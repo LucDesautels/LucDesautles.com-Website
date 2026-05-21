@@ -1,0 +1,19 @@
+---
+// Short reverse-gradient band that brings the page back to cream after the
+// dark robotics section.
+---
+<div class="trans" aria-hidden="true"></div>
+<style>
+  .trans {
+    height: 120px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(
+      180deg,
+      var(--dark) 0%,
+      #2a221c 30%,
+      var(--bg-warm) 75%,
+      var(--bg) 100%
+    );
+  }
+</style>

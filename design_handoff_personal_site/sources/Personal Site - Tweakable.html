@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Luc Desautels — homepage (tweakable)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Khand:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    html, body { margin:0; padding:0; background:#f1ede3; }
+    body { font-family: 'Manrope', system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    .hy-scroll::-webkit-scrollbar { height:8px; }
+    .hy-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius:99px; }
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="hybrid.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent": "#d96a36",
+      "trim": "#d96a36",
+      "standoutStyle": "filled",
+      "displayScale": 1.0,
+      "quirkyExperiences": true,
+      "cream": "#f1ede3",
+      "dark": "#161412"
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+      // Map tweak state → theme object the components expect.
+      const theme = {
+        accent: t.accent,
+        trim:   t.trim,
+        standoutStyle: t.standoutStyle,
+        displayScale: t.displayScale,
+        bg: t.cream,
+        dark: t.dark,
+      };
+
+      return (
+        <>
+          <HybridPage theme={theme} quirkyExperiences={t.quirkyExperiences}/>
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Color">
+              <TweakColor
+                label="Primary accent"
+                value={t.accent}
+                onChange={(v)=> setTweak({ accent: v })}
+                options={["#d96a36","#c14a1f","#e8693c","#f08c4d"]}
+              />
+              <TweakColor
+                label="Cream trim (small accents on light side)"
+                value={t.trim}
+                onChange={(v)=> setTweak({ trim: v })}
+                options={["#d96a36","#1f4ed8","#0a0a0a","#3b6b2a"]}
+              />
+              <TweakColor
+                label="Cream background"
+                value={t.cream}
+                onChange={(v)=> setTweak({ cream: v })}
+                options={["#f1ede3","#f4f0e6","#ece5d2","#ffffff"]}
+              />
+              <TweakColor
+                label="Dark background (telemetry side)"
+                value={t.dark}
+                onChange={(v)=> setTweak({ dark: v })}
+                options={["#161412","#0e0d0b","#1a1714","#202020"]}
+              />
+            </TweakSection>
+
+            <TweakSection label="Layout">
+              <TweakSelect
+                label="Standout treatment"
+                value={t.standoutStyle}
+                onChange={(v)=> setTweak({ standoutStyle: v })}
+                options={[
+                  { value: "filled", label: "Filled accent card" },
+                  { value: "tab",    label: "Bigger card + 'Standout' tab" },
+                ]}
+              />
+              <TweakSlider
+                label="Display type scale"
+                value={t.displayScale}
+                onChange={(v)=> setTweak({ displayScale: v })}
+                min={0.8} max={1.25} step={0.05}
+                unit="×"
+              />
+              <TweakToggle
+                label="Quirky Experiences section"
+                value={t.quirkyExperiences}
+                onChange={(v)=> setTweak({ quirkyExperiences: v })}
+              />
+            </TweakSection>
+          </TweaksPanel>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>

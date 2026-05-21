@@ -1,0 +1,47 @@
+---
+interface Props {
+  size?: number;
+  rotate?: number;
+  color?: string;
+  align?: "left" | "right";
+  underline?: boolean;
+}
+const {
+  size = 56,
+  rotate = -6,
+  color = "var(--hand)",
+  align = "left",
+  underline = true,
+} = Astro.props;
+---
+<div
+  class="hand"
+  style={`font-size:${size}px;color:${color};transform:rotate(${rotate}deg);transform-origin:${align === "right" ? "right center" : "left center"};`}
+>
+  <div class="hand__inner">
+    <slot />
+    {underline && (
+      <svg class="hand__underline" viewBox="0 0 200 14" preserveAspectRatio="none">
+        <path d="M2 8 C 50 2, 120 12, 198 5" stroke={color} stroke-width="2.4" fill="none" stroke-linecap="round" />
+      </svg>
+    )}
+  </div>
+</div>
+<style>
+  .hand {
+    font-family: var(--font-hand);
+    line-height: 0.95;
+    white-space: nowrap;
+    display: inline-block;
+  }
+  .hand__inner { position: relative; padding-bottom: 2px; }
+  .hand__underline {
+    position: absolute;
+    left: -4px;
+    right: 0;
+    bottom: -8px;
+    width: 105%;
+    height: 14px;
+    overflow: visible;
+  }
+</style>

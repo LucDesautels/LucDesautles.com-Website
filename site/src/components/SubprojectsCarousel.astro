@@ -1,0 +1,208 @@
+---
+import { SUBPROJECTS, DOMAINS } from "@/data/content";
+import Placeholder from "./Placeholder.astro";
+---
+<section class="sub" id="subprojects">
+  <div class="sub__head shell">
+    <div>
+      <div class="eyebrow eyebrow--dark">[ § 03 — Robotics sub-projects ]</div>
+      <h3 class="sub__title">Filter by domain.</h3>
+    </div>
+    <a class="sub__all" href="/engineering">⊞ Full project grid →</a>
+  </div>
+
+  <!-- Filter chips are decorative until the dedicated grid page exists. -->
+  <div class="sub__chips shell" role="tablist" aria-label="Engineering domain filter">
+    {DOMAINS.map((d, i) => (
+      <button
+        type="button"
+        class={i === 0 ? "chip chip--active" : "chip"}
+        data-domain={d}
+        aria-pressed={i === 0}
+      >{d}</button>
+    ))}
+  </div>
+
+  <div class="sub__scroller">
+    {SUBPROJECTS.map((p) => (
+      <article class="card" data-tag={p.tag} data-domain={p.domain}>
+        <div class="card__media">
+          <Placeholder label={p.label} aspect="4/5" dark />
+          <span class="card__tag">{p.tag}</span>
+          <span class="card__domain">{p.domain}</span>
+        </div>
+        <div class="card__title">{p.label}</div>
+        <div class="card__desc">{p.desc}</div>
+      </article>
+    ))}
+  </div>
+
+  <div class="sub__empty shell" data-empty hidden>
+    [ No sub-projects in this domain yet ]
+  </div>
+</section>
+
+<script>
+  // Domain filter. NOTE: Astro `<script>` tags are ES modules, so
+  // `document.currentScript` is null here — query the section directly.
+  const root = document.querySelector<HTMLElement>(".sub");
+  if (root) {
+    const chips = root.querySelectorAll<HTMLButtonElement>(".chip");
+    const cards = root.querySelectorAll<HTMLElement>(".card");
+    const scroller = root.querySelector<HTMLElement>(".sub__scroller");
+    const empty = root.querySelector<HTMLElement>(".sub__empty");
+
+    const apply = (domain: string) => {
+      let shown = 0;
+      cards.forEach((card) => {
+        const match = domain === "ALL" || card.dataset.domain === domain;
+        card.classList.toggle("card--hidden", !match);
+        if (match) shown++;
+      });
+      // Reset the horizontal scroll so the first match is in view.
+      if (scroller) scroller.scrollLeft = 0;
+      if (empty) empty.hidden = shown > 0;
+    };
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const d = chip.dataset.domain ?? "ALL";
+        chips.forEach((c) => {
+          const on = c === chip;
+          c.classList.toggle("chip--active", on);
+          c.setAttribute("aria-pressed", String(on));
+        });
+        apply(d);
+      });
+    });
+  }
+</script>
+
+<style>
+  .sub {
+    position: relative;
+    z-index: 2; /* opaquely cover the fixed wave canvas behind it */
+    padding: 32px 0 56px;
+    background: var(--dark);
+    color: var(--dark-ink);
+    border-top: 1px solid var(--dark-line);
+  }
+  .sub__head {
+    padding: 0 var(--page-pad) 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .sub__title {
+    font-family: var(--font-tech);
+    font-size: clamp(32px, 5vw, 48px);
+    margin: 6px 0 0;
+    color: var(--dark-ink);
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+  .sub__all {
+    padding: 10px 14px;
+    border: 1px solid var(--dark-line);
+    color: var(--dark-ink);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .sub__chips {
+    padding: 0 var(--page-pad) 18px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    padding: 6px 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dark-dim);
+    background: transparent;
+    border: 1px solid var(--dark-line);
+    cursor: pointer;
+    transition: color .15s, background .15s;
+  }
+  .chip:hover { color: var(--dark-ink); }
+  .chip--active {
+    color: var(--accent-ink);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .sub__scroller {
+    display: flex;
+    gap: 14px;
+    padding: 0 var(--page-pad) 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    /* Aesthetic scrollbar — dark variant for this section. */
+    scrollbar-color: var(--accent) rgba(255, 255, 255, 0.08);
+    scrollbar-width: thin;
+  }
+  .sub__scroller::-webkit-scrollbar { height: 10px; }
+  .sub__scroller::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.06); }
+  .sub__scroller::-webkit-scrollbar-thumb { background: var(--accent); border: 2px solid var(--dark); }
+  .sub__scroller::-webkit-scrollbar-thumb:hover { background: var(--dark-ink); }
+  .card {
+    flex: 0 0 240px;
+    scroll-snap-align: start;
+  }
+  .card--hidden { display: none; }
+  .sub__empty {
+    padding: 24px var(--page-pad) 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dark-mute);
+  }
+  .card__media { position: relative; }
+  .card__tag {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 3px 8px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .card__domain {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--dark-ink);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .card__title {
+    margin-top: 10px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--dark-ink);
+    font-weight: 600;
+  }
+  .card__desc {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--dark-dim);
+    margin-top: 4px;
+    line-height: 1.55;
+  }
+</style>

@@ -1,0 +1,51 @@
+---
+// Diagonal-stripe placeholder. Two sizing modes:
+//   - aspect: "4/3"        → width fills container, height derived (preferred for grid items)
+//   - h: 240, w: 300       → explicit pixel dims (used by polaroids, hero portrait)
+interface Props {
+  label: string;
+  aspect?: string;
+  h?: number;
+  w?: number | string;
+  dark?: boolean;
+  accent?: boolean;
+  note?: string;
+  tilt?: number;
+  frame?: boolean;
+  class?: string;
+}
+const {
+  label,
+  aspect,
+  h,
+  w,
+  dark,
+  accent,
+  note,
+  tilt,
+  frame,
+  class: className,
+} = Astro.props;
+
+const cls = [
+  "placeholder",
+  dark ? "placeholder--dark" : null,
+  accent && !dark ? "placeholder--accent-cream" : null,
+  frame ? "placeholder--frame" : null,
+  className,
+].filter(Boolean).join(" ");
+
+const styleParts: string[] = [];
+if (aspect) {
+  styleParts.push(`aspect-ratio:${aspect}`, "width:100%");
+} else {
+  if (h !== undefined) styleParts.push(`height:${h}px`);
+  if (w !== undefined) styleParts.push(typeof w === "number" ? `width:${w}px` : `width:${w}`);
+}
+if (tilt) styleParts.push(`transform:rotate(${tilt}deg)`);
+const style = styleParts.join(";");
+---
+<div class={cls} style={style}>
+  <div class="placeholder__label">[ {label} ]</div>
+  {note && <div class="placeholder__note">{note}</div>}
+</div>

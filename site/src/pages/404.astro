@@ -1,0 +1,39 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Footer from "@/components/Footer.astro";
+---
+<BaseLayout title="Not found — Luc Desautels" noIndex>
+  <TopBar />
+  <main class="nf" id="main">
+    <div class="eyebrow">404</div>
+    <h1 class="nf__title">That page hasn't been built yet<span style="color:var(--accent);">.</span></h1>
+    <p class="nf__text">Try the <a href="/">home page</a>, or jump straight to <a href="/#sailfish">Project Sailfish</a>.</p>
+  </main>
+  <Footer />
+</BaseLayout>
+<style>
+  .nf {
+    padding: 120px var(--page-pad);
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .nf__title {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 7vw, 80px);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin: 12px 0 16px;
+  }
+  .nf__text {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: var(--ink-dim);
+  }
+  .nf__text a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+</style>

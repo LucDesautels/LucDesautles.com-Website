@@ -1,0 +1,17 @@
+---
+interface Props { size?: number; color?: string; class?: string; style?: string; }
+const { size = 90, color = "var(--heart)", class: className, style } = Astro.props;
+---
+<svg
+  width={size}
+  height={size * 0.92}
+  viewBox="0 0 100 92"
+  class={className}
+  style={style}
+  aria-hidden="true"
+>
+  <g fill="none" stroke={color} stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M50 82 C 22 64, 6 38, 24 18 C 36 7, 50 18, 50 32 C 50 19, 64 6, 76 17 C 95 36, 80 62, 51 81" />
+    <path d="M50 78 C 26 62, 12 40, 27 22 C 36 13, 48 21, 50 30" opacity="0.45" />
+  </g>
+</svg>

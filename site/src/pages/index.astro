@@ -1,0 +1,53 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Hero from "@/components/Hero.astro";
+import RoboticsIntroF from "@/components/RoboticsIntroF.astro";
+import RoboticsPanels from "@/components/RoboticsPanels.astro";
+import SubprojectsCarousel from "@/components/SubprojectsCarousel.astro";
+import TransitionToCream from "@/components/TransitionToCream.astro";
+import MetaSection from "@/components/MetaSection.astro";
+import Principles from "@/components/Principles.astro";
+import Footer from "@/components/Footer.astro";
+import HorizontalTOC from "@/components/islands/HorizontalTOC.tsx";
+import FilterIndicator from "@/components/islands/FilterIndicator.tsx";
+import { META_GROUPS, TOC } from "@/data/content";
+---
+<BaseLayout>
+  <TopBar />
+  <Hero />
+
+  <!-- Gallery — only visible in "full picture" filter. -->
+  <div data-filters="full">
+    <HorizontalTOC sections={TOC} client:visible />
+  </div>
+
+  <!-- Robotics block — visible in full, eng-acad, engineering. -->
+  <div id="robotics-intro" data-filters="full eng-acad engineering">
+    <RoboticsIntroF />
+    <RoboticsPanels />
+    <SubprojectsCarousel />
+    <TransitionToCream />
+  </div>
+
+  <!-- Academics — always rendered. The Engineering filter hides its header
+       + Education group via CSS so only the Research group shows. -->
+  <MetaSection meta={META_GROUPS[0]} num={4} />
+
+  <!-- Well-rounded — full + non-engineering. -->
+  <div data-filters="full non-eng">
+    <MetaSection meta={META_GROUPS[1]} num={5} />
+  </div>
+
+  <!-- Experiences (quirky) — full + non-engineering. -->
+  <div data-filters="full non-eng">
+    <MetaSection meta={META_GROUPS[2]} num={6} quirky />
+  </div>
+
+  <!-- Principles + Footer — always visible. -->
+  <Principles />
+  <Footer />
+
+  <!-- Floating filter indicator (sticky bottom-right when a filter is on). -->
+  <FilterIndicator client:load />
+</BaseLayout>

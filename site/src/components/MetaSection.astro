@@ -1,0 +1,193 @@
+---
+import type { MetaGroup } from "@/data/content";
+import Placeholder from "./Placeholder.astro";
+
+interface Props {
+  meta: MetaGroup;
+  num: number;
+  quirky?: boolean;
+}
+const { meta, num, quirky } = Astro.props;
+---
+<section class="ms" id={meta.id}>
+  <div class="ms__inner shell">
+    <div class="ms__head">
+      <div>
+        <div class="eyebrow">§ 0{num} — {meta.subtitle}</div>
+        <h2 class="ms__title">
+          {meta.title}<span class="ms__period">.</span>
+        </h2>
+        {quirky && (
+          <div class="ms__quirk">slightly less serious from here on.</div>
+        )}
+      </div>
+    </div>
+
+    {meta.groups.map((g, gi) => {
+      const standout = g.items.find((i) => i.standout) ?? g.items[0];
+      const rest = g.items.filter((i) => i !== standout);
+      return (
+        <div class="group" data-group-id={g.id}>
+          <div class="group__head">
+            <span class="eyebrow">
+              {String(gi + 1).padStart(2, "0")} / {String(meta.groups.length).padStart(2, "0")}
+            </span>
+            <h3 class="group__title">{g.title}.</h3>
+          </div>
+          <div class="group__grid">
+            <!-- Standout (tab style) -->
+            <article class={`standout${quirky ? " standout--tilt" : ""}`}>
+              <div class="standout__tab">★ Standout</div>
+              <Placeholder label={standout.title} aspect="4/3" />
+              <div class="standout__body">
+                <h4 class="standout__title">{standout.title}</h4>
+                <p class="standout__text">{standout.body}</p>
+              </div>
+            </article>
+
+            <!-- Two siblings -->
+            {rest.map((it, i) => (
+              <article
+                class="item"
+                style={quirky ? `transform:rotate(${i === 0 ? 1.5 : -1.2}deg);` : undefined}
+              >
+                <Placeholder label={it.title} aspect="4/3" />
+                <h4 class="item__title">{it.title}</h4>
+                <p class="item__text">{it.body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</section>
+
+<style>
+  .ms {
+    position: relative;
+    padding: 80px var(--page-pad);
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .ms__inner { position: relative; z-index: 1; }
+  .ms__head { display: flex; align-items: flex-end; justify-content: space-between; }
+  .ms__title {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 8vw, 92px);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: 8px 0 0;
+    color: var(--ink);
+  }
+  .ms__period { color: var(--trim); }
+  .ms__quirk {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink-dim);
+    margin-top: 10px;
+    transform: rotate(-1deg);
+    display: inline-block;
+  }
+
+  .group {
+    padding: 32px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .group__head {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  .group__title {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .group__grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 18px;
+    align-items: stretch;
+  }
+  @media (max-width: 960px) {
+    .group__grid { grid-template-columns: 1fr; }
+  }
+
+  /* Standout — tab style with orange border + shadow */
+  .standout {
+    position: relative;
+    padding: 22px 24px;
+    background: #fff;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.10);
+    display: flex;
+    flex-direction: column;
+    min-height: 380px;
+    border: 2px solid #d66e3a;
+  }
+  .standout--tilt { transform: rotate(-1deg); }
+  .standout__tab {
+    position: absolute;
+    top: -13px;
+    left: 20px;
+    padding: 4px 10px;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .standout__body {
+    border-left: 3px solid var(--trim);
+    padding-left: 14px;
+    margin-top: 18px;
+  }
+  .standout__title {
+    font-family: var(--font-display);
+    font-size: clamp(26px, 3.2vw, 34px);
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .standout__text {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    color: var(--ink-dim);
+    margin: 10px 0 0;
+    line-height: 1.55;
+  }
+
+  /* Sibling item */
+  .item {
+    position: relative;
+    padding: 18px 20px;
+    background: #fff;
+    border: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+  }
+  .item__title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 14px 0 6px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .item__text {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    color: var(--ink-dim);
+    margin: 0;
+    line-height: 1.55;
+  }
+</style>

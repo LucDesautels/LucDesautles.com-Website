@@ -1,0 +1,87 @@
+---
+import { VALUES } from "@/data/content";
+const cols = [VALUES.engineering, VALUES.creative];
+---
+<section class="pr">
+  <div class="pr__shell shell">
+  <div class="pr__hero">
+    <div class="eyebrow">§ Principles</div>
+    <h2 class="pr__title">
+      What I look for in the <em class="pr__em">work,</em> and the <em class="pr__em">people.</em>
+    </h2>
+  </div>
+  <div class="pr__grid">
+    {cols.map((v) => (
+      <div class="pr__col">
+        <div class="eyebrow">{v.label}</div>
+        <div class="pr__list">
+          {v.points.map((p) => (
+            <div class="pr__pt">
+              <div class="pr__num">{p.k}</div>
+              <div>
+                <div class="pr__t">{p.t}</div>
+                <div class="pr__d">{p.d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+  </div>
+</section>
+
+<style>
+  .pr {
+    padding: 80px var(--page-pad);
+    background: var(--bg-warm);
+    position: relative;
+  }
+  .pr__hero { max-width: 980px; margin: 0 auto; text-align: center; }
+  .pr__title {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 500;
+    margin: 8px 0 28px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .pr__em { font-style: italic; color: var(--trim); font-weight: 500; }
+  .pr__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+    margin-top: 8px;
+  }
+  @media (max-width: 720px) {
+    .pr__grid { grid-template-columns: 1fr; gap: 32px; }
+  }
+  .pr__list { margin-top: 14px; }
+  .pr__pt {
+    padding: 18px 0;
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 18px;
+  }
+  .pr__num {
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-style: italic;
+    color: var(--trim);
+    line-height: 1;
+  }
+  .pr__t {
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .pr__d {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    color: var(--ink-dim);
+    margin-top: 4px;
+    line-height: 1.55;
+  }
+</style>

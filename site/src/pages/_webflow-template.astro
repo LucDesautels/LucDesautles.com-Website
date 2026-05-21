@@ -1,0 +1,32 @@
+---
+// Template for wrapping a Webflow export inside this site's shell.
+// 1. Rename this file to <slug>.astro (e.g. sailfish.astro)
+// 2. Paste the exported page's <body> contents into the slot below
+//    (set:html keeps Webflow markup intact).
+// 3. Move the export's CSS into public/webflow/<slug>/css/ and link below.
+// 4. Move scripts into public/webflow/<slug>/js/ and load with <script src>.
+
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Footer from "@/components/Footer.astro";
+
+const webflowBodyHtml = `
+  <!-- Paste exported <body> contents here, or fetch from a string. -->
+  <main style="padding:80px var(--page-pad);">
+    <h1 style="font-family:var(--font-display);font-size:64px;">Webflow page goes here</h1>
+    <p>Replace this with the imported export.</p>
+  </main>
+`;
+---
+<BaseLayout title="Sub-page title" description="Sub-page description for SEO.">
+  <TopBar />
+  <!-- If the export has its own CSS, load it here so it's scoped to this page. -->
+  <!-- <link rel="stylesheet" href="/webflow/<slug>/css/<slug>.css" /> -->
+
+  <Fragment set:html={webflowBodyHtml} />
+
+  <!-- Webflow runtime, if needed. Order matters. -->
+  <!-- <script src="/webflow/<slug>/js/webflow.js" defer></script> -->
+
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,944 @@
+---
+import { ROBOTICS } from "@/data/content";
+import Placeholder from "./Placeholder.astro";
+
+const cols = ROBOTICS; // [Sailfish, FTC]
+const N = 5; // slides per column
+---
+<section class="rp" id="sailfish" data-rp>
+  <!-- Sticky band: column headers + media + progress bars ─────────────── -->
+  <div class="rp__stickytop">
+    <div class="rp__shell shell">
+      <div class="rp__grid rp__grid--top">
+        {cols.map((p, ci) => (
+          <div class="col col--top" data-col={ci} id={ci === 1 ? "ftc" : undefined}>
+            <div class="col__head">
+              <div class="col__topline">
+                <div class="eyebrow eyebrow--dark">{p.eyebrow}</div>
+                <div class="col__counter">{String(ci + 1).padStart(2, "0")} / 02</div>
+              </div>
+              <h3 class="col__title">{p.title}</h3>
+            </div>
+
+            <div class="col__media">
+              <div class="col__img" data-col={ci} role="button" tabindex="0" aria-label={`Open ${p.title} lightbox`}>
+                {p.slides.map((s, si) => (
+                  <div class={`col__slide${si === 0 ? " is-active" : ""}`} data-slide={si}>
+                    {s.image ? (
+                      <img class="col__photo" src={s.image} alt={s.imageLabel} loading={si === 0 ? "eager" : "lazy"} decoding="async" />
+                    ) : (
+                      <Placeholder label={s.imageLabel} aspect="16/10" dark note="REPLACE" />
+                    )}
+                    {s.caption && <div class="col__caption">// {s.caption}</div>}
+                  </div>
+                ))}
+              </div>
+
+              <div class="col__bars" data-col={ci} aria-label="Slide progress">
+                {Array.from({ length: N }).map((_, si) => (
+                  <button class={`bar${si === 0 ? " is-active" : ""}`} data-col={ci} data-idx={si} aria-label={`Go to slide ${si + 1}`} type="button">
+                    <span class="bar__fill"></span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll-revealed info rows. Aligned across columns via shared grid. ── -->
+  <div class="rp__rowsband">
+    <div class="rp__shell shell">
+      <div class="rp__grid rp__grid--rows" style={`--n:${N}`}>
+        {Array.from({ length: N }).map((_, si) => (
+          <>
+            {cols.map((p, ci) => (
+              <button
+                class={`row${si === 0 ? " is-active" : ""}`}
+                data-col={ci}
+                data-idx={si}
+                style={`grid-row:${si + 1}; grid-column:${ci + 1};`}
+                type="button"
+                aria-label={`${p.title} — ${p.slides[si].title}`}
+              >
+                <span class="row__indicator" aria-hidden="true"></span>
+                <span class="row__inner">
+                  <span class="eyebrow eyebrow--dark">&gt; {p.slides[si].eyebrow}</span>
+                  <span class="row__title">{p.slides[si].title}</span>
+                  <span class="row__body">{p.slides[si].body}</span>
+                </span>
+              </button>
+            ))}
+          </>
+        ))}
+      </div>
+
+      <div class="rp__ctas">
+        {cols.map((p) => (
+          <a class="rp__cta" href={p.href}>Open dedicated page →</a>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox: rendered once, toggles visibility on click. ────────────── -->
+  <div class="rplb" data-rplb hidden aria-hidden="true">
+    <div class="rplb__backdrop" data-rplb-close></div>
+    <div class="rplb__panel" role="dialog" aria-modal="true" aria-labelledby="rplb-title">
+      <div class="rplb__bars" data-rplb-bars>
+        {Array.from({ length: N }).map((_, si) => (
+          <button class="bar" data-rplb-bar={si} type="button" aria-label={`Slide ${si + 1}`}>
+            <span class="bar__fill"></span>
+          </button>
+        ))}
+      </div>
+
+      <div class="rplb__main">
+        <div class="rplb__media">
+          {cols.map((p, ci) => (
+            p.slides.map((s, si) => (
+              <div class="rplb__slide" data-rplb-slide data-col={ci} data-idx={si} hidden>
+                <div class="rplb__img">
+                  {s.image ? (
+                    <img class="rplb__photo" src={s.image} alt={s.imageLabel} loading="lazy" decoding="async" />
+                  ) : (
+                    <Placeholder label={s.imageLabel} aspect="16/10" dark note="REPLACE" />
+                  )}
+                  {s.caption && <div class="rplb__caption">{s.caption}</div>}
+                </div>
+                {s.extras && s.extras.length > 0 && (
+                  <div class="rplb__thumbs">
+                    {s.extras.map((e) => (
+                      <div class="rplb__thumb">
+                        {e.image ? (
+                          <img class="rplb__thumb-photo" src={e.image} alt={e.label} loading="lazy" decoding="async" />
+                        ) : (
+                          <Placeholder label={e.label} aspect="4/3" dark />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          ))}
+
+          <button class="rplb__nav rplb__nav--prev" data-rplb-prev aria-label="Previous slide" type="button">
+            <span class="rplb__arrow">‹</span>
+          </button>
+          <button class="rplb__nav rplb__nav--next" data-rplb-next aria-label="Next slide" type="button">
+            <span class="rplb__arrow">›</span>
+          </button>
+
+          <!-- First-open tutorial: explains the click-to-navigate halves.
+               Fades out after a few seconds or on the first interaction. -->
+          <div class="rplb__hint" data-rplb-hint aria-hidden="true">
+            <div class="rplb__hint-half rplb__hint-half--prev">
+              <span class="rplb__hint-pill">‹ Click this side — back</span>
+            </div>
+            <div class="rplb__hint-line"></div>
+            <div class="rplb__hint-half rplb__hint-half--next">
+              <span class="rplb__hint-pill">Click this side — next ›</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="rplb__info">
+          {cols.map((p, ci) => (
+            p.slides.map((s, si) => (
+              <div class="rplb__info-block" data-rplb-info data-col={ci} data-idx={si} hidden>
+                <div class="eyebrow eyebrow--dark">&gt; {s.eyebrow}</div>
+                <h4 id={ci === 0 && si === 0 ? "rplb-title" : undefined} class="rplb__title">{s.title}</h4>
+                <p class="rplb__body">{s.longBody ?? s.body}</p>
+                <div class="rplb__meta">
+                  <span>{p.title}</span>
+                  <span class="rplb__sep">·</span>
+                  <span>{String(si + 1).padStart(2, "0")} / {String(N).padStart(2, "0")}</span>
+                </div>
+              </div>
+            ))
+          ))}
+        </aside>
+      </div>
+
+      <button class="rplb__close" data-rplb-close type="button" aria-label="Close">×</button>
+    </div>
+  </div>
+</section>
+
+<script>
+  // ────────────────────────────────────────────────────────────────────────
+  // Robotics dual-carousel state machine.
+  //
+  // Per spec (Here's the full spec in plain language.txt):
+  // - Single shared activeIndex across both columns
+  // - Auto-advance every ~4500ms when nothing is interacting
+  // - Hover-intent 500ms on a row → switch to that index; bars freeze
+  // - Click bar → jump; restart timer with a fresh 4500ms
+  // - Click row OR image → open lightbox on THAT column at THAT index
+  // - Lightbox: prev/next halves, top bars, keyboard arrows + Esc
+  // ────────────────────────────────────────────────────────────────────────
+
+  const TICK_MS = 4500;
+  const HOVER_INTENT_MS = 500;
+  const N = 5;
+
+  const root = document.querySelector("[data-rp]") as HTMLElement | null;
+  if (root) initRoboticsPanels(root);
+
+  function initRoboticsPanels(root: HTMLElement) {
+    const slidesByCol: NodeListOf<HTMLElement>[] = [
+      root.querySelectorAll<HTMLElement>('[data-col="0"] .col__slide'),
+      root.querySelectorAll<HTMLElement>('[data-col="1"] .col__slide'),
+    ];
+    const barsByCol: NodeListOf<HTMLElement>[] = [
+      root.querySelectorAll<HTMLElement>('.col__bars[data-col="0"] .bar'),
+      root.querySelectorAll<HTMLElement>('.col__bars[data-col="1"] .bar'),
+    ];
+    const rowsByCol: NodeListOf<HTMLElement>[] = [
+      root.querySelectorAll<HTMLElement>('.row[data-col="0"]'),
+      root.querySelectorAll<HTMLElement>('.row[data-col="1"]'),
+    ];
+    const images: NodeListOf<HTMLElement> =
+      root.querySelectorAll<HTMLElement>(".col__img");
+
+    let active = 0;
+    let paused = false;
+    let lbOpen = false;
+    let tickHandle: number | null = null;
+    let hoverIntentHandle: number | null = null;
+
+    // ── Bar state ─────────────────────────────────────────────────────
+    function renderBars(animateActive: boolean) {
+      for (let c = 0; c < 2; c++) {
+        barsByCol[c].forEach((bar, i) => {
+          const fill = bar.querySelector(".bar__fill") as HTMLElement;
+          if (!fill) return;
+          fill.style.transition = "none";
+          fill.style.animation = "none";
+          if (i < active) {
+            fill.style.width = "100%";
+          } else if (i > active) {
+            fill.style.width = "0%";
+          } else if (i === active) {
+            // Active bar
+            if (animateActive && !paused && !lbOpen) {
+              fill.style.width = "0%";
+              // Force reflow so the animation restarts from 0.
+              void fill.offsetWidth;
+              fill.style.animation = `rp-fill ${TICK_MS}ms linear forwards`;
+            } else {
+              // Snap to full when frozen on hover (per spec) or paused.
+              fill.style.width = paused ? "100%" : "0%";
+            }
+          }
+        });
+      }
+    }
+
+    // ── Slide / row visuals ───────────────────────────────────────────
+    function renderActive(animateActive: boolean) {
+      for (let c = 0; c < 2; c++) {
+        slidesByCol[c].forEach((sl, i) => sl.classList.toggle("is-active", i === active));
+        rowsByCol[c].forEach((r, i) => r.classList.toggle("is-active", i === active));
+        barsByCol[c].forEach((b, i) => b.classList.toggle("is-active", i === active));
+      }
+      renderBars(animateActive);
+    }
+
+    // ── Timer ─────────────────────────────────────────────────────────
+    function clearTimer() {
+      if (tickHandle != null) {
+        window.clearTimeout(tickHandle);
+        tickHandle = null;
+      }
+    }
+    function startTimer() {
+      clearTimer();
+      if (paused || lbOpen) return;
+      tickHandle = window.setTimeout(() => {
+        active = (active + 1) % N;
+        renderActive(true);
+        startTimer();
+      }, TICK_MS);
+    }
+    function restart() {
+      clearTimer();
+      renderActive(true);
+      startTimer();
+    }
+
+    function setActive(i: number, opts: { restart?: boolean } = {}) {
+      active = ((i % N) + N) % N;
+      if (opts.restart) restart();
+      else renderActive(true);
+    }
+
+    // ── Hover behaviour on rows ───────────────────────────────────────
+    function clearHoverIntent() {
+      if (hoverIntentHandle != null) {
+        window.clearTimeout(hoverIntentHandle);
+        hoverIntentHandle = null;
+      }
+    }
+    function attachRowHover(row: HTMLElement) {
+      const idx = Number(row.dataset.idx);
+      row.addEventListener("mouseenter", () => {
+        if (lbOpen) return;
+        paused = true;
+        clearTimer();
+        // Freeze the currently filling bar in place by snapping it.
+        const fill = barsByCol[0][active]?.querySelector(".bar__fill") as HTMLElement | null;
+        const fill2 = barsByCol[1][active]?.querySelector(".bar__fill") as HTMLElement | null;
+        [fill, fill2].forEach((f) => {
+          if (!f) return;
+          // Read current computed width and apply it inline so the animation
+          // halts visually where it was.
+          const w = window.getComputedStyle(f).width;
+          f.style.animation = "none";
+          f.style.width = w;
+        });
+        clearHoverIntent();
+        hoverIntentHandle = window.setTimeout(() => {
+          if (lbOpen) return;
+          active = idx;
+          // Snap state: bars 0..idx-1 + idx all solid (user is actively on it).
+          for (let c = 0; c < 2; c++) {
+            slidesByCol[c].forEach((sl, i) => sl.classList.toggle("is-active", i === active));
+            rowsByCol[c].forEach((r, i) => r.classList.toggle("is-active", i === active));
+            barsByCol[c].forEach((b, i) => b.classList.toggle("is-active", i === active));
+            barsByCol[c].forEach((bar, i) => {
+              const f = bar.querySelector(".bar__fill") as HTMLElement;
+              if (!f) return;
+              f.style.animation = "none";
+              f.style.transition = "none";
+              if (i <= active) f.style.width = "100%";
+              else f.style.width = "0%";
+            });
+          }
+        }, HOVER_INTENT_MS);
+      });
+      row.addEventListener("mouseleave", () => {
+        if (lbOpen) return;
+        clearHoverIntent();
+        paused = false;
+        // Per spec: timer fully resets on leave — fresh 4500ms for the new
+        // active bar to fill.
+        restart();
+      });
+    }
+
+    rowsByCol[0].forEach(attachRowHover);
+    rowsByCol[1].forEach(attachRowHover);
+
+    // ── Bar clicks (jump directly to that index) ──────────────────────
+    function attachBarClick(bar: HTMLElement) {
+      const idx = Number(bar.dataset.idx);
+      bar.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (lbOpen) return;
+        paused = false;
+        active = idx;
+        restart();
+      });
+    }
+    barsByCol[0].forEach(attachBarClick);
+    barsByCol[1].forEach(attachBarClick);
+
+    // ── Lightbox plumbing ─────────────────────────────────────────────
+    const lb = document.querySelector("[data-rplb]") as HTMLElement | null;
+    if (!lb) return;
+
+    const lbSlides = lb.querySelectorAll<HTMLElement>("[data-rplb-slide]");
+    const lbInfos = lb.querySelectorAll<HTMLElement>("[data-rplb-info]");
+    const lbBars = lb.querySelectorAll<HTMLElement>("[data-rplb-bar]");
+    const lbPrev = lb.querySelector("[data-rplb-prev]") as HTMLElement | null;
+    const lbNext = lb.querySelector("[data-rplb-next]") as HTMLElement | null;
+    const lbMedia = lb.querySelector("[data-rplb] .rplb__media") as HTMLElement | null;
+    const lbHint = lb.querySelector("[data-rplb-hint]") as HTMLElement | null;
+
+    let lbCol = 0;
+    let lbIdx = 0;
+    let hintHandle: number | null = null;
+
+    function lbRender() {
+      lbSlides.forEach((el) => {
+        const c = Number(el.dataset.col);
+        const i = Number(el.dataset.idx);
+        el.hidden = !(c === lbCol && i === lbIdx);
+      });
+      lbInfos.forEach((el) => {
+        const c = Number(el.dataset.col);
+        const i = Number(el.dataset.idx);
+        el.hidden = !(c === lbCol && i === lbIdx);
+      });
+      lbBars.forEach((b, i) => {
+        const f = b.querySelector(".bar__fill") as HTMLElement;
+        if (!f) return;
+        f.style.animation = "none";
+        f.style.transition = "none";
+        f.style.width = i <= lbIdx ? "100%" : "0%";
+      });
+    }
+
+    // The click-zone tutorial overlay — show on open, dismiss on first
+    // interaction or after a short timeout.
+    function showHint() {
+      if (!lbHint) return;
+      lbHint.classList.add("is-on");
+      if (hintHandle != null) window.clearTimeout(hintHandle);
+      hintHandle = window.setTimeout(dismissHint, 3200);
+    }
+    function dismissHint() {
+      if (!lbHint) return;
+      lbHint.classList.remove("is-on");
+      if (hintHandle != null) { window.clearTimeout(hintHandle); hintHandle = null; }
+    }
+
+    function openLb(col: number, idx: number) {
+      lbCol = col;
+      lbIdx = idx;
+      lbOpen = true;
+      paused = true;
+      clearTimer();
+      clearHoverIntent();
+      lb.hidden = false;
+      lb.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      lbRender();
+      // Animate in.
+      requestAnimationFrame(() => lb.classList.add("is-open"));
+      showHint();
+    }
+    function closeLb() {
+      if (!lbOpen) return;
+      lbOpen = false;
+      paused = false;
+      dismissHint();
+      lb.classList.remove("is-open");
+      lb.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      window.setTimeout(() => { lb.hidden = true; }, 220);
+      // Per spec: timer resets and gets a fresh full interval.
+      restart();
+    }
+    function step(d: number) {
+      lbIdx = ((lbIdx + d) % N + N) % N;
+      lbRender();
+      dismissHint();
+    }
+
+    lb.querySelectorAll<HTMLElement>("[data-rplb-close]").forEach((el) =>
+      el.addEventListener("click", closeLb)
+    );
+    lbPrev?.addEventListener("click", (e) => { e.stopPropagation(); step(-1); });
+    lbNext?.addEventListener("click", (e) => { e.stopPropagation(); step(+1); });
+
+    // Click anywhere on the media: left half → previous, right half → next.
+    // The arrow buttons stopPropagation, so they don't double-fire here.
+    lbMedia?.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest(".rplb__nav")) return;
+      const rect = lbMedia.getBoundingClientRect();
+      if (e.clientX - rect.left < rect.width / 2) step(-1);
+      else step(+1);
+    });
+    lbBars.forEach((b) =>
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        lbIdx = Number(b.getAttribute("data-rplb-bar"));
+        lbRender();
+      })
+    );
+    document.addEventListener("keydown", (e) => {
+      if (!lbOpen) return;
+      if (e.key === "Escape") closeLb();
+      else if (e.key === "ArrowLeft") step(-1);
+      else if (e.key === "ArrowRight") step(+1);
+    });
+
+    // ── Click handlers on images + rows open the lightbox ─────────────
+    images.forEach((img) => {
+      const col = Number(img.dataset.col);
+      img.addEventListener("click", () => openLb(col, active));
+      img.addEventListener("keydown", (e: KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openLb(col, active);
+        }
+      });
+    });
+    rowsByCol[0].forEach((r) => r.addEventListener("click", () => openLb(0, Number(r.dataset.idx))));
+    rowsByCol[1].forEach((r) => r.addEventListener("click", () => openLb(1, Number(r.dataset.idx))));
+
+    // ── Visibility: only auto-advance while the section is in view ────
+    let inView = false;
+    const io = new IntersectionObserver(
+      (entries) => {
+        inView = entries[0]?.isIntersecting ?? false;
+        if (!inView) clearTimer();
+        else if (!lbOpen && !paused && !document.hidden) startTimer();
+      },
+      { rootMargin: "0px 0px -20% 0px" }
+    );
+    io.observe(root);
+
+    // Also pause when the tab is hidden — no point ticking the carousel
+    // when the user has switched away.
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) clearTimer();
+      else if (inView && !lbOpen && !paused) startTimer();
+    });
+
+    // Initial paint.
+    renderActive(true);
+    startTimer();
+  }
+</script>
+
+<style>
+  /* ── Layout ──────────────────────────────────────────────────────── */
+  .rp {
+    position: relative;
+    z-index: 2; /* opaquely cover the fixed wave canvas behind it */
+    background: var(--dark);
+    color: var(--dark-ink);
+    padding: 0 0 80px;
+  }
+  .rp__shell { padding: 0 var(--page-pad); }
+
+  /* Sticky band pins to top of viewport while rows scroll past.
+     It sticks at top:0 (not topbar-h) so its dark background fills the
+     whole top strip — otherwise, when the auto-hiding topbar slides away,
+     rows scrolling underneath would peek through the gap above the band.
+     The extra top padding keeps the column headers clear of the topbar. */
+  .rp__stickytop {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--dark);
+    padding: calc(var(--topbar-h) + 16px) 0 18px;
+    border-bottom: 1px solid var(--dark-line-soft);
+  }
+
+  .rp__grid { display: grid; gap: 28px; }
+  .rp__grid--top { grid-template-columns: 1fr 1fr; }
+  .rp__grid--rows {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(var(--n, 5), auto);
+    margin-top: 28px;
+  }
+
+  /* ── Column header (above image) ─────────────────────────────────── */
+  .col__head { margin-bottom: 16px; }
+  .col__topline {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .col__counter {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--dark-mute);
+    text-transform: uppercase;
+  }
+  .col__title {
+    font-family: var(--font-tech);
+    font-size: clamp(36px, 5vw, 60px);
+    line-height: 0.95;
+    margin: 6px 0 0;
+    color: var(--dark-ink);
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+
+  /* ── Media (image stack + bars) ──────────────────────────────────── */
+  .col__media { display: flex; flex-direction: column; gap: 10px; }
+  .col__img {
+    position: relative;
+    aspect-ratio: 16/10;
+    cursor: zoom-in;
+    outline: none;
+    isolation: isolate;
+  }
+  .col__img:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+  .col__slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 450ms ease;
+  }
+  .col__slide.is-active { opacity: 1; pointer-events: auto; }
+  .col__photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .col__caption {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--dark-ink);
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.42);
+    padding: 6px 10px;
+    border: 1px solid var(--dark-line);
+  }
+
+  .col__bars {
+    display: flex;
+    gap: 6px;
+    padding: 0;
+  }
+  .bar {
+    flex: 1;
+    height: 3px;
+    background: var(--dark-line);
+    border: none;
+    padding: 0;
+    position: relative;
+    cursor: pointer;
+    transition: background 160ms ease;
+  }
+  .bar:hover { background: var(--dark-line-soft); }
+  .bar__fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--dark-ink);
+  }
+  @keyframes rp-fill { from { width: 0%; } to { width: 100%; } }
+
+  /* ── Rows ────────────────────────────────────────────────────────── */
+  .row {
+    position: relative;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 18px 18px 18px 22px;
+    margin: 0;
+    color: inherit;
+    cursor: pointer;
+    border-bottom: 1px solid var(--dark-line-soft);
+    transition: background 200ms ease;
+  }
+  .row:hover { background: rgba(255, 255, 255, 0.02); }
+  .row__indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: transparent;
+    transition: background 200ms ease;
+  }
+  .row.is-active {
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .row.is-active .row__indicator {
+    background: var(--dark-ink);
+  }
+  .row__inner { display: block; }
+  .row__title {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--dark-ink);
+    font-weight: 600;
+    margin: 6px 0 4px;
+  }
+  .row__body {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    color: var(--dark-dim);
+    line-height: 1.55;
+  }
+
+  .rp__ctas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-top: 28px;
+  }
+  .rp__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    justify-self: start;
+  }
+  .rp__cta:hover { background: var(--accent); color: var(--accent-ink); }
+
+  @media (max-width: 960px) {
+    .rp__grid--top { grid-template-columns: 1fr; }
+    .rp__grid--rows { grid-template-columns: 1fr; }
+    .rp__grid--rows .row { grid-column: 1 !important; }
+    .rp__ctas { grid-template-columns: 1fr; }
+    .rp__stickytop { position: relative; top: auto; }
+  }
+
+  /* ── Lightbox ────────────────────────────────────────────────────── */
+  .rplb {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
+  /* `display: flex` above overrides the UA [hidden] rule — re-assert it
+     so the closed lightbox doesn't sit invisibly on top of the page and
+     swallow every click and hover. */
+  .rplb[hidden] { display: none !important; }
+  .rplb.is-open { opacity: 1; }
+  .rplb__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 6, 4, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .rplb__panel {
+    position: relative;
+    width: min(1200px, 96vw);
+    height: 88vh;
+    background: var(--dark);
+    color: var(--dark-ink);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--dark-line);
+    transform: translateY(8px);
+    transition: transform 220ms ease;
+  }
+  .rplb.is-open .rplb__panel { transform: translateY(0); }
+  .rplb__bars {
+    display: flex;
+    gap: 6px;
+    padding: 14px 18px 0;
+  }
+  .rplb__main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+    padding: 14px 18px 18px;
+    min-height: 0;
+  }
+  .rplb__media {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    cursor: pointer;
+  }
+
+  /* Click-zone tutorial overlay. */
+  .rplb__hint {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  .rplb__hint.is-on { opacity: 1; }
+  .rplb__hint-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    transform: translateX(-50%);
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.7) 0 8px,
+      transparent 8px 16px
+    );
+  }
+  .rplb__hint-half {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rplb__hint-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dark-ink);
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    padding: 9px 16px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .rplb__slide {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+  }
+  /* `display: flex` above overrides the UA [hidden] rule — re-assert it. */
+  .rplb__slide[hidden],
+  .rplb__info-block[hidden] {
+    display: none !important;
+  }
+  .rplb__img {
+    position: relative;
+    aspect-ratio: 16/10;
+    flex: 1;
+    min-height: 0;
+  }
+  .rplb__img > .placeholder { width: 100%; height: 100%; }
+  .rplb__photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .rplb__caption {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dark-ink);
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    max-width: 60%;
+  }
+  .rplb__thumbs {
+    display: flex;
+    gap: 10px;
+  }
+  .rplb__thumb {
+    flex: 1;
+    aspect-ratio: 4/3;
+    border: 1px solid var(--dark-line);
+  }
+  .rplb__thumb > .placeholder { width: 100%; height: 100%; }
+  .rplb__thumb-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .rplb__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--dark-ink);
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 180ms ease, transform 180ms ease;
+    display: grid;
+    place-items: center;
+  }
+  .rplb__nav:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.05);
+  }
+  .rplb__nav--prev { left: 14px; }
+  .rplb__nav--next { right: 14px; }
+  .rplb__arrow { font-size: 28px; line-height: 1; }
+
+  .rplb__info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--dark-line);
+    border-radius: 12px;
+    padding: 22px 22px 24px;
+    overflow: auto;
+  }
+  .rplb__info-block .eyebrow {
+    margin-bottom: 12px;
+  }
+  .rplb__title {
+    font-family: var(--font-tech);
+    font-size: 28px;
+    line-height: 1.05;
+    color: var(--dark-ink);
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+  }
+  .rplb__body {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    color: var(--dark-dim);
+    line-height: 1.6;
+    margin: 0;
+  }
+  .rplb__meta {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--dark-line-soft);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dark-mute);
+    display: flex;
+    gap: 8px;
+  }
+
+  .rplb__close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--dark-ink);
+    font-size: 24px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+  }
+  .rplb__close:hover { background: rgba(255, 255, 255, 0.14); }
+
+  @media (max-width: 760px) {
+    .rplb__main { grid-template-columns: 1fr; }
+    .rplb__info { max-height: 36vh; }
+  }
+</style>

@@ -1,0 +1,149 @@
+---
+import { SITE, DEDICATED_PAGES, RESUME_HREF } from "@/data/content";
+import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
+---
+<header class="topbar">
+  <div class="topbar__shell shell">
+    <a class="topbar__brand" href="/">
+      Luc Desautels
+      <span class="topbar__dot" aria-hidden="true"></span>
+    </a>
+    <nav class="topbar__nav" aria-label="Primary">
+      {DEDICATED_PAGES.map((p) => (
+        <a class="topbar__link" href={p.href}>{p.label}</a>
+      ))}
+      <CopyEmailButton client:load email={SITE.contact.email} />
+      <a class="topbar__btn" href={RESUME_HREF}>Résumé</a>
+      <a
+        class="topbar__linkedin"
+        href={`https://${SITE.contact.linkedin}`}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="LinkedIn"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.65-1.85 3.39-1.85 3.62 0 4.29 2.38 4.29 5.48v6.26zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/>
+        </svg>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  // Hide the top bar when scrolling down past the hero; bring it back as soon
+  // as the user nudges upward. Always show within the first ~120px of the page.
+  const bar = document.querySelector<HTMLElement>(".topbar");
+  if (bar) {
+    const SHOW_AT_TOP = 120;     // px from top — always visible inside this zone
+    const UP_DELTA = 6;          // min upward movement to reveal
+    const DOWN_DELTA = 4;        // min downward movement to hide
+    let lastY = window.scrollY;
+    let hidden = false;
+    let ticking = false;
+
+    const update = () => {
+      ticking = false;
+      const y = window.scrollY;
+      const dy = y - lastY;
+      if (y < SHOW_AT_TOP) {
+        if (hidden) { hidden = false; bar.classList.remove("topbar--hidden"); }
+      } else if (dy > DOWN_DELTA) {
+        if (!hidden) { hidden = true; bar.classList.add("topbar--hidden"); }
+      } else if (dy < -UP_DELTA) {
+        if (hidden) { hidden = false; bar.classList.remove("topbar--hidden"); }
+      }
+      lastY = y;
+    };
+
+    window.addEventListener("scroll", () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+  }
+</script>
+
+<style>
+  .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    padding: 22px var(--page-pad);
+    background: var(--bg);
+    border-bottom: 1px solid var(--rule-soft);
+    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+    will-change: transform;
+  }
+  .topbar--hidden {
+    transform: translateY(-100%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .topbar { transition: none; }
+    .topbar--hidden { transform: none; }
+  }
+  .topbar__shell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .topbar__brand {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    display: inline-flex;
+    align-items: baseline;
+  }
+  .topbar__dot {
+    display: inline-block;
+    margin-left: 6px;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+  }
+  .topbar__nav {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .topbar__link {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .topbar__link:hover { color: var(--accent); }
+  .topbar__btn {
+    padding: 8px 14px;
+    border: 2px solid var(--rule);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .topbar__btn:hover { background: var(--ink); color: var(--bg); }
+  .topbar__linkedin {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a66c2;
+    color: #fff;
+    border-radius: 4px;
+  }
+
+  @media (max-width: 880px) {
+    .topbar__shell { flex-direction: column; align-items: flex-start; }
+    .topbar__nav { gap: 12px 16px; }
+    .topbar__link { font-size: 13px; }
+  }
+</style>

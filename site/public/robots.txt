@@ -1,0 +1,7 @@
+# Allow all crawlers. No off-limits sections at the moment.
+User-agent: *
+Allow: /
+
+# Sitemap (add the file once @astrojs/sitemap is wired up — until then
+# the path is reserved here so search consoles get a hint).
+Sitemap: https://desautels.net/sitemap-index.xml

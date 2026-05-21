@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+site/node_modules/
+
+# build output
+dist/
+site/dist/
+site/.astro/
+
+# logs
+*.log
+npm-debug.log*
+
+# environment
+.env
+.env.*
+!.env.example
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Claude Code local tooling
+.claude/
