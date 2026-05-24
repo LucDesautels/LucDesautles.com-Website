@@ -1,0 +1,474 @@
+---
+// Cream → dark transition that lives at the bottom of the robotics intro
+// section. Replaces the old HexMatrix with five switchable styles, picked
+// from the wf-tuner panel (TRANSITION row). The active mode is mirrored in
+// localStorage so the choice survives reloads.
+//
+// All five modes paint the same cream → dark vertical gradient as a backdrop
+// so the section still blends into the dark robotics block below — what
+// changes is the decoration on top of it.
+---
+<canvas class="rtxn" data-rtxn-canvas aria-hidden="true"></canvas>
+
+<script>
+  type Mode = "hex" | "water" | "gears" | "rain" | "circuits";
+
+  const canvas = document.querySelector<HTMLCanvasElement>("[data-rtxn-canvas]");
+  if (canvas && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    init(canvas);
+  }
+
+  function init(canvas: HTMLCanvasElement) {
+    const ctx = canvas.getContext("2d")!;
+    let W = 0, H = 0, DPR = 1;
+
+    function resize() {
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      W = canvas.clientWidth;
+      H = canvas.clientHeight;
+      canvas.width = Math.floor(W * DPR);
+      canvas.height = Math.floor(H * DPR);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    // Mode state — read from localStorage, listen for changes.
+    const VALID: Mode[] = ["hex", "water", "gears", "rain", "circuits"];
+    let mode: Mode = "hex";
+    try {
+      const saved = localStorage.getItem("rtxn-mode") as Mode | null;
+      if (saved && VALID.includes(saved)) mode = saved;
+    } catch {}
+
+    window.addEventListener("rtxn-mode-change", (e) => {
+      const next = (e as CustomEvent).detail?.mode as Mode;
+      if (VALID.includes(next)) {
+        mode = next;
+        resetMode();
+      }
+    });
+
+    // Cursor tracking in canvas-local coords (for the interactive modes).
+    const cursor = { x: -9999, y: -9999 };
+    window.addEventListener("pointermove", (e) => {
+      const r = canvas.getBoundingClientRect();
+      cursor.x = e.clientX - r.left;
+      cursor.y = e.clientY - r.top;
+    }, { passive: true });
+    window.addEventListener("pointerleave", () => { cursor.x = -9999; cursor.y = -9999; });
+
+    // ── Shared backdrop — cream that fades into dark near the bottom ──
+    function paintBackdrop() {
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "#f1ede3");
+      g.addColorStop(0.55, "#f1ede3");
+      g.addColorStop(0.92, "#1d1a17");
+      g.addColorStop(1, "#161412");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Where in the canvas the "transition zone" starts (top of the visible
+    // decoration on cream sections). Most modes draw mostly below this.
+    function zoneTop() { return H * 0.55; }
+
+    // ── Mode 1: HEX ──────────────────────────────────────────────────
+    // Clean hex grid, gentle pulse animation. Density + opacity ramps with
+    // depth so it dissolves out of the cream.
+    function drawHex(t: number) {
+      paintBackdrop();
+      const baseR = 24;
+      const dx = Math.sqrt(3) * baseR;
+      const dy = 1.5 * baseR;
+      const startY = zoneTop() - dy;
+      ctx.lineWidth = 1;
+      for (let row = 0, y = startY; y < H + dy; row++, y += dy) {
+        const yFrac = Math.max(0, Math.min(1, (y - zoneTop()) / (H - zoneTop())));
+        if (yFrac <= 0.02) continue;
+        const xOff = (row % 2) * (dx / 2);
+        for (let x = -dx; x < W + dx; x += dx) {
+          const cx = x + xOff;
+          const cy = y;
+          const phase = (cx * 0.006 + cy * 0.004) + t * 0.0006;
+          const pulse = 0.6 + 0.4 * Math.sin(phase + row * 0.3);
+          const r = baseR * (0.7 + yFrac * 0.35);
+          const fillOp = Math.min(0.92, 0.05 + yFrac * 0.85 * pulse);
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const a = i * (Math.PI / 3) + Math.PI / 6;
+            const px = cx + r * Math.cos(a);
+            const py = cy + r * Math.sin(a);
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fillStyle = `rgba(22, 20, 18, ${fillOp})`;
+          ctx.fill();
+          if (yFrac > 0.4) {
+            ctx.strokeStyle = `rgba(217, 106, 54, ${(yFrac - 0.4) * 0.25 * pulse})`;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    // ── Mode 2: WATER ────────────────────────────────────────────────
+    // Top-down ocean swell with cursor interaction, contained in the lower
+    // band. Bottom blends to dark so it reads as "water at night below".
+    const waterLines: Array<{ y: number; amp: number; phase: number; speed: number }> = [];
+    function buildWater() {
+      waterLines.length = 0;
+      const top = zoneTop() - 20;
+      const count = 28;
+      const span = H - top + 40;
+      for (let i = 0; i < count; i++) {
+        const seed = i * 1.61803398;
+        const j = Math.sin(seed * 3.7) * 0.5 + 0.5;
+        waterLines.push({
+          y: top + (i / (count - 1)) * span,
+          amp: 14 + j * 12,
+          phase: i * 0.8 + j * Math.PI,
+          speed: 0.0008 + j * 0.0007,
+        });
+      }
+    }
+    function drawWater(t: number) {
+      paintBackdrop();
+      if (waterLines.length === 0) buildWater();
+      const top = zoneTop() - 20;
+      const range = H - top;
+      ctx.lineWidth = 1.4;
+      for (const ln of waterLines) {
+        const depth = (ln.y - top) / range;             // 0 at top, 1 at bottom
+        // Stroke colour blends from dark-on-cream to white-on-dark.
+        const isDark = depth > 0.78;
+        const alpha = 0.10 + depth * 0.35;
+        ctx.strokeStyle = isDark
+          ? `rgba(244, 237, 226, ${0.20 + (depth - 0.78) * 2.5})`
+          : `rgba(26, 23, 20, ${alpha})`;
+        ctx.beginPath();
+        const stepX = 8;
+        for (let x = -10; x <= W + 10; x += stepX) {
+          const u = x / Math.max(1, W);
+          const a = Math.sin(u * Math.PI * 1.2 + t * ln.speed + ln.phase);
+          const b = Math.sin(u * Math.PI * 2.7 + t * ln.speed * 1.6 + ln.phase * 0.5) * 0.35;
+          let yy = ln.y + ln.amp * (a + b);
+          // Cursor lift (water displacement near the pointer).
+          if (cursor.x > -9000) {
+            const dx = x - cursor.x;
+            const dy = ln.y - cursor.y;
+            const dist = Math.hypot(dx, dy);
+            const R = 220;
+            if (dist < R) {
+              const k = 1 - dist / R;
+              const bell = k * k * (3 - 2 * k);
+              yy += (cursor.y - ln.y) * 0.45 * bell;
+            }
+          }
+          if (x === -10) ctx.moveTo(x, yy);
+          else ctx.lineTo(x, yy);
+        }
+        ctx.stroke();
+      }
+    }
+
+    // ── Mode 3: GEARS ────────────────────────────────────────────────
+    // Tiny stylish gears and rivets, distributed across the lower band,
+    // each rotating at its own slow rate.
+    const gears: Array<{ x: number; y: number; r: number; teeth: number; rate: number; phase: number; type: "gear" | "pulley" | "rivet" }> = [];
+    function buildGears() {
+      gears.length = 0;
+      const top = zoneTop();
+      const seed = (n: number) => Math.sin(n * 12.9898) * 43758.5453;
+      const frac = (n: number) => seed(n) - Math.floor(seed(n));
+      let id = 1;
+      const count = Math.max(8, Math.floor(W / 130));
+      for (let i = 0; i < count; i++) {
+        const yFrac = 0.15 + frac(id++) * 0.85;
+        const type: "gear" | "pulley" | "rivet" = frac(id++) < 0.7 ? "gear" : (frac(id++) < 0.5 ? "pulley" : "rivet");
+        const r = type === "rivet" ? 3 + frac(id++) * 3
+                : type === "pulley" ? 14 + frac(id++) * 12
+                : 16 + frac(id++) * 22;
+        gears.push({
+          x: 40 + frac(id++) * (W - 80),
+          y: top + yFrac * (H - top),
+          r,
+          teeth: 8 + Math.floor(frac(id++) * 8),
+          rate: (frac(id++) - 0.5) * 0.0010,
+          phase: frac(id++) * Math.PI * 2,
+          type,
+        });
+      }
+    }
+    function drawGearShape(cx: number, cy: number, r: number, teeth: number, rot: number, stroke: string, fill: string) {
+      const outer = r * 1.18;
+      const inner = r * 0.92;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rot);
+      ctx.beginPath();
+      const steps = teeth * 2;
+      for (let i = 0; i <= steps; i++) {
+        const a = (i / steps) * Math.PI * 2;
+        const rr = (i % 2 === 0) ? outer : inner;
+        const px = rr * Math.cos(a);
+        const py = rr * Math.sin(a);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
+      // Hub
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.34, 0, Math.PI * 2);
+      ctx.fillStyle = stroke;
+      ctx.fill();
+      // Axle hole
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.12, 0, Math.PI * 2);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      // Spokes
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 0.9;
+      for (let k = 0; k < 4; k++) {
+        const a = k * (Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(r * 0.35 * Math.cos(a), r * 0.35 * Math.sin(a));
+        ctx.lineTo(r * 0.85 * Math.cos(a), r * 0.85 * Math.sin(a));
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function drawGears(t: number) {
+      paintBackdrop();
+      if (gears.length === 0) buildGears();
+      const top = zoneTop();
+      for (const g of gears) {
+        const yFrac = Math.max(0, (g.y - top) / (H - top));
+        const onDark = yFrac > 0.7;
+        const baseAlpha = 0.20 + yFrac * 0.55;
+        const stroke = onDark
+          ? `rgba(244, 237, 226, ${Math.min(0.9, baseAlpha + 0.2)})`
+          : `rgba(26, 23, 20, ${baseAlpha})`;
+        const fill = onDark ? "rgba(22, 20, 18, 0.92)" : "rgba(241, 237, 227, 0.4)";
+        const rot = g.phase + t * g.rate;
+        if (g.type === "rivet") {
+          ctx.beginPath();
+          ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
+          ctx.fillStyle = stroke;
+          ctx.fill();
+          continue;
+        }
+        if (g.type === "pulley") {
+          ctx.save();
+          ctx.translate(g.x, g.y);
+          ctx.rotate(rot);
+          ctx.beginPath();
+          ctx.arc(0, 0, g.r, 0, Math.PI * 2);
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, 0, g.r * 0.55, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(0, 0, g.r * 0.18, 0, Math.PI * 2);
+          ctx.fillStyle = stroke;
+          ctx.fill();
+          ctx.restore();
+          continue;
+        }
+        drawGearShape(g.x, g.y, g.r, g.teeth, rot, stroke, fill);
+      }
+    }
+
+    // ── Mode 4: RAIN ─────────────────────────────────────────────────
+    // Vertical streams of small dashes — like data raining down into the
+    // dark section. Cream-coloured streaks on cream, white on dark.
+    const rainDrops: Array<{ x: number; y: number; len: number; speed: number; jitter: number }> = [];
+    function buildRain() {
+      rainDrops.length = 0;
+      const count = Math.max(40, Math.floor(W / 18));
+      const frac = (n: number) => { const s = Math.sin(n * 9.234) * 43758.5; return s - Math.floor(s); };
+      for (let i = 0; i < count; i++) {
+        rainDrops.push({
+          x: frac(i + 1) * W,
+          y: -frac(i + 2) * H * 0.8,
+          len: 28 + frac(i + 3) * 60,
+          speed: 24 + frac(i + 4) * 60,
+          jitter: frac(i + 5) * Math.PI * 2,
+        });
+      }
+    }
+    let rainLastT = 0;
+    function drawRain(t: number) {
+      paintBackdrop();
+      if (rainDrops.length === 0) buildRain();
+      const dt = Math.min(50, t - rainLastT) / 1000;
+      rainLastT = t;
+      const top = zoneTop() - 60;
+      ctx.lineWidth = 1.3;
+      for (const d of rainDrops) {
+        d.y += d.speed * dt;
+        if (d.y - d.len > H + 20) {
+          d.y = top - d.len - Math.random() * 80;
+          d.x = Math.random() * W;
+        }
+        if (d.y + d.len < top) continue;
+        const yMid = d.y - d.len / 2;
+        const yFrac = Math.max(0, Math.min(1, (yMid - top) / (H - top)));
+        const grad = ctx.createLinearGradient(d.x, d.y - d.len, d.x, d.y);
+        const onDark = yFrac > 0.75;
+        if (onDark) {
+          grad.addColorStop(0, "rgba(244, 237, 226, 0)");
+          grad.addColorStop(1, `rgba(244, 237, 226, ${0.5 + (yFrac - 0.75) * 1.6})`);
+        } else {
+          grad.addColorStop(0, "rgba(26, 23, 20, 0)");
+          grad.addColorStop(1, `rgba(26, 23, 20, ${0.20 + yFrac * 0.5})`);
+        }
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        const sway = Math.sin(t * 0.0008 + d.jitter) * 2;
+        ctx.moveTo(d.x + sway, d.y - d.len);
+        ctx.lineTo(d.x, d.y);
+        ctx.stroke();
+        // Head
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, 1.6, 0, Math.PI * 2);
+        ctx.fillStyle = onDark
+          ? `rgba(244, 237, 226, ${0.7})`
+          : `rgba(26, 23, 20, ${0.35 + yFrac * 0.5})`;
+        ctx.fill();
+      }
+    }
+
+    // ── Mode 5: CIRCUITS ─────────────────────────────────────────────
+    // Right-angle traces that grow segment-by-segment with terminator pads
+    // at each turn. Like a circuit board etching itself into the dark side.
+    type Seg = { x1: number; y1: number; x2: number; y2: number };
+    type Trace = { segs: Seg[]; grown: number; total: number; lastGrowT: number; growRate: number };
+    const traces: Trace[] = [];
+    function buildCircuits() {
+      traces.length = 0;
+      const top = zoneTop();
+      const count = Math.max(6, Math.floor(W / 220));
+      for (let i = 0; i < count; i++) seedTrace(top);
+    }
+    function seedTrace(top: number) {
+      const segs: Seg[] = [];
+      let x = Math.random() * W;
+      let y = top - 10 + Math.random() * (H - top + 10);
+      let dir: "h" | "v" = Math.random() < 0.5 ? "h" : "v";
+      let total = 0;
+      const segCount = 4 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < segCount; i++) {
+        const len = 26 + Math.random() * 90;
+        const sign = Math.random() < 0.5 ? -1 : 1;
+        const nx = dir === "h" ? Math.max(8, Math.min(W - 8, x + len * sign)) : x;
+        const ny = dir === "v" ? Math.max(top, Math.min(H - 8, y + len * sign)) : y;
+        const s: Seg = { x1: x, y1: y, x2: nx, y2: ny };
+        segs.push(s);
+        total += Math.hypot(nx - x, ny - y);
+        x = nx; y = ny;
+        dir = dir === "h" ? "v" : "h";
+      }
+      traces.push({ segs, grown: 0, total, lastGrowT: performance.now(), growRate: 60 + Math.random() * 110 });
+    }
+    function drawCircuits(t: number) {
+      paintBackdrop();
+      if (traces.length === 0) buildCircuits();
+      const top = zoneTop();
+      // Advance growth.
+      for (const tr of traces) {
+        const dt = Math.min(80, t - tr.lastGrowT) / 1000;
+        tr.lastGrowT = t;
+        tr.grown += tr.growRate * dt;
+        if (tr.grown > tr.total + 80) {
+          // Recycle as a new trace.
+          const idx = traces.indexOf(tr);
+          if (idx >= 0) traces.splice(idx, 1);
+          seedTrace(top);
+        }
+      }
+      // Draw.
+      for (const tr of traces) {
+        const first = tr.segs[0];
+        const yFrac = Math.max(0, (first.y1 - top) / (H - top));
+        const onDark = yFrac > 0.7;
+        const stroke = onDark
+          ? `rgba(217, 106, 54, ${0.55 + yFrac * 0.25})`
+          : `rgba(26, 23, 20, ${0.25 + yFrac * 0.45})`;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.4;
+        ctx.lineCap = "square";
+        let remaining = tr.grown;
+        for (const s of tr.segs) {
+          const segLen = Math.hypot(s.x2 - s.x1, s.y2 - s.y1);
+          if (remaining <= 0) break;
+          const draw = Math.min(remaining, segLen);
+          const fx = s.x1 + (s.x2 - s.x1) * (draw / segLen);
+          const fy = s.y1 + (s.y2 - s.y1) * (draw / segLen);
+          ctx.beginPath();
+          ctx.moveTo(s.x1, s.y1);
+          ctx.lineTo(fx, fy);
+          ctx.stroke();
+          remaining -= segLen;
+          // Pad at the endpoint of fully-drawn segments
+          if (remaining > 0) {
+            ctx.beginPath();
+            ctx.arc(s.x2, s.y2, 3.4, 0, Math.PI * 2);
+            ctx.fillStyle = onDark ? "rgba(217, 106, 54, 0.9)" : "rgba(26, 23, 20, 0.6)";
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    // ── Render loop ───────────────────────────────────────────────────
+    function resetMode() {
+      // Rebuild any per-mode state that depends on canvas size.
+      waterLines.length = 0;
+      gears.length = 0;
+      rainDrops.length = 0;
+      traces.length = 0;
+      rainLastT = performance.now();
+    }
+    let raf = 0;
+    let running = !document.hidden;
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) { running = false; if (raf) cancelAnimationFrame(raf); }
+      else if (!running) { running = true; raf = requestAnimationFrame(tick); }
+    });
+    function tick() {
+      if (!running) return;
+      const now = performance.now();
+      switch (mode) {
+        case "hex":      drawHex(now); break;
+        case "water":    drawWater(now); break;
+        case "gears":    drawGears(now); break;
+        case "rain":     drawRain(now); break;
+        case "circuits": drawCircuits(now); break;
+      }
+      raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+  }
+</script>
+
+<style>
+  .rtxn {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+</style>

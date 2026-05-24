@@ -229,7 +229,7 @@ export default function HorizontalTOC({ sections }: Props) {
       const now = performance.now();
       const dark = sticky.classList.contains("htoc__sticky--dark");
       ctx.clearRect(0, 0, W, H);
-      ctx.strokeStyle = dark ? "rgba(244,237,226,0.16)" : "rgba(26,23,20,0.10)";
+      ctx.strokeStyle = dark ? "rgba(255,255,255,0.32)" : "rgba(26,23,20,0.10)";
       ctx.lineWidth = 1.6;
       const stepX = 8;
       for (const c of lineCfg) {

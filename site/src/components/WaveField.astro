@@ -44,6 +44,16 @@
     </div>
   </div>
   <div class="wf-tuner__row">
+    <div class="wf-tuner__label">TRANSITION</div>
+    <div class="wf-tuner__pills" data-wf-rtxn-group>
+      <button class="wf-tuner__pill is-active" data-rtxn="hex"      type="button">hex</button>
+      <button class="wf-tuner__pill"           data-rtxn="water"    type="button">water</button>
+      <button class="wf-tuner__pill"           data-rtxn="gears"    type="button">gears</button>
+      <button class="wf-tuner__pill"           data-rtxn="rain"     type="button">rain</button>
+      <button class="wf-tuner__pill"           data-rtxn="circuits" type="button">circuits</button>
+    </div>
+  </div>
+  <div class="wf-tuner__row">
     <div class="wf-tuner__label">ZOOM ×<span data-wf-zoom-readout>1.00</span></div>
     <input
       class="wf-tuner__slider"
@@ -66,6 +76,30 @@
   const ENABLED = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canvas = document.querySelector<HTMLCanvasElement>("[data-wavefield]");
   if (canvas && ENABLED) init(canvas);
+
+  // TEMPORARY: robotics-intro transition mode picker. Writes to localStorage
+  // and fires an event the RoboticsTransition component listens for.
+  const rtxnGroup = document.querySelector("[data-wf-rtxn-group]");
+  if (rtxnGroup) {
+    try {
+      const saved = localStorage.getItem("rtxn-mode");
+      if (saved) {
+        rtxnGroup.querySelectorAll(".wf-tuner__pill").forEach((b) =>
+          b.classList.toggle("is-active", (b as HTMLElement).dataset.rtxn === saved)
+        );
+      }
+    } catch {}
+    rtxnGroup.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-rtxn]");
+      if (!btn) return;
+      const mode = btn.dataset.rtxn;
+      try { if (mode) localStorage.setItem("rtxn-mode", mode); } catch {}
+      rtxnGroup.querySelectorAll(".wf-tuner__pill").forEach((b) =>
+        b.classList.toggle("is-active", b === btn)
+      );
+      window.dispatchEvent(new CustomEvent("rtxn-mode-change", { detail: { mode } }));
+    });
+  }
 
   // TEMPORARY: page-zoom slider so we can scout the right scale per breakpoint.
   const zoomSlider = document.querySelector<HTMLInputElement>("[data-wf-zoom-slider]");

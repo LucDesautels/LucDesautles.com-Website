@@ -61,17 +61,19 @@ import FilterPills from "./islands/FilterPills.tsx";
     position: relative;
     z-index: 1;
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    /* Push filter pills to the bottom of the viewport. */
-    justify-content: space-between;
+    /* 2-row grid: hero block fills row 1 (and self-centres in it), filter
+       pills sit naturally docked at the bottom in row 2. */
+    display: grid;
+    grid-template-rows: 1fr auto;
     gap: 48px;
   }
   .hero__grid {
     display: grid;
     grid-template-columns: 1fr clamp(440px, 36vw, 600px);
     gap: 56px;
-    align-items: start;
+    align-items: center;
+    align-self: center;
+    width: 100%;
   }
   .hero__col { min-width: 0; }
   .hero__name {
