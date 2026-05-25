@@ -205,16 +205,25 @@ export default function HorizontalTOC({ sections }: Props) {
     const ro = new ResizeObserver(resize);
     ro.observe(sticky);
 
-    // Lines spaced down the section; shape comes from a shared 2D swell
-    // field (matches the global WaveField) so they read as one ocean
-    // surface seen from above rather than independent squiggles.
-    const lineCfg = [
-      { yRel: 0.14, amp: 28 },
-      { yRel: 0.32, amp: 32 },
-      { yRel: 0.50, amp: 26 },
-      { yRel: 0.68, amp: 30 },
-      { yRel: 0.86, amp: 24 },
-    ];
+    // Lines spaced down the section. Count + amp pulled live from
+    // window.__wfConfig.horiz (driven by the WaveTuner panel) so we can
+    // sweep parameters interactively.
+    type Line = { yRel: number; amp: number };
+    let lineCfg: Line[] = [];
+    const rebuild = () => {
+      const cfg = (window as any).__wfConfig?.horiz ?? {};
+      const N = Math.max(2, Math.round(cfg.lineCount ?? 5));
+      lineCfg = [];
+      for (let i = 0; i < N; i++) {
+        // Even spacing with a touch of jitter so they don't grid up.
+        const seed = i * 1.61803398;
+        const j = Math.sin(seed * 4.32) * 0.5 + 0.5;
+        const yRel = (i + 0.5) / N + (j - 0.5) * (0.45 / N);
+        const j2 = Math.sin(seed * 2.71) * 0.5 + 0.5;
+        lineCfg.push({ yRel: Math.max(0.05, Math.min(0.95, yRel)), amp: 22 + j2 * 12 });
+      }
+    };
+    rebuild();
     const waveField = (x: number, y: number, t: number): number => {
       const a = Math.sin(x * 0.0068 + y * 0.0021 - t * 0.00055);
       const b = Math.sin(x * 0.0115 - y * 0.0033 - t * 0.00082);
@@ -222,21 +231,36 @@ export default function HorizontalTOC({ sections }: Props) {
       return a * 0.52 + b * 0.28 + c * 0.30;
     };
 
+    const onCfgChange = (e: Event) => {
+      const key = (e as CustomEvent).detail?.key as string | undefined;
+      if (key === "horiz.lineCount" || key === "__init") rebuild();
+    };
+    window.addEventListener("wf-config-change", onCfgChange);
+
     let raf = 0;
     let alive = true;
     const draw = () => {
       if (!alive) return;
       const now = performance.now();
       const dark = sticky.classList.contains("htoc__sticky--dark");
+      const cfg = (window as any).__wfConfig?.horiz ?? {};
+      const thickness = cfg.thickness ?? 1.6;
+      const opDark = cfg.opacityDark ?? 0.32;
+      const opLight = cfg.opacityLight ?? 0.10;
+      const speedMul = cfg.naturalSpeed ?? 1;
+      const ampMul = cfg.naturalAmp ?? 1;
       ctx.clearRect(0, 0, W, H);
-      ctx.strokeStyle = dark ? "rgba(255,255,255,0.32)" : "rgba(26,23,20,0.10)";
-      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = dark
+        ? `rgba(255, 255, 255, ${opDark})`
+        : `rgba(26, 23, 20, ${opLight})`;
+      ctx.lineWidth = thickness;
       const stepX = 8;
+      const ts = now * speedMul;
       for (const c of lineCfg) {
         const baseY = c.yRel * H;
         ctx.beginPath();
         for (let x = -20; x <= W + 20; x += stepX) {
-          const y = baseY + c.amp * waveField(x, baseY, now);
+          const y = baseY + c.amp * ampMul * waveField(x, baseY, ts);
           if (x === -20) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
@@ -260,6 +284,7 @@ export default function HorizontalTOC({ sections }: Props) {
       if (raf) cancelAnimationFrame(raf);
       ro.disconnect();
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("wf-config-change", onCfgChange);
     };
   }, []);
 

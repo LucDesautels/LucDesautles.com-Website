@@ -1,6 +1,8 @@
 ---
 import "@/styles/tokens.css";
 import WaveField from "@/components/WaveField.astro";
+import WaveTuner from "@/components/WaveTuner.astro";
+import SmoothScroll from "@/components/SmoothScroll.astro";
 
 interface Props {
   title?: string;
@@ -78,6 +80,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://desautels.n
   <body>
     {/* Keyboard-first navigation aid — visually hidden until focused. */}
     <a class="skip-link" href="#main">Skip to content</a>
+    <SmoothScroll />
+    <WaveTuner />
     <WaveField />
     <slot />
 

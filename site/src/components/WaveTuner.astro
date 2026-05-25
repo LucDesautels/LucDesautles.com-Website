@@ -1,0 +1,539 @@
+---
+// TEMPORARY tabbed control panel (top-left). Owns the live config object on
+// window.__wfConfig and dispatches "wf-config-change" events that every
+// other animated subsystem listens to (WaveField, RoboticsTransition,
+// HorizontalTOC internal canvas, and the .ric__cad CAD images).
+//
+// The whole panel — markup, JS wiring, CSS — gets removed when we bake in
+// the chosen values.
+
+type Slider = { key: string; label: string; min: number; max: number; step: number; value: number; fmt?: "int" | "1dp" | "2dp"; freeform?: boolean };
+
+const mainSliders: Slider[] = [
+  { key: "main.lineCount",    label: "LINE COUNT",     min: 3,   max: 10,  step: 1,    value: 5,    fmt: "int" },
+  { key: "main.thickness",    label: "THICKNESS",      min: 0.5, max: 4,   step: 0.1,  value: 1.6,  fmt: "1dp" },
+  { key: "main.opacity",      label: "OPACITY",        min: 0,   max: 1,   step: 0.02, value: 0.22, fmt: "2dp" },
+  { key: "main.naturalSpeed", label: "DRIFT SPEED ×",  min: 0,   max: 3,   step: 0.05, value: 1,    fmt: "2dp" },
+  { key: "main.naturalAmp",   label: "AMPLITUDE ×",    min: 0,   max: 3,   step: 0.05, value: 1,    fmt: "2dp" },
+  { key: "main.cursorReact",  label: "CURSOR PUSH ×",  min: 0,   max: 3,   step: 0.05, value: 1,    fmt: "2dp" },
+];
+const transitionSliders: Slider[] = [
+  { key: "transition.lineCount",     label: "LINE COUNT",      min: 8,   max: 60,   step: 1,    value: 28,   fmt: "int" },
+  { key: "transition.thickness",     label: "THICKNESS",       min: 0.5, max: 4,    step: 0.1,  value: 1.4,  fmt: "1dp" },
+  { key: "transition.opacity",       label: "OPACITY ×",       min: 0,   max: 2,    step: 0.05, value: 1,    fmt: "2dp" },
+  { key: "transition.naturalSpeed",  label: "DRIFT SPEED ×",   min: 0,   max: 3,    step: 0.05, value: 1,    fmt: "2dp" },
+  { key: "transition.naturalAmp",    label: "AMPLITUDE ×",     min: 0,   max: 3,    step: 0.05, value: 1,    fmt: "2dp" },
+  { key: "transition.cursorReact",   label: "CURSOR PUSH ×",   min: 0,   max: 3,    step: 0.05, value: 1,    fmt: "2dp" },
+  { key: "transition.fadeStart",     label: "FADE START Y",    min: 0.2, max: 0.85, step: 0.01, value: 0.55, fmt: "2dp" },
+  { key: "transition.densityToDark", label: "DENSITY → DARK",  min: 0,   max: 2,    step: 0.05, value: 1,    fmt: "2dp" },
+  { key: "transition.colorFlip",     label: "COLOR FLIP Y",    min: 0.5, max: 0.95, step: 0.01, value: 0.78, fmt: "2dp" },
+];
+const horizSliders: Slider[] = [
+  { key: "horiz.lineCount",    label: "LINE COUNT",        min: 3,   max: 10, step: 1,    value: 5,    fmt: "int" },
+  { key: "horiz.thickness",    label: "THICKNESS",         min: 0.5, max: 4,  step: 0.1,  value: 1.6,  fmt: "1dp" },
+  { key: "horiz.opacityDark",  label: "OPACITY (DARK)",    min: 0,   max: 1,  step: 0.02, value: 0.32, fmt: "2dp" },
+  { key: "horiz.opacityLight", label: "OPACITY (LIGHT)",   min: 0,   max: 1,  step: 0.02, value: 0.10, fmt: "2dp" },
+  { key: "horiz.naturalSpeed", label: "DRIFT SPEED ×",     min: 0,   max: 3,  step: 0.05, value: 1,    fmt: "2dp" },
+  { key: "horiz.naturalAmp",   label: "AMPLITUDE ×",       min: 0,   max: 3,  step: 0.05, value: 1,    fmt: "2dp" },
+];
+function imgSliders(side: "left" | "right", defaults: { rot: number }): Slider[] {
+  return [
+    // X / Y use freeform number inputs so any value is typeable.
+    { key: `images.${side}.x`,     label: "X (PX)",  min: -9999, max: 9999, step: 1,    value: 0,         fmt: "int", freeform: true },
+    { key: `images.${side}.y`,     label: "Y (PX)",  min: -9999, max: 9999, step: 1,    value: 0,         fmt: "int", freeform: true },
+    { key: `images.${side}.rot`,   label: "ROTATE",  min: 0,     max: 360,  step: 1,    value: defaults.rot, fmt: "int" },
+    { key: `images.${side}.scale`, label: "SCALE",   min: 0.3,   max: 2,    step: 0.05, value: 1,         fmt: "2dp" },
+  ];
+}
+const leftImgSliders  = imgSliders("left",  { rot: 225 });
+const rightImgSliders = imgSliders("right", { rot: 0 });
+
+function fmt(v: number, f: Slider["fmt"]) {
+  if (f === "int")  return Math.round(v).toString();
+  if (f === "1dp")  return v.toFixed(1);
+  return v.toFixed(2);
+}
+---
+<div class="wf-tuner" data-wf-tuner role="region" aria-label="Live tuner (temporary)">
+  <div class="wf-tuner__tabs" role="tablist">
+    <button class="wf-tab is-active" data-tab-btn="main"       type="button" role="tab" aria-selected="true">main</button>
+    <button class="wf-tab"           data-tab-btn="transition" type="button" role="tab" aria-selected="false">transition</button>
+    <button class="wf-tab"           data-tab-btn="horiz"      type="button" role="tab" aria-selected="false">horizontal</button>
+    <button class="wf-tab"           data-tab-btn="images"     type="button" role="tab" aria-selected="false">images</button>
+  </div>
+
+  <div class="wf-tuner__body">
+
+    <!-- ── MAIN TAB ─────────────────────────────────────────────── -->
+    <div class="wf-tab-panel is-active" data-tab-panel="main" role="tabpanel">
+      <div class="wf-row">
+        <div class="wf-label">HOVER</div>
+        <div class="wf-pills" data-wf-pills="main.hoverMode">
+          <button class="wf-pill"           data-pill="push"   type="button">push</button>
+          <button class="wf-pill is-active" data-pill="drape"  type="button">drape</button>
+          <button class="wf-pill"           data-pill="vortex" type="button">vortex</button>
+          <button class="wf-pill"           data-pill="wake"   type="button">wake</button>
+          <button class="wf-pill"           data-pill="sway"   type="button">sway</button>
+        </div>
+      </div>
+      <div class="wf-row">
+        <div class="wf-label">CLICK</div>
+        <div class="wf-pills" data-wf-pills="main.clickMode">
+          <button class="wf-pill is-active" data-pill="drop"  type="button">drop</button>
+          <button class="wf-pill"           data-pill="slow"  type="button">slow</button>
+          <button class="wf-pill"           data-pill="wide"  type="button">wide</button>
+          <button class="wf-pill"           data-pill="tight" type="button">tight</button>
+          <button class="wf-pill"           data-pill="ring"  type="button">ring</button>
+          <button class="wf-pill"           data-pill="shove" type="button">shove</button>
+          <button class="wf-pill"           data-pill="trail" type="button">trail</button>
+          <button class="wf-pill"           data-pill="multi" type="button">multi</button>
+          <button class="wf-pill"           data-pill="burst" type="button">burst</button>
+        </div>
+      </div>
+      {mainSliders.map((s) => (
+        <div class="wf-slider" data-slider>
+          <label class="wf-label">{s.label} <span data-readout>{fmt(s.value, s.fmt)}</span></label>
+          <input type="range" min={s.min} max={s.max} step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} />
+        </div>
+      ))}
+      <div class="wf-slider" data-slider>
+        <label class="wf-label">ZOOM × <span data-readout>1.000</span></label>
+        <input type="range" min="0.5" max="1.2" step="0.025" value="1" data-key="main.zoom" data-fmt="3dp" />
+      </div>
+    </div>
+
+    <!-- ── TRANSITION TAB ───────────────────────────────────────── -->
+    <div class="wf-tab-panel" data-tab-panel="transition" role="tabpanel" hidden>
+      <div class="wf-row">
+        <div class="wf-label">VARIANT</div>
+        <div class="wf-pills" data-wf-pills="transition.mode">
+          <button class="wf-pill"           data-pill="hex"      type="button">hex</button>
+          <button class="wf-pill is-active" data-pill="water"    type="button">water</button>
+          <button class="wf-pill"           data-pill="gears"    type="button">gears</button>
+          <button class="wf-pill"           data-pill="rain"     type="button">rain</button>
+          <button class="wf-pill"           data-pill="circuits" type="button">circuits</button>
+        </div>
+      </div>
+      {transitionSliders.map((s) => (
+        <div class="wf-slider" data-slider>
+          <label class="wf-label">{s.label} <span data-readout>{fmt(s.value, s.fmt)}</span></label>
+          <input type="range" min={s.min} max={s.max} step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} />
+        </div>
+      ))}
+    </div>
+
+    <!-- ── HORIZONTAL TAB ───────────────────────────────────────── -->
+    <div class="wf-tab-panel" data-tab-panel="horiz" role="tabpanel" hidden>
+      {horizSliders.map((s) => (
+        <div class="wf-slider" data-slider>
+          <label class="wf-label">{s.label} <span data-readout>{fmt(s.value, s.fmt)}</span></label>
+          <input type="range" min={s.min} max={s.max} step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} />
+        </div>
+      ))}
+    </div>
+
+    <!-- ── IMAGES TAB ───────────────────────────────────────────── -->
+    <div class="wf-tab-panel" data-tab-panel="images" role="tabpanel" hidden>
+      <div class="wf-subhead">LEFT IMAGE</div>
+      {leftImgSliders.map((s) => (
+        <div class="wf-slider" data-slider>
+          <label class="wf-label">{s.label} <span data-readout>{fmt(s.value, s.fmt)}</span></label>
+          {s.freeform ? (
+            <input type="number" step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} class="wf-numinput" />
+          ) : (
+            <input type="range" min={s.min} max={s.max} step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} />
+          )}
+        </div>
+      ))}
+      <div class="wf-row">
+        <button class="wf-toggle" data-toggle data-key="images.left.mirrorH" type="button">Mirror H</button>
+        <button class="wf-toggle" data-toggle data-key="images.left.mirrorV" type="button">Mirror V</button>
+      </div>
+
+      <div class="wf-subhead">RIGHT IMAGE</div>
+      {rightImgSliders.map((s) => (
+        <div class="wf-slider" data-slider>
+          <label class="wf-label">{s.label} <span data-readout>{fmt(s.value, s.fmt)}</span></label>
+          {s.freeform ? (
+            <input type="number" step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} class="wf-numinput" />
+          ) : (
+            <input type="range" min={s.min} max={s.max} step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} />
+          )}
+        </div>
+      ))}
+      <div class="wf-row">
+        <button class="wf-toggle" data-toggle data-key="images.right.mirrorH" type="button">Mirror H</button>
+        <button class="wf-toggle is-on" data-toggle data-key="images.right.mirrorV" type="button">Mirror V</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wf-tuner__hint">temporary · drag to taste · click anywhere to fire click effect</div>
+</div>
+
+<script>
+  // ── Default config (mirrors the slider defaults above) ──────────
+  const DEFAULTS = {
+    main: {
+      lineCount: 5,
+      thickness: 1.6,
+      opacity: 0.22,
+      naturalSpeed: 1.0,
+      naturalAmp: 1.0,
+      cursorReact: 1.0,
+      hoverMode: "drape",
+      clickMode: "drop",
+      zoom: 1.0,
+    },
+    transition: {
+      mode: "water",
+      lineCount: 28,
+      thickness: 1.4,
+      opacity: 1.0,
+      naturalSpeed: 1.0,
+      naturalAmp: 1.0,
+      cursorReact: 1.0,
+      fadeStart: 0.55,
+      densityToDark: 1.0,
+      colorFlip: 0.78,
+    },
+    horiz: {
+      lineCount: 5,
+      thickness: 1.6,
+      opacityDark: 0.32,
+      opacityLight: 0.10,
+      naturalSpeed: 1.0,
+      naturalAmp: 1.0,
+    },
+    images: {
+      left:  { x: 0, y: 0, rot: 225, scale: 1.0, mirrorH: false, mirrorV: false },
+      right: { x: 0, y: 0, rot: 0,   scale: 1.0, mirrorH: false, mirrorV: true  },
+    },
+  } as const;
+
+  type AnyCfg = Record<string, any>;
+  function deepClone<T>(o: T): T { return JSON.parse(JSON.stringify(o)); }
+  function mergeInto(target: AnyCfg, source: AnyCfg) {
+    for (const k of Object.keys(source)) {
+      if (source[k] && typeof source[k] === "object" && !Array.isArray(source[k])) {
+        if (typeof target[k] !== "object" || target[k] == null) target[k] = {};
+        mergeInto(target[k], source[k]);
+      } else {
+        target[k] = source[k];
+      }
+    }
+  }
+
+  // Hydrate from localStorage, but always start from defaults so missing
+  // keys in saved data don't leave us with undefined.
+  const cfg: AnyCfg = deepClone(DEFAULTS);
+  try {
+    const raw = localStorage.getItem("wf-config");
+    if (raw) mergeInto(cfg, JSON.parse(raw));
+  } catch {}
+  (window as any).__wfConfig = cfg;
+
+  function getAt(path: string): any {
+    return path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), cfg);
+  }
+  function setAt(path: string, value: any) {
+    const parts = path.split(".");
+    let o: AnyCfg = cfg;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (typeof o[parts[i]] !== "object" || o[parts[i]] == null) o[parts[i]] = {};
+      o = o[parts[i]];
+    }
+    o[parts[parts.length - 1]] = value;
+  }
+  function persist() {
+    try { localStorage.setItem("wf-config", JSON.stringify(cfg)); } catch {}
+  }
+  function fire(key: string, value: any) {
+    window.dispatchEvent(new CustomEvent("wf-config-change", { detail: { key, value, cfg } }));
+  }
+  function formatVal(v: number, fmt: string | null) {
+    if (fmt === "int")  return Math.round(v).toString();
+    if (fmt === "1dp")  return v.toFixed(1);
+    if (fmt === "3dp")  return v.toFixed(3);
+    return v.toFixed(2);
+  }
+
+  // ── CAD image transform updater ──────────────────────────────────
+  // Listens for images.* slider changes and rewrites the .ric__cad
+  // transforms. No-ops if the robotics intro section isn't on this page.
+  function applyCadImage(side: "left" | "right") {
+    const c = (cfg as any).images?.[side];
+    if (!c) return;
+    const el = document.querySelector<HTMLElement>(`.ric__cad--${side}`);
+    if (!el) return;
+    const sx = (c.mirrorH ? -1 : 1) * (c.scale ?? 1);
+    const sy = (c.mirrorV ? -1 : 1) * (c.scale ?? 1);
+    el.style.transform =
+      `translate(${c.x ?? 0}px, ${c.y ?? 0}px) ` +
+      `rotate(${c.rot ?? 0}deg) ` +
+      `scale(${sx}, ${sy})`;
+    el.style.transformOrigin = "center center";
+  }
+  function applyCadImagesAll() {
+    applyCadImage("left");
+    applyCadImage("right");
+  }
+
+  const tuner = document.querySelector<HTMLElement>("[data-wf-tuner]");
+  if (tuner) initTuner(tuner);
+  // Initial pass — also retry once after the next frame in case the .ric__cad
+  // elements aren't in the DOM yet (different page render order).
+  applyCadImagesAll();
+  requestAnimationFrame(applyCadImagesAll);
+
+  function initTuner(tuner: HTMLElement) {
+    // ── Sync every slider/number/toggle/pill DOM to the live config ──
+    tuner.querySelectorAll<HTMLInputElement>("input[data-key]").forEach((input) => {
+      const key = input.dataset.key!;
+      const value = getAt(key);
+      if (typeof value === "number") {
+        input.value = String(value);
+        const readout = input.closest("[data-slider]")?.querySelector<HTMLElement>("[data-readout]");
+        if (readout) readout.textContent = formatVal(value, input.dataset.fmt ?? null);
+      }
+    });
+    tuner.querySelectorAll<HTMLElement>("[data-toggle][data-key]").forEach((btn) => {
+      const on = !!getAt(btn.dataset.key!);
+      btn.classList.toggle("is-on", on);
+    });
+    tuner.querySelectorAll<HTMLElement>("[data-wf-pills]").forEach((group) => {
+      const key = group.dataset.wfPills!;
+      const value = getAt(key);
+      group.querySelectorAll<HTMLElement>("[data-pill]").forEach((b) => {
+        b.classList.toggle("is-active", b.dataset.pill === value);
+      });
+    });
+
+    // Apply zoom on load (since it isn't reapplied each frame elsewhere).
+    document.documentElement.style.setProperty("zoom" as any, String(cfg.main.zoom));
+    fire("__init", cfg);
+
+    // ── Tab switching ──────────────────────────────────────────────
+    tuner.querySelectorAll<HTMLElement>("[data-tab-btn]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.tabBtn;
+        tuner.querySelectorAll<HTMLElement>("[data-tab-btn]").forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-selected", String(on));
+        });
+        tuner.querySelectorAll<HTMLElement>("[data-tab-panel]").forEach((p) => {
+          const on = p.dataset.tabPanel === id;
+          p.classList.toggle("is-active", on);
+          p.hidden = !on;
+        });
+      });
+    });
+
+    // ── Sliders + number inputs (delegated) ───────────────────────
+    const onInputOrChange = (e: Event) => {
+      const input = e.target as HTMLInputElement;
+      if (!input.matches("input[data-key]")) return;
+      if (input.type !== "range" && input.type !== "number") return;
+      const key = input.dataset.key!;
+      const raw = input.value;
+      // Number inputs can be momentarily empty while the user edits — skip
+      // pushing a NaN into the config.
+      if (raw === "" || raw === "-") return;
+      const value = Number(raw);
+      if (!Number.isFinite(value)) return;
+      setAt(key, value);
+      const readout = input.closest("[data-slider]")?.querySelector<HTMLElement>("[data-readout]");
+      if (readout) readout.textContent = formatVal(value, input.dataset.fmt ?? null);
+      // Apply page zoom immediately when changed.
+      if (key === "main.zoom") {
+        document.documentElement.style.setProperty("zoom" as any, String(value));
+      }
+      if (key.startsWith("images.")) applyCadImagesAll();
+      persist();
+      fire(key, value);
+    };
+    tuner.addEventListener("input", onInputOrChange);
+    tuner.addEventListener("change", onInputOrChange);
+
+    // ── Toggle buttons (mirror H/V) ───────────────────────────────
+    tuner.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-toggle]");
+      if (!btn) return;
+      const key = btn.dataset.key!;
+      const next = !getAt(key);
+      setAt(key, next);
+      btn.classList.toggle("is-on", next);
+      if (key.startsWith("images.")) applyCadImagesAll();
+      persist();
+      fire(key, next);
+    });
+
+    // ── Pill groups (hover / click / transition variant) ──────────
+    tuner.querySelectorAll<HTMLElement>("[data-wf-pills]").forEach((group) => {
+      const key = group.dataset.wfPills!;
+      group.addEventListener("click", (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-pill]");
+        if (!btn) return;
+        const value = btn.dataset.pill!;
+        setAt(key, value);
+        group.querySelectorAll(".wf-pill").forEach((b) => b.classList.toggle("is-active", b === btn));
+        // Back-compat for RoboticsTransition (still listens for this event).
+        if (key === "transition.mode") {
+          window.dispatchEvent(new CustomEvent("rtxn-mode-change", { detail: { mode: value } }));
+        }
+        persist();
+        fire(key, value);
+      });
+    });
+  }
+</script>
+
+<style>
+  .wf-tuner {
+    position: fixed;
+    top: calc(var(--topbar-h) + 12px);
+    left: 12px;
+    z-index: 200;
+    width: 320px;
+    max-height: calc(100vh - var(--topbar-h) - 24px);
+    background: rgba(20, 18, 16, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #f4ede2;
+    font-family: var(--font-mono);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .wf-tuner__tabs {
+    display: flex;
+    gap: 2px;
+    padding: 8px 8px 0;
+    background: inherit;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .wf-tab {
+    flex: 1;
+    padding: 6px 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(244, 237, 226, 0.6);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: lowercase;
+    cursor: pointer;
+  }
+  .wf-tab.is-active {
+    color: var(--accent);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-bottom-color: rgba(20, 18, 16, 0.94);
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .wf-tuner__body {
+    padding: 12px 12px 4px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .wf-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .wf-label {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    justify-content: space-between;
+  }
+  .wf-label span { color: #f4ede2; font-weight: 600; }
+  .wf-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+  .wf-pill {
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #d8d2c5;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: lowercase;
+    cursor: pointer;
+    transition: background 140ms, border-color 140ms, color 140ms;
+  }
+  .wf-pill:hover { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+  .wf-pill.is-active {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+  }
+  .wf-slider {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .wf-slider input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .wf-numinput {
+    width: 100%;
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #f4ede2;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .wf-numinput:focus { outline: 1px solid var(--accent); }
+  .wf-subhead {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(244, 237, 226, 0.5);
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  }
+  .wf-subhead:first-of-type { border-top: 0; padding-top: 0; }
+  .wf-toggle {
+    flex: 1;
+    padding: 6px 8px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #d8d2c5;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: lowercase;
+    cursor: pointer;
+  }
+  .wf-toggle.is-on {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+  }
+  .wf-tab-panel {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .wf-tab-panel.is-active { display: flex; }
+  .wf-tuner__hint {
+    padding: 6px 12px 10px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(244, 237, 226, 0.4);
+  }
+</style>

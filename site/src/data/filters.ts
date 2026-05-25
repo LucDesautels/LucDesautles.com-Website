@@ -75,13 +75,18 @@ export function applyFilter(id: FilterId) {
   body.dataset.filter = id;
   window.dispatchEvent(new CustomEvent(FILTER_EVENT, { detail: { filter: id } }));
 
-  // After the layout has settled, scroll to the relevant section.
+  // After the layout has settled, scroll to the relevant section. Prefer
+  // Lenis so the jump rides the same easing as wheel scrolls.
+  const lenis = (window as unknown as { lenis?: { scrollTo: (t: number | string | HTMLElement, opts?: object) => void } }).lenis;
   if (f.jumpTo) {
     requestAnimationFrame(() => {
-      const el = document.querySelector(f.jumpTo!);
-      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const el = document.querySelector<HTMLElement>(f.jumpTo!);
+      if (!el) return;
+      if (lenis) lenis.scrollTo(el, { offset: 0 });
+      else el.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   } else if (id === "full") {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (lenis) lenis.scrollTo(0);
+    else window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }

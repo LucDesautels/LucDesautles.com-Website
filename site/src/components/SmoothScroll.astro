@@ -1,0 +1,53 @@
+---
+// Lenis smooth scroll. Drives a RAF loop that interpolates window.scrollY,
+// so existing scroll listeners (TopBar, WaveField) and IntersectionObservers
+// keep working as-is. Lenis is exposed on window so programmatic scrolls
+// (filters.ts) can animate through the same loop. Disables itself under
+// prefers-reduced-motion. Horizontal scrollers opt out with
+// `data-lenis-prevent` on the scroller element.
+---
+
+<script>
+  import Lenis from "lenis";
+
+  declare global {
+    interface Window {
+      lenis?: Lenis;
+    }
+  }
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (!reduceMotion) {
+    const lenis = new Lenis({
+      duration: 1.1,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      // Touch devices keep native scroll — Lenis on touch tends to feel laggy
+      // and breaks momentum scrolling.
+      syncTouch: false,
+    });
+
+    window.lenis = lenis;
+
+    // Lenis suppresses native scroll events while it's animating so it stays
+    // the single source of truth. Re-fire them so listeners that read
+    // window.scrollY on the native event (TopBar) keep working without
+    // needing to know Lenis exists.
+    lenis.on("scroll", () => {
+      window.dispatchEvent(new Event("scroll"));
+    });
+
+    let rafHandle = 0;
+    const raf = (time: number) => {
+      lenis.raf(time);
+      rafHandle = requestAnimationFrame(raf);
+    };
+    rafHandle = requestAnimationFrame(raf);
+
+    window.addEventListener("beforeunload", () => {
+      cancelAnimationFrame(rafHandle);
+      lenis.destroy();
+    });
+  }
+</script>

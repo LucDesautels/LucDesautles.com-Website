@@ -23,7 +23,7 @@ import Placeholder from "./Placeholder.astro";
     ))}
   </div>
 
-  <div class="sub__scroller">
+  <div class="sub__scroller" data-lenis-prevent>
     {SUBPROJECTS.map((p) => (
       <article class="card" data-tag={p.tag} data-domain={p.domain}>
         <div class="card__media">

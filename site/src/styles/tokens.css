@@ -53,7 +53,8 @@ html {
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
+  /* Smooth scrolling is handled by Lenis (see SmoothScroll.astro). Native
+     scroll-behavior: smooth would race with Lenis's RAF loop. */
 
   /* Firefox custom scrollbar. */
   scrollbar-color: var(--accent) var(--bg-warm);
@@ -195,7 +196,6 @@ body.filter-engineering #academics .group[data-group-id="education"] {
 /* ── Reduced motion ────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
   *,
   *::before,
   *::after {

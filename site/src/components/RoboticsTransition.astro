@@ -34,18 +34,38 @@
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    // Mode state — read from localStorage, listen for changes.
+    // Mode state — read from window.__wfConfig (set by WaveTuner). Default
+    // is "water". Falls back to the older "rtxn-mode" event for back-compat.
     const VALID: Mode[] = ["hex", "water", "gears", "rain", "circuits"];
-    let mode: Mode = "hex";
+    const getCfg = () => (window as any).__wfConfig;
+    const cfgMode = () => {
+      const m = getCfg()?.transition?.mode as Mode | undefined;
+      return m && VALID.includes(m) ? m : "water";
+    };
+    let mode: Mode = cfgMode();
     try {
-      const saved = localStorage.getItem("rtxn-mode") as Mode | null;
-      if (saved && VALID.includes(saved)) mode = saved;
+      const legacy = localStorage.getItem("rtxn-mode") as Mode | null;
+      if (legacy && VALID.includes(legacy)) mode = legacy;
     } catch {}
 
     window.addEventListener("rtxn-mode-change", (e) => {
       const next = (e as CustomEvent).detail?.mode as Mode;
       if (VALID.includes(next)) {
         mode = next;
+        resetMode();
+      }
+    });
+    window.addEventListener("wf-config-change", (e) => {
+      const key = (e as CustomEvent).detail?.key as string | undefined;
+      if (!key) return;
+      if (key === "transition.mode" || key === "__init") {
+        mode = cfgMode();
+        resetMode();
+      } else if (
+        key === "transition.lineCount" ||
+        key === "transition.fadeStart"
+      ) {
+        // Structural rebuild — sliders that change the line layout.
         resetMode();
       }
     });
@@ -72,7 +92,11 @@
 
     // Where in the canvas the "transition zone" starts (top of the visible
     // decoration on cream sections). Most modes draw mostly below this.
-    function zoneTop() { return H * 0.55; }
+    // For the WATER mode the slider `transition.fadeStart` overrides this.
+    function zoneTop() {
+      const f = getCfg()?.transition?.fadeStart;
+      return H * (typeof f === "number" ? f : 0.55);
+    }
 
     // ── Mode 1: HEX ──────────────────────────────────────────────────
     // Clean hex grid, gentle pulse animation. Density + opacity ramps with
@@ -120,14 +144,20 @@
     const waterLines: Array<{ y: number; amp: number; phase: number; speed: number }> = [];
     function buildWater() {
       waterLines.length = 0;
+      const cfg = getCfg()?.transition ?? {};
       const top = zoneTop() - 20;
-      const count = 28;
+      const count = Math.max(2, Math.round(cfg.lineCount ?? 28));
+      const densityMul = cfg.densityToDark ?? 1;
       const span = H - top + 40;
       for (let i = 0; i < count; i++) {
         const seed = i * 1.61803398;
         const j = Math.sin(seed * 3.7) * 0.5 + 0.5;
+        // densityToDark biases line positions toward the dark side as it
+        // grows above 1.0 (curve `t = (i/(N-1))^(1/densityMul)`).
+        const tNorm = (i / Math.max(1, count - 1));
+        const biased = Math.pow(tNorm, 1 / Math.max(0.2, densityMul));
         waterLines.push({
-          y: top + (i / (count - 1)) * span,
+          y: top + biased * span,
           amp: 14 + j * 12,
           phase: i * 0.8 + j * Math.PI,
           speed: 0.0008 + j * 0.0007,
@@ -137,26 +167,32 @@
     function drawWater(t: number) {
       paintBackdrop();
       if (waterLines.length === 0) buildWater();
+      const cfg = getCfg()?.transition ?? {};
       const top = zoneTop() - 20;
       const range = H - top;
-      ctx.lineWidth = 1.4;
+      const thickness = cfg.thickness ?? 1.4;
+      const opMul = cfg.opacity ?? 1;
+      const speedMul = cfg.naturalSpeed ?? 1;
+      const ampMul = cfg.naturalAmp ?? 1;
+      const cursorMul = cfg.cursorReact ?? 1;
+      const colorFlip = cfg.colorFlip ?? 0.78;
+      ctx.lineWidth = thickness;
       for (const ln of waterLines) {
-        const depth = (ln.y - top) / range;             // 0 at top, 1 at bottom
-        // Stroke colour blends from dark-on-cream to white-on-dark.
-        const isDark = depth > 0.78;
-        const alpha = 0.10 + depth * 0.35;
+        const depth = (ln.y - top) / range;
+        const isDark = depth > colorFlip;
+        const alpha = (0.10 + depth * 0.35) * opMul;
         ctx.strokeStyle = isDark
-          ? `rgba(244, 237, 226, ${0.20 + (depth - 0.78) * 2.5})`
+          ? `rgba(244, 237, 226, ${(0.20 + (depth - colorFlip) * 2.5) * opMul})`
           : `rgba(26, 23, 20, ${alpha})`;
         ctx.beginPath();
         const stepX = 8;
         for (let x = -10; x <= W + 10; x += stepX) {
           const u = x / Math.max(1, W);
-          const a = Math.sin(u * Math.PI * 1.2 + t * ln.speed + ln.phase);
-          const b = Math.sin(u * Math.PI * 2.7 + t * ln.speed * 1.6 + ln.phase * 0.5) * 0.35;
-          let yy = ln.y + ln.amp * (a + b);
-          // Cursor lift (water displacement near the pointer).
-          if (cursor.x > -9000) {
+          const ts = t * speedMul;
+          const a = Math.sin(u * Math.PI * 1.2 + ts * ln.speed + ln.phase);
+          const b = Math.sin(u * Math.PI * 2.7 + ts * ln.speed * 1.6 + ln.phase * 0.5) * 0.35;
+          let yy = ln.y + ln.amp * ampMul * (a + b);
+          if (cursor.x > -9000 && cursorMul > 0) {
             const dx = x - cursor.x;
             const dy = ln.y - cursor.y;
             const dist = Math.hypot(dx, dy);
@@ -164,7 +200,7 @@
             if (dist < R) {
               const k = 1 - dist / R;
               const bell = k * k * (3 - 2 * k);
-              yy += (cursor.y - ln.y) * 0.45 * bell;
+              yy += (cursor.y - ln.y) * 0.45 * bell * cursorMul;
             }
           }
           if (x === -10) ctx.moveTo(x, yy);
