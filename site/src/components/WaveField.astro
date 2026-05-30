@@ -33,16 +33,19 @@
 
   // ── Shared cross-component state, written by HorizontalTOC each frame ─
   type WfState = {
-    htocShiftX: number;    // current strip translateX (px); 0 outside htoc
-    htocActive: number;    // 0..1 — how much the htoc region is on-screen
-    htocDarkness: number;  // 0..1 — current dominant section darkness
+    htocShiftX: number;     // current strip translateX (px); 0 outside htoc
+    htocActive: number;     // 0..1 — how much the htoc region is on-screen
+    htocDarkness: number;   // 0..1 — current dominant section darkness
     htocBounds: { top: number; bottom: number } | null;
-    htocPinOffset: number; // accumulated scroll spent inside the pin range
+    htocPinOffset: number;  // accumulated scroll spent inside the pin range
+    htocWaveShiftX: number; // x-shift to apply to the wave field — same
+                            // smoothed curve as the strip, but with no
+                            // entrance hump (so the lines don't bob)
   };
   function getState(): WfState {
     return ((window as any).__wfState as WfState) ?? {
       htocShiftX: 0, htocActive: 0, htocDarkness: 0, htocBounds: null,
-      htocPinOffset: 0,
+      htocPinOffset: 0, htocWaveShiftX: 0,
     };
   }
 
@@ -246,10 +249,16 @@
 
       // ── Wave lines ───────────────────────────────────────────────
       const stepX = 6;
-      // X-shift for wave sampling — slides the pattern horizontally with
-      // the htoc strip. Scaled by htocActive (0 outside htoc, 1 inside) so
-      // the rest of the page isn't influenced by a phantom shift value.
-      const shiftX = (st.htocShiftX || 0) * (st.htocActive ?? 0);
+      // X-shift for wave sampling. We use the *wave-only* shift the htoc
+      // publishes, which is 0 before pin (no entrance hump), smoothly
+      // ramps to -maxTranslate during pin, and continues a bit further
+      // through the exit drift before holding. Multiplying by htocActive
+      // here used to read as a vertical "bob" — the entrance ramped both
+      // the active factor and the strip's right-to-left slide-in, and
+      // their product hit a peak halfway through entrance before falling
+      // back to 0 at pin start. The wave-only shift removes that pump
+      // entirely.
+      const shiftX = st.htocWaveShiftX ?? 0;
 
       // Stroke colour: lerp 26,23,20 (dark ink) ↔ 244,237,226 (light ink).
       const r = Math.round(lerp(26, 244, darkness));

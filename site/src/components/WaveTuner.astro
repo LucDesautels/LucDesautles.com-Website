@@ -63,6 +63,7 @@ function fmt(v: number, f: Slider["fmt"]) {
     <button class="wf-tab"           data-tab-btn="transition" type="button" role="tab" aria-selected="false">transition</button>
     <button class="wf-tab"           data-tab-btn="horiz"      type="button" role="tab" aria-selected="false">horizontal</button>
     <button class="wf-tab"           data-tab-btn="rail"       type="button" role="tab" aria-selected="false">rail</button>
+    <button class="wf-tab"           data-tab-btn="scroll"     type="button" role="tab" aria-selected="false">scroll</button>
     <button class="wf-tab"           data-tab-btn="images"     type="button" role="tab" aria-selected="false">images</button>
   </div>
 
@@ -128,6 +129,23 @@ function fmt(v: number, f: Slider["fmt"]) {
           <button class="wf-pill"           data-pill="line-thread"      type="button">line + text fills L→R</button>
           <button class="wf-pill"           data-pill="active-text"      type="button">just text, active in accent</button>
           <button class="wf-pill"           data-pill="cumulative-text"  type="button">just text, fills section-by-section</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCROLL TAB ───────────────────────────────────────────── -->
+    <!-- Live-swappable scroll modes. SmoothScroll.astro tears down + reinstates
+         Lenis when the mode changes, so you can A/B feel between presets
+         without reloading. `native` is the browser's own scroll. -->
+    <div class="wf-tab-panel" data-tab-panel="scroll" role="tabpanel" hidden>
+      <div class="wf-row">
+        <div class="wf-label">MODE</div>
+        <div class="wf-pills wf-pills--stack" data-wf-pills="scroll.mode">
+          <button class="wf-pill"           data-pill="native"   type="button">native (no Lenis)</button>
+          <button class="wf-pill"           data-pill="subtle"   type="button">subtle (very light)</button>
+          <button class="wf-pill is-active" data-pill="default"  type="button">default (Lenis original)</button>
+          <button class="wf-pill"           data-pill="soft"     type="button">soft (slow + glide-y)</button>
+          <button class="wf-pill"           data-pill="snappy"   type="button">snappy (short + sharp)</button>
         </div>
       </div>
     </div>
@@ -206,6 +224,10 @@ function fmt(v: number, f: Slider["fmt"]) {
       // markup based on this value. See WaveTuner.astro RAIL TAB.
       variant: "fat-fixed" as
         "fat-fixed" | "thin-fixed" | "line-thread" | "active-text" | "cumulative-text",
+    },
+    scroll: {
+      // SmoothScroll.astro destroys + recreates Lenis when this changes.
+      mode: "default" as "native" | "subtle" | "default" | "soft" | "snappy",
     },
     images: {
       left:  { x: 0, y: 0, rot: 225, scale: 1.0, mirrorH: false, mirrorV: false },

@@ -26,6 +26,14 @@ type WfState = {
   //     maxTranslate → wave field continues smoothly from where it was
   //     frozen, with no snap)
   htocPinOffset: number;
+  // The shift the *wave field* should follow horizontally. Same smooth
+  // pin + exit curve as the visible strip translates, but with no
+  // entrance hump — so the wave lines don't bob up + back as the
+  // gallery slides in from the right.
+  //   0 before pin, smoothly down to -maxTranslate during pin,
+  //   smoothly down to -maxTranslate - extraShift during the exit tail,
+  //   then constant.
+  htocWaveShiftX: number;
 };
 function publishWfState(patch: Partial<WfState>) {
   const w = window as any;
@@ -61,6 +69,86 @@ const SIZE_MUL = [1.0, 0.7, 1.25, 0.85, 1.15, 0.6, 1.3, 0.9, 0.75, 1.1];
 // Horizontal gap between tiles within a section, and padding at section edges.
 const TILE_GAP = 72;
 const SECTION_PAD_X = 140;
+
+// Cubic Hermite spline between two endpoints with specified slopes (dy/dx).
+// Used to filet the corners on the htoc scroll mapping — at each corner
+// we know the incoming + outgoing line's value and slope, and Hermite
+// gives us a C1-continuous cubic that matches both.
+function hermite(
+  s: number,
+  sL: number, vL: number, slopeL: number,
+  sR: number, vR: number, slopeR: number,
+): number {
+  const span = sR - sL;
+  const t = (s - sL) / span;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const h00 = 2 * t3 - 3 * t2 + 1;
+  const h10 = t3 - 2 * t2 + t;
+  const h01 = -2 * t3 + 3 * t2;
+  const h11 = t3 - t2;
+  return h00 * vL + h10 * span * slopeL + h01 * vR + h11 * span * slopeR;
+}
+
+// Strip shiftX as a function of "scrolled" (vertical scroll past the
+// section's entrance start). Piecewise: entrance line, floor-corner
+// fillet, pin line, exit-corner fillet + drift, then static.
+function stripShiftAt(
+  s: number, vh: number, vw: number, maxT: number,
+  pinEnd: number, cornerW: number, exitDrift: number, extraShift: number,
+): number {
+  const slopeEntrance = -vw / vh;
+  const slopePin = -1;
+  if (s < vh - cornerW) {
+    return vw * (1 - s / vh);
+  }
+  if (s < vh + cornerW) {
+    return hermite(
+      s,
+      vh - cornerW, vw * cornerW / vh, slopeEntrance,
+      vh + cornerW, -cornerW,           slopePin,
+    );
+  }
+  if (s < pinEnd - cornerW) {
+    return -(s - vh);
+  }
+  if (s < pinEnd + exitDrift) {
+    return hermite(
+      s,
+      pinEnd - cornerW,   -(maxT - cornerW),       slopePin,
+      pinEnd + exitDrift, -maxT - extraShift,      0,
+    );
+  }
+  return -maxT - extraShift;
+}
+
+// Wave shift — same shape as the strip from the floor corner on, but with
+// the entrance piece forced to 0. The wave field is never visible during
+// the gallery's entrance slide (the lines just sit at their natural pre-
+// pin pattern), then smoothly follows the strip during pin + exit drift.
+function waveShiftAt(
+  s: number, vh: number, maxT: number,
+  pinEnd: number, cornerW: number, exitDrift: number, extraShift: number,
+): number {
+  const slopePin = -1;
+  if (s < vh - cornerW) return 0;
+  if (s < vh + cornerW) {
+    return hermite(
+      s,
+      vh - cornerW, 0,        0,
+      vh + cornerW, -cornerW, slopePin,
+    );
+  }
+  if (s < pinEnd - cornerW) return -(s - vh);
+  if (s < pinEnd + exitDrift) {
+    return hermite(
+      s,
+      pinEnd - cornerW,   -(maxT - cornerW),  slopePin,
+      pinEnd + exitDrift, -maxT - extraShift, 0,
+    );
+  }
+  return -maxT - extraShift;
+}
 
 // Lerp two #rrggbb hex colors. Returns an `rgb(r,g,b)` string so we can stuff
 // it straight into CSS without re-parsing.
@@ -123,6 +211,15 @@ export default function HorizontalTOC({ sections }: Props) {
   }, []);
 
   // Measure on mount + on resize. Decide whether to enable the scroll-jack.
+  // The outer is sized to:
+  //   vh  (entrance: strip slides in from right)
+  // + maxTranslate  (pin: strip slides left under the viewport)
+  // + exit drift   (smoothed deceleration past pin end where the images
+  //                 continue sliding left into the section below — gives
+  //                 the strip a "filleted" exit corner instead of an
+  //                 instant stop)
+  // Keep these constants in sync with the smoothing math in `update()`.
+  const EXIT_DRIFT_VH = 0.4;   // exit tail = 40% of one viewport height
   useLayoutEffect(() => {
     const measure = () => {
       const strip = stripRef.current;
@@ -134,7 +231,8 @@ export default function HorizontalTOC({ sections }: Props) {
       const wantPin = !reduced && viewportW >= 900 && stripW > viewportW + 50;
       if (wantPin) {
         const maxTranslate = stripW - viewportW;
-        setOuterHeight(viewportH + maxTranslate);
+        const exitDrift = viewportH * EXIT_DRIFT_VH;
+        setOuterHeight(viewportH + maxTranslate + exitDrift);
         setEnabled(true);
       } else {
         setOuterHeight(null);
@@ -167,7 +265,7 @@ export default function HorizontalTOC({ sections }: Props) {
       }
       publishWfState({
         htocShiftX: 0, htocActive: 0, htocDarkness: 0, htocBounds: null,
-        htocPinOffset: 0,
+        htocPinOffset: 0, htocWaveShiftX: 0,
       });
       return;
     }
@@ -184,27 +282,38 @@ export default function HorizontalTOC({ sections }: Props) {
       const stripW = strip.scrollWidth;
       const maxTranslate = stripW - vw;
 
-      // Two-phase scroll mapping:
-      //   Phase 1 (entrance, vh of vertical scroll): the section is scrolling
-      //     up into view. shift-x goes from +vw → 0, so the strip starts off
-      //     the right edge of the viewport and the first tile lands at the
-      //     left edge exactly as the sticky pins.
-      //   Phase 2 (pin, maxTranslate of vertical scroll): shift-x goes from
-      //     0 → -maxTranslate, the normal horizontal-pin behavior.
+      // Scroll → strip shift mapping, smoothed at both corners.
+      //
+      //   1. Entrance      (linear: shift = vw → 0 as scrolled goes 0 → vh)
+      //   2. Floor corner  (cubic Hermite blend over ±cornerW around vh —
+      //                     fillets the kink where the diagonal slide-in
+      //                     meets the horizontal pin)
+      //   3. Pin           (linear: shift = 0 → -maxTranslate)
+      //   4. Exit corner + (cubic Hermite from pin's last bit out to the
+      //      drift tail     final drift end — slope -1 → 0, so the images
+      //                     decelerate smoothly past pin end while
+      //                     continuing to slide left into the section
+      //                     below)
       const startY = outer.offsetTop - vh;
-      const totalScroll = outer.offsetHeight; // vh + maxTranslate
+      const exitDrift = vh * EXIT_DRIFT_VH;
+      const extraShift = vw * 0.35; // leftward drift past -maxTranslate
+      const totalScroll = outer.offsetHeight; // vh + maxTranslate + exitDrift
       const scrolled = Math.min(Math.max(window.scrollY - startY, 0), totalScroll);
 
-      let shiftX: number;
-      if (scrolled <= vh) {
-        // Entrance — speed is vw/vh (typically ~1.6x vertical scroll).
-        const enterP = vh > 0 ? scrolled / vh : 1;
-        shiftX = vw * (1 - enterP);
-      } else {
-        // Pin — 1:1 horizontal to vertical.
-        const pinP = (scrolled - vh) / Math.max(1, maxTranslate);
-        shiftX = -pinP * maxTranslate;
-      }
+      const pinEnd = vh + maxTranslate;
+      // Corner radius (in scrolled units) — capped so it never overruns
+      // a phase on small/tall viewports.
+      const cornerW = Math.max(40, Math.min(vh * 0.15, maxTranslate * 0.08));
+
+      // Strip shift — has all four pieces (entrance, floor corner, pin,
+      // exit corner + drift).
+      const shiftX = stripShiftAt(scrolled, vh, vw, maxTranslate, pinEnd, cornerW, exitDrift, extraShift);
+      // Wave shift — same curve as the strip from the floor corner
+      // onwards, but with the entrance forced to 0. Stops the entrance
+      // hump from pushing the wave pattern right-then-left (which read
+      // visually as a vertical bob), and keeps the wave field stationary
+      // before the gallery pins.
+      const waveShiftX = waveShiftAt(scrolled, vh, maxTranslate, pinEnd, cornerW, exitDrift, extraShift);
       strip.style.setProperty("--shift-x", `${shiftX.toFixed(2)}px`);
 
       // Overall progress for the rail + opacity ramp. The rail subscribes
@@ -277,7 +386,10 @@ export default function HorizontalTOC({ sections }: Props) {
       // The WaveField uses effectiveScrollY = realScrollY - pinOffset, so
       // during pin the effective value stays at pinStartY (waves freeze),
       // and after pin it tracks realScrollY again with the pin period
-      // subtracted (no snap at the exit boundary).
+      // subtracted (no snap at the exit boundary). The exit drift past
+      // pin end intentionally does NOT add to pinOffset — vertical
+      // scrolling should resume the moment the user is past the pin, even
+      // while the horizontal drift continues.
       const pinStartY = outer.offsetTop;
       const pinOffset = Math.max(0, Math.min(maxTranslate, window.scrollY - pinStartY));
 
@@ -287,6 +399,7 @@ export default function HorizontalTOC({ sections }: Props) {
         htocDarkness: darkness * active, // only count darkness while on-screen
         htocBounds: { top: r.top, bottom: r.bottom },
         htocPinOffset: pinOffset,
+        htocWaveShiftX: waveShiftX,
       });
     };
     const onScroll = () => {
