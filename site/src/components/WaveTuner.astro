@@ -38,6 +38,13 @@ const horizSliders: Slider[] = [
   { key: "horiz.opacityLight", label: "OPACITY (LIGHT)",    min: 0,   max: 1,  step: 0.02, value: 0.22, fmt: "2dp" },
   { key: "horiz.fadeStart",    label: "FADE START (DARK)",  min: 0,   max: 1,  step: 0.01, value: 0.25, fmt: "2dp" },
   { key: "horiz.fadeEnd",      label: "FADE END (DARK)",    min: 0,   max: 1,  step: 0.01, value: 0.65, fmt: "2dp" },
+  // Scales how aggressively the wave field tracks horizontal scroll. At
+  // 1.0 the wave pattern shifts 1:1 with the gallery — which makes any
+  // single point on screen sweep through ~6 wave cycles per pin scroll,
+  // perceived as a high-frequency vertical jitter. Lower values keep
+  // the direction-of-motion link without the jitter. 0 = wave field
+  // stationary horizontally, 1 = full 1:1 with the gallery.
+  { key: "horiz.shiftScale",   label: "WAVE SHIFT × SCROLL",min: 0,   max: 1,  step: 0.02, value: 0.4,  fmt: "2dp" },
 ];
 function imgSliders(side: "left" | "right", defaults: { rot: number }): Slider[] {
   return [
@@ -218,6 +225,7 @@ function fmt(v: number, f: Slider["fmt"]) {
       opacityLight: 0.22,
       fadeStart: 0.25,
       fadeEnd: 0.65,
+      shiftScale: 0.4,
     },
     rail: {
       // HorizontalTOC subscribes to wf-config-change and swaps its rail

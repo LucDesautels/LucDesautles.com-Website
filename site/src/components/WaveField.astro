@@ -33,19 +33,20 @@
 
   // ── Shared cross-component state, written by HorizontalTOC each frame ─
   type WfState = {
-    htocShiftX: number;     // current strip translateX (px); 0 outside htoc
-    htocActive: number;     // 0..1 — how much the htoc region is on-screen
-    htocDarkness: number;   // 0..1 — current dominant section darkness
+    htocShiftX: number;      // current strip translateX (px); 0 outside htoc
+    htocActive: number;      // 0..1 — how much the htoc region is on-screen
+    htocDarkness: number;    // 0..1 — current dominant section darkness
     htocBounds: { top: number; bottom: number } | null;
-    htocPinOffset: number;  // accumulated scroll spent inside the pin range
-    htocWaveShiftX: number; // x-shift to apply to the wave field — same
-                            // smoothed curve as the strip, but with no
-                            // entrance hump (so the lines don't bob)
+    htocPinOffset: number;   // (unused here — see comment below)
+    htocWaveShiftX: number;  // (unused here — see comment below)
+    htocPinStartY: number;   // sticky's offsetTop; constant unless layout reflows
+    htocMaxTranslate: number;// pin distance; constant unless layout reflows
   };
   function getState(): WfState {
     return ((window as any).__wfState as WfState) ?? {
       htocShiftX: 0, htocActive: 0, htocDarkness: 0, htocBounds: null,
       htocPinOffset: 0, htocWaveShiftX: 0,
+      htocPinStartY: 0, htocMaxTranslate: 0,
     };
   }
 
@@ -217,12 +218,21 @@
       // Dark-ness drives stroke color + opacity blending.
       const darkness = smoothstep(fadeStart, fadeEnd, st.htocDarkness ?? 0);
 
-      // Subtract the htoc's accumulated pin offset from the real scrollY.
-      // During pin, the offset grows linearly with realScrollY, so the
-      // effective value stays at pinStartY (waves freeze vertically).
-      // After pin, the offset is constant, so effectiveScrollY tracks
-      // realScrollY again — continuous across the exit boundary, no snap.
-      const scrollY = realScrollY - (st.htocPinOffset ?? 0);
+      // Pin freeze: derive the offset locally from realScrollY + the
+      // htoc's published geometry constants. Using the *snapshot*
+      // offset published by HorizontalTOC each frame instead would skew
+      // by one frame's scroll delta (HorizontalTOC's RAF and this one
+      // sample window.scrollY at slightly different moments while Lenis
+      // is animating), and the residual would jitter the wave lines
+      // vertically at high scroll velocity. Doing the math here with
+      // the same `realScrollY` we use for line positioning means the
+      // two terms cancel exactly — pure horizontal motion during pin.
+      const pinStartY = st.htocPinStartY ?? 0;
+      const maxT = st.htocMaxTranslate ?? 0;
+      const pinOffset = maxT > 0
+        ? Math.max(0, Math.min(maxT, realScrollY - pinStartY))
+        : 0;
+      const scrollY = realScrollY - pinOffset;
 
       // Fade the wave field out below the IMPACTFUL / COMPETITIVE ROBOTICS
       // wordmark — past that point only the RoboticsTransition's own
@@ -249,16 +259,20 @@
 
       // ── Wave lines ───────────────────────────────────────────────
       const stepX = 6;
-      // X-shift for wave sampling. We use the *wave-only* shift the htoc
-      // publishes, which is 0 before pin (no entrance hump), smoothly
-      // ramps to -maxTranslate during pin, and continues a bit further
-      // through the exit drift before holding. Multiplying by htocActive
-      // here used to read as a vertical "bob" — the entrance ramped both
-      // the active factor and the strip's right-to-left slide-in, and
-      // their product hit a peak halfway through entrance before falling
-      // back to 0 at pin start. The wave-only shift removes that pump
-      // entirely.
-      const shiftX = st.htocWaveShiftX ?? 0;
+      // X-shift for wave sampling. Derived locally from pinOffset for
+      // the same reason we derive pinOffset locally — using the
+      // published snapshot would skew by one Lenis-advanced frame.
+      //
+      // shiftScale tames the high-frequency vertical-jitter look that
+      // appears at scroll speed × 1.0 coupling. The wave field is a sum
+      // of three sines at moderate spatial frequencies (~924 px /
+      // ~547 px / ~1462 px wavelength). At 1:1 coupling, a single
+      // pin scroll (~5800 px) sweeps roughly six wave cycles past any
+      // given screen point, which at 60 fps reads as fast vertical
+      // morphing. Scaling down keeps the direction-of-motion link with
+      // the gallery while the morphing per unit scroll stays subtle.
+      const shiftScale = horizCfg.shiftScale ?? 0.4;
+      const shiftX = -pinOffset * shiftScale;
 
       // Stroke colour: lerp 26,23,20 (dark ink) ↔ 244,237,226 (light ink).
       const r = Math.round(lerp(26, 244, darkness));

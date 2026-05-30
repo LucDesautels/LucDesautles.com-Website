@@ -34,6 +34,17 @@ type WfState = {
   //   smoothly down to -maxTranslate - extraShift during the exit tail,
   //   then constant.
   htocWaveShiftX: number;
+  // Geometry constants the WaveField uses to recompute pinOffset locally
+  // from its OWN window.scrollY reading (instead of using the snapshot
+  // we publish here). Lenis advances window.scrollY between the two
+  // RAFs, and (realScrollY at frame T) - (pinOffset at frame T-1) leaves
+  // a small residual per frame — visible as a high-frequency vertical
+  // jitter on the wave lines that scales with scroll velocity. With
+  // these constants the WaveField can do `Math.max(0, Math.min(maxT,
+  // realScrollY - pinStartY))` itself, so both terms come from the
+  // exact same scrollY snapshot.
+  htocPinStartY: number;
+  htocMaxTranslate: number;
 };
 function publishWfState(patch: Partial<WfState>) {
   const w = window as any;
@@ -266,6 +277,7 @@ export default function HorizontalTOC({ sections }: Props) {
       publishWfState({
         htocShiftX: 0, htocActive: 0, htocDarkness: 0, htocBounds: null,
         htocPinOffset: 0, htocWaveShiftX: 0,
+        htocPinStartY: 0, htocMaxTranslate: 0,
       });
       return;
     }
@@ -400,6 +412,8 @@ export default function HorizontalTOC({ sections }: Props) {
         htocBounds: { top: r.top, bottom: r.bottom },
         htocPinOffset: pinOffset,
         htocWaveShiftX: waveShiftX,
+        htocPinStartY: pinStartY,
+        htocMaxTranslate: maxTranslate,
       });
     };
     const onScroll = () => {
