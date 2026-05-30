@@ -1,7 +1,73 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { TocSection } from "@/data/content";
 
 interface Props { sections: TocSection[]; }
+
+// Cross-component channel — the global WaveField reads from this every frame
+// to slide its wave pattern with the horizontal scroll and to colour-shift
+// the lines as the dominant section tone darkens. We never *create* this on
+// the wave-field side; it's populated here as soon as the section mounts.
+type WfState = {
+  htocShiftX: number;
+  htocActive: number;
+  htocDarkness: number;
+  htocBounds: { top: number; bottom: number } | null;
+  // The htoc converts vertical scroll into horizontal strip motion while
+  // it's pinned, so naive yDoc - scrollY positioning would keep dragging
+  // the wave field upward while the user is "scrolling horizontally."
+  //
+  // htocPinOffset is the cumulative scroll distance the user has spent
+  // *inside* the pin range. The WaveField subtracts it from realScrollY
+  // every frame:
+  //   0 before the pin (effectiveScrollY = realScrollY, normal)
+  //   grows linearly 0 → maxTranslate during the pin (effective stays
+  //     at pinStartY → waves freeze vertically)
+  //   stays at maxTranslate after the pin (effective = realScrollY -
+  //     maxTranslate → wave field continues smoothly from where it was
+  //     frozen, with no snap)
+  htocPinOffset: number;
+  // The shift the *wave field* should follow horizontally. Same smooth
+  // pin + exit curve as the visible strip translates, but with no
+  // entrance hump — so the wave lines don't bob up + back as the
+  // gallery slides in from the right.
+  //   0 before pin, smoothly down to -maxTranslate during pin,
+  //   smoothly down to -maxTranslate - extraShift during the exit tail,
+  //   then constant.
+  htocWaveShiftX: number;
+  // Geometry constants the WaveField uses to recompute pinOffset locally
+  // from its OWN window.scrollY reading (instead of using the snapshot
+  // we publish here). Lenis advances window.scrollY between the two
+  // RAFs, and (realScrollY at frame T) - (pinOffset at frame T-1) leaves
+  // a small residual per frame — visible as a high-frequency vertical
+  // jitter on the wave lines that scales with scroll velocity. With
+  // these constants the WaveField can do `Math.max(0, Math.min(maxT,
+  // realScrollY - pinStartY))` itself, so both terms come from the
+  // exact same scrollY snapshot.
+  htocPinStartY: number;
+  htocMaxTranslate: number;
+};
+function publishWfState(patch: Partial<WfState>) {
+  const w = window as any;
+  const cur = (w.__wfState ?? {}) as WfState;
+  w.__wfState = { ...cur, ...patch };
+}
+
+// Relative luminance (0..1) of an "rgb(r,g,b)" or "#rrggbb" colour. Used to
+// translate the section tone into a darkness factor for the wave stroke.
+function luminanceOf(c: string): number {
+  let r = 0, g = 0, b = 0;
+  if (c.startsWith("#")) {
+    r = parseInt(c.slice(1, 3), 16);
+    g = parseInt(c.slice(3, 5), 16);
+    b = parseInt(c.slice(5, 7), 16);
+  } else {
+    const m = c.match(/(\d+(?:\.\d+)?)/g);
+    if (!m || m.length < 3) return 1;
+    r = +m[0]; g = +m[1]; b = +m[2];
+  }
+  // ITU-R BT.601 luma — good enough for "is this background dark?"
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
 
 // Per-tile vertical offsets — bigger range, deliberately erratic so tiles
 // don't read as a baseline-aligned row. Pattern is deterministic for SSR.
@@ -14,6 +80,86 @@ const SIZE_MUL = [1.0, 0.7, 1.25, 0.85, 1.15, 0.6, 1.3, 0.9, 0.75, 1.1];
 // Horizontal gap between tiles within a section, and padding at section edges.
 const TILE_GAP = 72;
 const SECTION_PAD_X = 140;
+
+// Cubic Hermite spline between two endpoints with specified slopes (dy/dx).
+// Used to filet the corners on the htoc scroll mapping — at each corner
+// we know the incoming + outgoing line's value and slope, and Hermite
+// gives us a C1-continuous cubic that matches both.
+function hermite(
+  s: number,
+  sL: number, vL: number, slopeL: number,
+  sR: number, vR: number, slopeR: number,
+): number {
+  const span = sR - sL;
+  const t = (s - sL) / span;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const h00 = 2 * t3 - 3 * t2 + 1;
+  const h10 = t3 - 2 * t2 + t;
+  const h01 = -2 * t3 + 3 * t2;
+  const h11 = t3 - t2;
+  return h00 * vL + h10 * span * slopeL + h01 * vR + h11 * span * slopeR;
+}
+
+// Strip shiftX as a function of "scrolled" (vertical scroll past the
+// section's entrance start). Piecewise: entrance line, floor-corner
+// fillet, pin line, exit-corner fillet + drift, then static.
+function stripShiftAt(
+  s: number, vh: number, vw: number, maxT: number,
+  pinEnd: number, cornerW: number, exitDrift: number, extraShift: number,
+): number {
+  const slopeEntrance = -vw / vh;
+  const slopePin = -1;
+  if (s < vh - cornerW) {
+    return vw * (1 - s / vh);
+  }
+  if (s < vh + cornerW) {
+    return hermite(
+      s,
+      vh - cornerW, vw * cornerW / vh, slopeEntrance,
+      vh + cornerW, -cornerW,           slopePin,
+    );
+  }
+  if (s < pinEnd - cornerW) {
+    return -(s - vh);
+  }
+  if (s < pinEnd + exitDrift) {
+    return hermite(
+      s,
+      pinEnd - cornerW,   -(maxT - cornerW),       slopePin,
+      pinEnd + exitDrift, -maxT - extraShift,      0,
+    );
+  }
+  return -maxT - extraShift;
+}
+
+// Wave shift — same shape as the strip from the floor corner on, but with
+// the entrance piece forced to 0. The wave field is never visible during
+// the gallery's entrance slide (the lines just sit at their natural pre-
+// pin pattern), then smoothly follows the strip during pin + exit drift.
+function waveShiftAt(
+  s: number, vh: number, maxT: number,
+  pinEnd: number, cornerW: number, exitDrift: number, extraShift: number,
+): number {
+  const slopePin = -1;
+  if (s < vh - cornerW) return 0;
+  if (s < vh + cornerW) {
+    return hermite(
+      s,
+      vh - cornerW, 0,        0,
+      vh + cornerW, -cornerW, slopePin,
+    );
+  }
+  if (s < pinEnd - cornerW) return -(s - vh);
+  if (s < pinEnd + exitDrift) {
+    return hermite(
+      s,
+      pinEnd - cornerW,   -(maxT - cornerW),  slopePin,
+      pinEnd + exitDrift, -maxT - extraShift, 0,
+    );
+  }
+  return -maxT - extraShift;
+}
 
 // Lerp two #rrggbb hex colors. Returns an `rgb(r,g,b)` string so we can stuff
 // it straight into CSS without re-parsing.
@@ -30,18 +176,61 @@ function lerpHex(a: string, b: string, t: number): string {
   return `rgb(${r},${g},${bl})`;
 }
 
+type RailVariant =
+  | "fat-fixed"
+  | "thin-fixed"
+  | "line-thread"
+  | "active-text"
+  | "cumulative-text";
+
 export default function HorizontalTOC({ sections }: Props) {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const stickyRef = useRef<HTMLDivElement | null>(null);
   const stripRef = useRef<HTMLDivElement | null>(null);
-  const wavesRef = useRef<HTMLCanvasElement | null>(null);
+  const railRef = useRef<HTMLDivElement | null>(null);
 
   const [activeIdx, setActiveIdx] = useState(0);
-  const [progress, setProgress] = useState(0);
   const [outerHeight, setOuterHeight] = useState<number | null>(null);
   const [enabled, setEnabled] = useState(false);
+  const [railVariant, setRailVariant] = useState<RailVariant>("fat-fixed");
+
+  // The bottom rail's progress used to live in React state, which forced a
+  // re-render every scroll frame and then queued a CSS width transition on
+  // top of that. Result: the orange fill catch-up was visibly behind the
+  // scroll and stuttered in steps. We now write progress directly onto a
+  // CSS custom property on the rail element each scroll frame — no React
+  // re-render, no CSS transition — so the fill stays in lockstep.
+  const setRailProgress = (p: number) => {
+    railRef.current?.style.setProperty("--rail-p", p.toFixed(4));
+  };
+
+  // Pick the rail variant from the live WaveTuner config (window.__wfConfig
+  // .rail.variant). Updates fire only when the user toggles it, so there
+  // is no per-frame React cost.
+  useEffect(() => {
+    const pick = () => {
+      const v = (window as any).__wfConfig?.rail?.variant as RailVariant | undefined;
+      if (v) setRailVariant(v);
+    };
+    pick();
+    const handler = (e: Event) => {
+      const k = (e as CustomEvent).detail?.key as string | undefined;
+      if (k === "rail.variant" || k === "__init") pick();
+    };
+    window.addEventListener("wf-config-change", handler);
+    return () => window.removeEventListener("wf-config-change", handler);
+  }, []);
 
   // Measure on mount + on resize. Decide whether to enable the scroll-jack.
+  // The outer is sized to:
+  //   vh  (entrance: strip slides in from right)
+  // + maxTranslate  (pin: strip slides left under the viewport)
+  // + exit drift   (smoothed deceleration past pin end where the images
+  //                 continue sliding left into the section below — gives
+  //                 the strip a "filleted" exit corner instead of an
+  //                 instant stop)
+  // Keep these constants in sync with the smoothing math in `update()`.
+  const EXIT_DRIFT_VH = 0.4;   // exit tail = 40% of one viewport height
   useLayoutEffect(() => {
     const measure = () => {
       const strip = stripRef.current;
@@ -53,7 +242,8 @@ export default function HorizontalTOC({ sections }: Props) {
       const wantPin = !reduced && viewportW >= 900 && stripW > viewportW + 50;
       if (wantPin) {
         const maxTranslate = stripW - viewportW;
-        setOuterHeight(viewportH + maxTranslate);
+        const exitDrift = viewportH * EXIT_DRIFT_VH;
+        setOuterHeight(viewportH + maxTranslate + exitDrift);
         setEnabled(true);
       } else {
         setOuterHeight(null);
@@ -71,17 +261,24 @@ export default function HorizontalTOC({ sections }: Props) {
   }, [sections]);
 
   // Scroll driver: sets strip translateX, sticky background color, dark/light
-  // class, and an "enter" custom prop the tiles use to fade in.
+  // class, an "enter" custom prop the tiles use to fade in, and publishes
+  // window.__wfState for the global WaveField to read.
   useEffect(() => {
     if (!enabled) {
       if (stripRef.current) {
         stripRef.current.style.transform = "";
         stripRef.current.style.removeProperty("--enter");
       }
+      setRailProgress(0);
       if (stickyRef.current) {
         stickyRef.current.style.backgroundColor = sections[0]?.tone ?? "";
         stickyRef.current.classList.remove("htoc__sticky--dark");
       }
+      publishWfState({
+        htocShiftX: 0, htocActive: 0, htocDarkness: 0, htocBounds: null,
+        htocPinOffset: 0, htocWaveShiftX: 0,
+        htocPinStartY: 0, htocMaxTranslate: 0,
+      });
       return;
     }
     let raf = 0;
@@ -97,33 +294,46 @@ export default function HorizontalTOC({ sections }: Props) {
       const stripW = strip.scrollWidth;
       const maxTranslate = stripW - vw;
 
-      // Two-phase scroll mapping:
-      //   Phase 1 (entrance, vh of vertical scroll): the section is scrolling
-      //     up into view. shift-x goes from +vw → 0, so the strip starts off
-      //     the right edge of the viewport and the first tile lands at the
-      //     left edge exactly as the sticky pins.
-      //   Phase 2 (pin, maxTranslate of vertical scroll): shift-x goes from
-      //     0 → -maxTranslate, the normal horizontal-pin behavior.
+      // Scroll → strip shift mapping, smoothed at both corners.
+      //
+      //   1. Entrance      (linear: shift = vw → 0 as scrolled goes 0 → vh)
+      //   2. Floor corner  (cubic Hermite blend over ±cornerW around vh —
+      //                     fillets the kink where the diagonal slide-in
+      //                     meets the horizontal pin)
+      //   3. Pin           (linear: shift = 0 → -maxTranslate)
+      //   4. Exit corner + (cubic Hermite from pin's last bit out to the
+      //      drift tail     final drift end — slope -1 → 0, so the images
+      //                     decelerate smoothly past pin end while
+      //                     continuing to slide left into the section
+      //                     below)
       const startY = outer.offsetTop - vh;
-      const totalScroll = outer.offsetHeight; // vh + maxTranslate
+      const exitDrift = vh * EXIT_DRIFT_VH;
+      const extraShift = vw * 0.35; // leftward drift past -maxTranslate
+      const totalScroll = outer.offsetHeight; // vh + maxTranslate + exitDrift
       const scrolled = Math.min(Math.max(window.scrollY - startY, 0), totalScroll);
 
-      let shiftX: number;
-      if (scrolled <= vh) {
-        // Entrance — speed is vw/vh (typically ~1.6x vertical scroll).
-        const enterP = vh > 0 ? scrolled / vh : 1;
-        shiftX = vw * (1 - enterP);
-      } else {
-        // Pin — 1:1 horizontal to vertical.
-        const pinP = (scrolled - vh) / Math.max(1, maxTranslate);
-        shiftX = -pinP * maxTranslate;
-      }
+      const pinEnd = vh + maxTranslate;
+      // Corner radius (in scrolled units) — capped so it never overruns
+      // a phase on small/tall viewports.
+      const cornerW = Math.max(40, Math.min(vh * 0.15, maxTranslate * 0.08));
+
+      // Strip shift — has all four pieces (entrance, floor corner, pin,
+      // exit corner + drift).
+      const shiftX = stripShiftAt(scrolled, vh, vw, maxTranslate, pinEnd, cornerW, exitDrift, extraShift);
+      // Wave shift — same curve as the strip from the floor corner
+      // onwards, but with the entrance forced to 0. Stops the entrance
+      // hump from pushing the wave pattern right-then-left (which read
+      // visually as a vertical bob), and keeps the wave field stationary
+      // before the gallery pins.
+      const waveShiftX = waveShiftAt(scrolled, vh, maxTranslate, pinEnd, cornerW, exitDrift, extraShift);
       strip.style.setProperty("--shift-x", `${shiftX.toFixed(2)}px`);
 
-      // Overall progress for the rail + opacity ramp.
+      // Overall progress for the rail + opacity ramp. The rail subscribes
+      // via a CSS custom property (no React re-render, no width transition)
+      // so it tracks the scroll in real time without queuing catch-up frames.
       const p = totalScroll > 0 ? scrolled / totalScroll : 0;
       strip.style.setProperty("--enter", String(Math.min(1, p * 6.5)));
-      setProgress(p);
+      setRailProgress(p);
 
       // Active section = whichever section's center is closest to the visible
       // center, in strip coordinates.
@@ -162,11 +372,49 @@ export default function HorizontalTOC({ sections }: Props) {
       }
       const c1 = sections[seg]?.tone ?? "#f1ede3";
       const c2 = sections[Math.min(seg + 1, sections.length - 1)]?.tone ?? c1;
-      sticky.style.backgroundColor = lerpHex(c1, c2, t);
+      const lerped = lerpHex(c1, c2, t);
+      sticky.style.backgroundColor = lerped;
 
       // Dark text mode follows the dominant section.
       const dominantDark = !!sections[best]?.dark;
       sticky.classList.toggle("htoc__sticky--dark", dominantDark);
+
+      // ── Publish state for the global WaveField ────────────────────
+      // htocActive ramps 0→1 around the sticky region so the wave shift
+      // and the tone-darkness influence fade in smoothly rather than
+      // popping the moment the section appears.
+      const r = sticky.getBoundingClientRect();
+      const inView = Math.max(0, Math.min(vh, r.bottom)) - Math.max(0, r.top);
+      const active = Math.max(0, Math.min(1, inView / vh));
+      // 1 - luminance ⇒ darkness factor. Dark backgrounds (Robotics) → 1;
+      // cream backgrounds → ~0. The WaveField does its own smoothstep on
+      // top of this, so we just hand off the raw value.
+      const darkness = 1 - luminanceOf(lerped);
+
+      // Vertical-scroll freeze: while the sticky is pinned the user is
+      // actually scrolling vertically but visually it should read as
+      // *horizontal* motion. pinOffset is the accumulated scroll the
+      // user has spent inside the pin range — clamped to [0, maxTranslate].
+      // The WaveField uses effectiveScrollY = realScrollY - pinOffset, so
+      // during pin the effective value stays at pinStartY (waves freeze),
+      // and after pin it tracks realScrollY again with the pin period
+      // subtracted (no snap at the exit boundary). The exit drift past
+      // pin end intentionally does NOT add to pinOffset — vertical
+      // scrolling should resume the moment the user is past the pin, even
+      // while the horizontal drift continues.
+      const pinStartY = outer.offsetTop;
+      const pinOffset = Math.max(0, Math.min(maxTranslate, window.scrollY - pinStartY));
+
+      publishWfState({
+        htocShiftX: shiftX,
+        htocActive: active,
+        htocDarkness: darkness * active, // only count darkness while on-screen
+        htocBounds: { top: r.top, bottom: r.bottom },
+        htocPinOffset: pinOffset,
+        htocWaveShiftX: waveShiftX,
+        htocPinStartY: pinStartY,
+        htocMaxTranslate: maxTranslate,
+      });
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
@@ -179,114 +427,8 @@ export default function HorizontalTOC({ sections }: Props) {
     };
   }, [enabled, sections]);
 
-  // Ambient wavy-line background for the section. The canvas is the first
-  // child of .htoc__sticky, so it paints behind the tiles + labels (a true
-  // background, not an overlay). Lines drift gently in place — they don't
-  // scroll, since the section is pinned. Stroke colour follows the dominant
-  // tone: pale lines on the dark Robotics section, dark ink elsewhere.
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const canvas = wavesRef.current;
-    const sticky = stickyRef.current;
-    if (!canvas || !sticky) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let W = 0, H = 0, DPR = 1;
-    const resize = () => {
-      DPR = Math.min(window.devicePixelRatio || 1, 2);
-      W = sticky.clientWidth;
-      H = sticky.clientHeight || window.innerHeight;
-      canvas.width = Math.floor(W * DPR);
-      canvas.height = Math.floor(H * DPR);
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    };
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(sticky);
-
-    // Lines spaced down the section. Count + amp pulled live from
-    // window.__wfConfig.horiz (driven by the WaveTuner panel) so we can
-    // sweep parameters interactively.
-    type Line = { yRel: number; amp: number };
-    let lineCfg: Line[] = [];
-    const rebuild = () => {
-      const cfg = (window as any).__wfConfig?.horiz ?? {};
-      const N = Math.max(2, Math.round(cfg.lineCount ?? 5));
-      lineCfg = [];
-      for (let i = 0; i < N; i++) {
-        // Even spacing with a touch of jitter so they don't grid up.
-        const seed = i * 1.61803398;
-        const j = Math.sin(seed * 4.32) * 0.5 + 0.5;
-        const yRel = (i + 0.5) / N + (j - 0.5) * (0.45 / N);
-        const j2 = Math.sin(seed * 2.71) * 0.5 + 0.5;
-        lineCfg.push({ yRel: Math.max(0.05, Math.min(0.95, yRel)), amp: 22 + j2 * 12 });
-      }
-    };
-    rebuild();
-    const waveField = (x: number, y: number, t: number): number => {
-      const a = Math.sin(x * 0.0068 + y * 0.0021 - t * 0.00055);
-      const b = Math.sin(x * 0.0115 - y * 0.0033 - t * 0.00082);
-      const c = Math.sin(x * 0.0043 + y * 0.0012 - t * 0.00040);
-      return a * 0.52 + b * 0.28 + c * 0.30;
-    };
-
-    const onCfgChange = (e: Event) => {
-      const key = (e as CustomEvent).detail?.key as string | undefined;
-      if (key === "horiz.lineCount" || key === "__init") rebuild();
-    };
-    window.addEventListener("wf-config-change", onCfgChange);
-
-    let raf = 0;
-    let alive = true;
-    const draw = () => {
-      if (!alive) return;
-      const now = performance.now();
-      const dark = sticky.classList.contains("htoc__sticky--dark");
-      const cfg = (window as any).__wfConfig?.horiz ?? {};
-      const thickness = cfg.thickness ?? 1.6;
-      const opDark = cfg.opacityDark ?? 0.32;
-      const opLight = cfg.opacityLight ?? 0.10;
-      const speedMul = cfg.naturalSpeed ?? 1;
-      const ampMul = cfg.naturalAmp ?? 1;
-      ctx.clearRect(0, 0, W, H);
-      ctx.strokeStyle = dark
-        ? `rgba(255, 255, 255, ${opDark})`
-        : `rgba(26, 23, 20, ${opLight})`;
-      ctx.lineWidth = thickness;
-      const stepX = 8;
-      const ts = now * speedMul;
-      for (const c of lineCfg) {
-        const baseY = c.yRel * H;
-        ctx.beginPath();
-        for (let x = -20; x <= W + 20; x += stepX) {
-          const y = baseY + c.amp * ampMul * waveField(x, baseY, ts);
-          if (x === -20) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-      raf = requestAnimationFrame(draw);
-    };
-    raf = requestAnimationFrame(draw);
-
-    const onVis = () => {
-      if (document.hidden) {
-        if (raf) cancelAnimationFrame(raf);
-      } else if (alive) {
-        raf = requestAnimationFrame(draw);
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-
-    return () => {
-      alive = false;
-      if (raf) cancelAnimationFrame(raf);
-      ro.disconnect();
-      document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("wf-config-change", onCfgChange);
-    };
-  }, []);
+  // (No internal wave canvas — the global WaveField now paints across this
+  // section too, driven by the wfState we publish from the scroll effect.)
 
   // Click a rail label → solve for the scrollY that lands the section's left
   // edge at the viewport's left edge, then scroll there.
@@ -332,9 +474,7 @@ export default function HorizontalTOC({ sections }: Props) {
       aria-label="Field log — scroll to explore"
     >
       <div ref={stickyRef} className="htoc__sticky" style={{ backgroundColor: sections[0]?.tone }}>
-        {/* Ambient wave background — first child so it paints behind the
-            tiles and labels rather than over them. */}
-        <canvas ref={wavesRef} className="htoc__waves" aria-hidden="true" />
+        {/* (Wave background now comes from the global WaveField — no local canvas.) */}
 
         {/* Top-left small section label */}
         <div className="htoc__corner">
@@ -388,28 +528,98 @@ export default function HorizontalTOC({ sections }: Props) {
           </div>
         </div>
 
-        {/* Bottom rail — orange fill + section labels overlaid on top + counter. */}
-        <div className="htoc__rail-wrap">
-          <div className="htoc__rail">
-            <div
-              className="htoc__rail-fill"
-              style={{ width: `${Math.max(2, progress * 100).toFixed(1)}%` }}
-            />
-            <div className="htoc__rail-labels">
+        {/* Bottom rail — one of five variants picked from the WaveTuner.
+            Progress comes from a CSS custom property (--rail-p) set in the
+            scroll RAF, so the fill paints in lockstep with the scroll. */}
+        <div
+          ref={railRef}
+          className={`htoc__rail-wrap htoc__rail-wrap--${railVariant}`}
+        >
+          {(railVariant === "fat-fixed" || railVariant === "thin-fixed") && (
+            <div className="htoc__rail">
+              <div className="htoc__rail-fill" />
+              <div className="htoc__rail-labels">
+                {sections.map((sec, i) => (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => jumpTo(i)}
+                    className={`htoc__rail-label${i === activeIdx ? " htoc__rail-label--active" : ""}`}
+                    style={{ left: `${((i + 0.5) / sections.length) * 100}%` }}
+                    aria-current={i === activeIdx ? "true" : undefined}
+                  >
+                    {sec.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {railVariant === "line-thread" && (
+            // Inline-flex row of labels separated by line segments. A second,
+            // identical row sits on top in accent colour, clipped from the
+            // left by inset(0 (1-p)*100% 0 0) — so as the user scrolls, the
+            // accent layer wipes over the muted layer continuously, filling
+            // both the line segments and the text in a single sweep.
+            <div className="htoc__thread">
+              <div className="htoc__thread-row htoc__thread-row--muted">
+                {sections.map((sec, i) => (
+                  <React.Fragment key={sec.id}>
+                    {i > 0 && <span className="htoc__thread-seg" aria-hidden="true" />}
+                    <button
+                      type="button"
+                      onClick={() => jumpTo(i)}
+                      className="htoc__thread-lbl"
+                      aria-current={i === activeIdx ? "true" : undefined}
+                    >
+                      {sec.label}
+                    </button>
+                  </React.Fragment>
+                ))}
+              </div>
+              <div className="htoc__thread-row htoc__thread-row--accent" aria-hidden="true">
+                {sections.map((sec, i) => (
+                  <React.Fragment key={sec.id}>
+                    {i > 0 && <span className="htoc__thread-seg" />}
+                    <span className="htoc__thread-lbl">{sec.label}</span>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {railVariant === "active-text" && (
+            <div className="htoc__textrail">
               {sections.map((sec, i) => (
                 <button
                   key={sec.id}
                   type="button"
                   onClick={() => jumpTo(i)}
-                  className={`htoc__rail-label${i === activeIdx ? " htoc__rail-label--active" : ""}`}
-                  style={{ left: `${((i + 0.5) / sections.length) * 100}%` }}
+                  className={`htoc__textrail-lbl${i === activeIdx ? " is-active" : ""}`}
                   aria-current={i === activeIdx ? "true" : undefined}
                 >
                   {sec.label}
                 </button>
               ))}
             </div>
-          </div>
+          )}
+
+          {railVariant === "cumulative-text" && (
+            <div className="htoc__textrail htoc__textrail--cumulative">
+              {sections.map((sec, i) => (
+                <button
+                  key={sec.id}
+                  type="button"
+                  onClick={() => jumpTo(i)}
+                  className={`htoc__textrail-lbl${i <= activeIdx ? " is-passed" : ""}${i === activeIdx ? " is-active" : ""}`}
+                  aria-current={i === activeIdx ? "true" : undefined}
+                >
+                  {sec.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="htoc__counter">
             {String(activeIdx + 1).padStart(2, "0")} / {String(sections.length).padStart(2, "0")}
           </div>
@@ -447,15 +657,7 @@ export default function HorizontalTOC({ sections }: Props) {
           overflow: hidden;
         }
 
-        /* Ambient wave background — absolutely positioned, first child, so it
-           sits behind .htoc__viewport (tiles), .htoc__corner and the rail. */
-        .htoc__waves {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          pointer-events: none;
-        }
+        /* (Removed: .htoc__waves — waves now come from the global WaveField.) */
 
         /* Top-left tiny label */
         .htoc__corner {
@@ -492,9 +694,9 @@ export default function HorizontalTOC({ sections }: Props) {
           display: inline-flex;
           align-items: center;
           will-change: transform, opacity;
-          /* JS sets --shift-x (px) and --enter (0..1). Horizontal motion runs
-             throughout the section's scroll, so the entrance is mostly the
-             quick opacity ramp + a small upward slide. */
+          /* JS sets --shift-x (px) and --enter (0..1). Horizontal motion
+             runs throughout the whole section scroll, so the entrance is
+             mostly the quick opacity ramp + a small upward slide. */
           transform: translate3d(var(--shift-x, 0px), calc((1 - var(--enter, 0)) * 40px), 0);
           opacity: var(--enter, 0);
         }
@@ -537,7 +739,12 @@ export default function HorizontalTOC({ sections }: Props) {
           transition: color .35s ease;
         }
 
-        /* Bottom rail with overlaid labels */
+        /* ── Bottom rail ────────────────────────────────────────────────
+           One container, five variant skins. Progress comes from --rail-p
+           (0..1) which the scroll RAF writes to the wrap element directly,
+           so the fill paints in lockstep with the scroll. No CSS width
+           transitions anywhere — those queue catch-up frames and made the
+           old rail visibly lag and step. */
         .htoc__rail-wrap {
           position: absolute;
           left: 0;
@@ -549,20 +756,42 @@ export default function HorizontalTOC({ sections }: Props) {
           align-items: center;
           z-index: 3;
         }
-        .htoc__rail {
+
+        /* ▸ Variant A — fat bar (current style, lag-free) */
+        .htoc__rail-wrap--fat-fixed .htoc__rail {
           flex: 1;
           position: relative;
           height: 36px;
           background: rgba(26,23,20,0.10);
           transition: background-color .35s ease;
         }
+        /* ▸ Variant B — thin bar, centered, narrower */
+        .htoc__rail-wrap--thin-fixed { justify-content: center; }
+        .htoc__rail-wrap--thin-fixed .htoc__rail {
+          flex: 0 1 min(720px, 80%);
+          position: relative;
+          height: 6px;
+          border-radius: 3px;
+          background: rgba(26,23,20,0.12);
+          transition: background-color .35s ease;
+        }
+        .htoc__rail-wrap--thin-fixed .htoc__rail-fill { border-radius: inherit; }
+        .htoc__rail-wrap--thin-fixed .htoc__rail-label {
+          /* Move labels off the thin bar so they don't overlap a 6px strip. */
+          top: -22px;
+          font-size: 10px;
+          padding: 2px 6px;
+        }
+
+        /* Shared fill — width comes from --rail-p, no transition. */
         .htoc__rail-fill {
           position: absolute;
           left: 0;
           top: 0;
           bottom: 0;
           background: var(--accent);
-          transition: width .12s linear;
+          width: calc(max(var(--rail-p, 0), 0.02) * 100%);
+          transition: none;
         }
         .htoc__rail-labels {
           position: absolute;
@@ -591,6 +820,100 @@ export default function HorizontalTOC({ sections }: Props) {
           color: var(--accent-ink);
           font-weight: 700;
         }
+
+        /* ▸ Variant C — line + text fills L→R.
+           Two stacked rows: muted (always visible) and accent (clipped from
+           the right by inset(0 (1-p)*100% 0 0)). The accent layer wipes over
+           the muted one as scroll progresses, sweeping a single orange tide
+           across both the line segments and the text in one continuous pass. */
+        .htoc__rail-wrap--line-thread { padding: 0 var(--page-pad); }
+        .htoc__thread {
+          flex: 1;
+          position: relative;
+          height: 28px;
+        }
+        .htoc__thread-row {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-family: var(--font-mono);
+          font-size: 11px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+        .htoc__thread-row--muted { color: var(--ink-mute); }
+        .htoc__thread-row--accent {
+          color: var(--accent);
+          pointer-events: none;
+          /* Wipe-from-left clip driven by --rail-p. */
+          clip-path: inset(0 calc((1 - var(--rail-p, 0)) * 100%) 0 0);
+          -webkit-clip-path: inset(0 calc((1 - var(--rail-p, 0)) * 100%) 0 0);
+        }
+        .htoc__thread-row--accent .htoc__thread-seg { background: var(--accent); }
+        .htoc__thread-row--muted  .htoc__thread-seg { background: rgba(26,23,20,0.18); }
+        .htoc__thread-seg {
+          flex: 1;
+          height: 1px;
+          min-width: 24px;
+        }
+        .htoc__thread-lbl {
+          flex: 0 0 auto;
+          background: transparent;
+          border: 0;
+          padding: 4px 10px;
+          cursor: pointer;
+          color: inherit;
+          font: inherit;
+          letter-spacing: inherit;
+          text-transform: inherit;
+        }
+        .htoc__thread-row--muted .htoc__thread-lbl:hover { color: var(--accent); }
+
+        /* ▸ Variants D & E — text-only rails.
+           D (active-text):     only the current label is in accent.
+           E (cumulative-text): every label up to and including the current
+                                one is in accent, painted in section steps. */
+        .htoc__textrail {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 0 4px;
+        }
+        .htoc__textrail-lbl {
+          flex: 0 1 auto;
+          background: transparent;
+          border: 0;
+          padding: 4px 10px;
+          cursor: pointer;
+          font-family: var(--font-mono);
+          font-size: 11px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          font-weight: 500;
+          color: var(--ink-mute);
+          white-space: nowrap;
+          transition: color .2s ease, font-weight .15s;
+        }
+        .htoc__textrail-lbl:hover { color: var(--accent); }
+        .htoc__textrail-lbl.is-active { color: var(--accent); font-weight: 700; }
+        .htoc__textrail--cumulative .htoc__textrail-lbl.is-passed { color: var(--accent); }
+        .htoc__textrail--cumulative .htoc__textrail-lbl.is-active { font-weight: 700; }
+
+        /* Dark-section variants of the new rails. The active / passed
+           selectors carry the same class-count as the dark override, so
+           they need to come AFTER it to win — they're declared here in
+           the right order. */
+        .htoc__sticky--dark .htoc__thread-row--muted { color: var(--dark-mute); }
+        .htoc__sticky--dark .htoc__thread-row--muted .htoc__thread-seg { background: rgba(255,255,255,0.18); }
+        .htoc__sticky--dark .htoc__textrail-lbl { color: var(--dark-mute); }
+        .htoc__sticky--dark .htoc__textrail-lbl.is-active { color: var(--accent); }
+        .htoc__sticky--dark .htoc__textrail--cumulative .htoc__textrail-lbl.is-passed { color: var(--accent); }
         .htoc__counter {
           font-family: var(--font-mono);
           font-size: 12px;

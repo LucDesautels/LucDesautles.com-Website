@@ -28,13 +28,23 @@ const transitionSliders: Slider[] = [
   { key: "transition.densityToDark", label: "DENSITY → DARK",  min: 0,   max: 2,    step: 0.05, value: 1,    fmt: "2dp" },
   { key: "transition.colorFlip",     label: "COLOR FLIP Y",    min: 0.5, max: 0.95, step: 0.01, value: 0.78, fmt: "2dp" },
 ];
+// The horizontal-scroll waves now share the global WaveField — so the
+// "structural" sliders (line count, thickness, drift speed, amplitude)
+// live in MAIN. What stays here are the controls that only matter when the
+// htoc region is on screen: the dark/light stroke opacities and the
+// smoothstep window that softens the dark↔light transition.
 const horizSliders: Slider[] = [
-  { key: "horiz.lineCount",    label: "LINE COUNT",        min: 3,   max: 10, step: 1,    value: 5,    fmt: "int" },
-  { key: "horiz.thickness",    label: "THICKNESS",         min: 0.5, max: 4,  step: 0.1,  value: 1.6,  fmt: "1dp" },
-  { key: "horiz.opacityDark",  label: "OPACITY (DARK)",    min: 0,   max: 1,  step: 0.02, value: 0.32, fmt: "2dp" },
-  { key: "horiz.opacityLight", label: "OPACITY (LIGHT)",   min: 0,   max: 1,  step: 0.02, value: 0.10, fmt: "2dp" },
-  { key: "horiz.naturalSpeed", label: "DRIFT SPEED ×",     min: 0,   max: 3,  step: 0.05, value: 1,    fmt: "2dp" },
-  { key: "horiz.naturalAmp",   label: "AMPLITUDE ×",       min: 0,   max: 3,  step: 0.05, value: 1,    fmt: "2dp" },
+  { key: "horiz.opacityDark",  label: "OPACITY (DARK)",     min: 0,   max: 1,  step: 0.02, value: 0.32, fmt: "2dp" },
+  { key: "horiz.opacityLight", label: "OPACITY (LIGHT)",    min: 0,   max: 1,  step: 0.02, value: 0.22, fmt: "2dp" },
+  { key: "horiz.fadeStart",    label: "FADE START (DARK)",  min: 0,   max: 1,  step: 0.01, value: 0.25, fmt: "2dp" },
+  { key: "horiz.fadeEnd",      label: "FADE END (DARK)",    min: 0,   max: 1,  step: 0.01, value: 0.65, fmt: "2dp" },
+  // Scales how aggressively the wave field tracks horizontal scroll. At
+  // 1.0 the wave pattern shifts 1:1 with the gallery — which makes any
+  // single point on screen sweep through ~6 wave cycles per pin scroll,
+  // perceived as a high-frequency vertical jitter. Lower values keep
+  // the direction-of-motion link without the jitter. 0 = wave field
+  // stationary horizontally, 1 = full 1:1 with the gallery.
+  { key: "horiz.shiftScale",   label: "WAVE SHIFT × SCROLL",min: 0,   max: 1,  step: 0.02, value: 0.4,  fmt: "2dp" },
 ];
 function imgSliders(side: "left" | "right", defaults: { rot: number }): Slider[] {
   return [
@@ -59,37 +69,17 @@ function fmt(v: number, f: Slider["fmt"]) {
     <button class="wf-tab is-active" data-tab-btn="main"       type="button" role="tab" aria-selected="true">main</button>
     <button class="wf-tab"           data-tab-btn="transition" type="button" role="tab" aria-selected="false">transition</button>
     <button class="wf-tab"           data-tab-btn="horiz"      type="button" role="tab" aria-selected="false">horizontal</button>
+    <button class="wf-tab"           data-tab-btn="rail"       type="button" role="tab" aria-selected="false">rail</button>
+    <button class="wf-tab"           data-tab-btn="scroll"     type="button" role="tab" aria-selected="false">scroll</button>
     <button class="wf-tab"           data-tab-btn="images"     type="button" role="tab" aria-selected="false">images</button>
   </div>
 
   <div class="wf-tuner__body">
 
     <!-- ── MAIN TAB ─────────────────────────────────────────────── -->
+    <!-- Hover/click pills removed: drape is the only hover mode, droplet
+         (expanding ring + radial line push) is the only click mode. -->
     <div class="wf-tab-panel is-active" data-tab-panel="main" role="tabpanel">
-      <div class="wf-row">
-        <div class="wf-label">HOVER</div>
-        <div class="wf-pills" data-wf-pills="main.hoverMode">
-          <button class="wf-pill"           data-pill="push"   type="button">push</button>
-          <button class="wf-pill is-active" data-pill="drape"  type="button">drape</button>
-          <button class="wf-pill"           data-pill="vortex" type="button">vortex</button>
-          <button class="wf-pill"           data-pill="wake"   type="button">wake</button>
-          <button class="wf-pill"           data-pill="sway"   type="button">sway</button>
-        </div>
-      </div>
-      <div class="wf-row">
-        <div class="wf-label">CLICK</div>
-        <div class="wf-pills" data-wf-pills="main.clickMode">
-          <button class="wf-pill is-active" data-pill="drop"  type="button">drop</button>
-          <button class="wf-pill"           data-pill="slow"  type="button">slow</button>
-          <button class="wf-pill"           data-pill="wide"  type="button">wide</button>
-          <button class="wf-pill"           data-pill="tight" type="button">tight</button>
-          <button class="wf-pill"           data-pill="ring"  type="button">ring</button>
-          <button class="wf-pill"           data-pill="shove" type="button">shove</button>
-          <button class="wf-pill"           data-pill="trail" type="button">trail</button>
-          <button class="wf-pill"           data-pill="multi" type="button">multi</button>
-          <button class="wf-pill"           data-pill="burst" type="button">burst</button>
-        </div>
-      </div>
       {mainSliders.map((s) => (
         <div class="wf-slider" data-slider>
           <label class="wf-label">{s.label} <span data-readout>{fmt(s.value, s.fmt)}</span></label>
@@ -130,6 +120,41 @@ function fmt(v: number, f: Slider["fmt"]) {
           <input type="range" min={s.min} max={s.max} step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} />
         </div>
       ))}
+    </div>
+
+    <!-- ── RAIL TAB ─────────────────────────────────────────────── -->
+    <!-- The bottom progress rail in the HorizontalTOC. Five variants to
+         try out — all of them update via a CSS custom property in the
+         scroll RAF (no width transition, no React re-render per frame),
+         so none of them should lag behind the scroll. -->
+    <div class="wf-tab-panel" data-tab-panel="rail" role="tabpanel" hidden>
+      <div class="wf-row">
+        <div class="wf-label">VARIANT</div>
+        <div class="wf-pills wf-pills--stack" data-wf-pills="rail.variant">
+          <button class="wf-pill is-active" data-pill="fat-fixed"        type="button">fat bar (full width)</button>
+          <button class="wf-pill"           data-pill="thin-fixed"       type="button">thin bar (centered)</button>
+          <button class="wf-pill"           data-pill="line-thread"      type="button">line + text fills L→R</button>
+          <button class="wf-pill"           data-pill="active-text"      type="button">just text, active in accent</button>
+          <button class="wf-pill"           data-pill="cumulative-text"  type="button">just text, fills section-by-section</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCROLL TAB ───────────────────────────────────────────── -->
+    <!-- Live-swappable scroll modes. SmoothScroll.astro tears down + reinstates
+         Lenis when the mode changes, so you can A/B feel between presets
+         without reloading. `native` is the browser's own scroll. -->
+    <div class="wf-tab-panel" data-tab-panel="scroll" role="tabpanel" hidden>
+      <div class="wf-row">
+        <div class="wf-label">MODE</div>
+        <div class="wf-pills wf-pills--stack" data-wf-pills="scroll.mode">
+          <button class="wf-pill"           data-pill="native"   type="button">native (no Lenis)</button>
+          <button class="wf-pill"           data-pill="subtle"   type="button">subtle (very light)</button>
+          <button class="wf-pill is-active" data-pill="default"  type="button">default (Lenis original)</button>
+          <button class="wf-pill"           data-pill="soft"     type="button">soft (slow + glide-y)</button>
+          <button class="wf-pill"           data-pill="snappy"   type="button">snappy (short + sharp)</button>
+        </div>
+      </div>
     </div>
 
     <!-- ── IMAGES TAB ───────────────────────────────────────────── -->
@@ -181,8 +206,6 @@ function fmt(v: number, f: Slider["fmt"]) {
       naturalSpeed: 1.0,
       naturalAmp: 1.0,
       cursorReact: 1.0,
-      hoverMode: "drape",
-      clickMode: "drop",
       zoom: 1.0,
     },
     transition: {
@@ -198,12 +221,21 @@ function fmt(v: number, f: Slider["fmt"]) {
       colorFlip: 0.78,
     },
     horiz: {
-      lineCount: 5,
-      thickness: 1.6,
       opacityDark: 0.32,
-      opacityLight: 0.10,
-      naturalSpeed: 1.0,
-      naturalAmp: 1.0,
+      opacityLight: 0.22,
+      fadeStart: 0.25,
+      fadeEnd: 0.65,
+      shiftScale: 0.4,
+    },
+    rail: {
+      // HorizontalTOC subscribes to wf-config-change and swaps its rail
+      // markup based on this value. See WaveTuner.astro RAIL TAB.
+      variant: "fat-fixed" as
+        "fat-fixed" | "thin-fixed" | "line-thread" | "active-text" | "cumulative-text",
+    },
+    scroll: {
+      // SmoothScroll.astro destroys + recreates Lenis when this changes.
+      mode: "default" as "native" | "subtle" | "default" | "soft" | "snappy",
     },
     images: {
       left:  { x: 0, y: 0, rot: 225, scale: 1.0, mirrorH: false, mirrorV: false },
@@ -458,6 +490,10 @@ function fmt(v: number, f: Slider["fmt"]) {
   }
   .wf-label span { color: #f4ede2; font-weight: 600; }
   .wf-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+  /* For long, sentence-style pill labels (e.g. rail variants) — stack them
+     in a single column so each option is one tap target on its own line. */
+  .wf-pills--stack { flex-direction: column; align-items: stretch; }
+  .wf-pills--stack .wf-pill { text-align: left; }
   .wf-pill {
     padding: 4px 8px;
     background: transparent;

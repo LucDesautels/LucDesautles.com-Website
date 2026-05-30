@@ -1,53 +1,133 @@
 ---
-// Lenis smooth scroll. Drives a RAF loop that interpolates window.scrollY,
-// so existing scroll listeners (TopBar, WaveField) and IntersectionObservers
-// keep working as-is. Lenis is exposed on window so programmatic scrolls
-// (filters.ts) can animate through the same loop. Disables itself under
-// prefers-reduced-motion. Horizontal scrollers opt out with
-// `data-lenis-prevent` on the scroller element.
+// Lenis smooth scroll, with a runtime mode selector. The WaveTuner publishes
+// the chosen mode on window.__wfConfig.scroll.mode and fires a
+// "wf-config-change" event; we destroy + reinstate Lenis with the new preset
+// when that fires so the user can A/B feel between presets without reloading.
+//
+// Modes:
+//   native   — Lenis disabled, browser-native scroll.
+//   subtle   — short smoothing, almost native (good if Lenis "lag" annoys).
+//   default  — original feel (Lenis with the duration/easing we shipped).
+//   soft     — longer smoothing, very glide-y.
+//   snappy   — shorter smoothing, sharper response, no glide.
+//
+// Lenis suppresses native scroll events while animating, so we re-fire them
+// for listeners that read window.scrollY on the native event (TopBar). The
+// Lenis instance is exposed on window so programmatic scrolls (filters.ts,
+// HorizontalTOC jumpTo) can animate through the same loop.
+//
+// Reduced-motion users always get native scroll — we never instantiate Lenis.
 ---
 
 <script>
   import Lenis from "lenis";
 
+  type ScrollMode = "native" | "subtle" | "default" | "soft" | "snappy";
+
   declare global {
     interface Window {
       lenis?: Lenis;
+      __wfConfig?: any;
     }
   }
 
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  if (!reduceMotion) {
-    const lenis = new Lenis({
+  // Preset options for each mode. `null` means "no Lenis, use native scroll".
+  type LenisOpts = ConstructorParameters<typeof Lenis>[0];
+  const PRESETS: Record<ScrollMode, LenisOpts | null> = {
+    native: null,
+    subtle: {
+      duration: 0.5,
+      easing: (t: number) => 1 - Math.pow(1 - t, 3),
+      smoothWheel: true,
+      syncTouch: false,
+    },
+    default: {
       duration: 1.1,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      // Touch devices keep native scroll — Lenis on touch tends to feel laggy
-      // and breaks momentum scrolling.
       syncTouch: false,
-    });
+    },
+    soft: {
+      duration: 1.6,
+      easing: (t: number) => 1 - Math.pow(1 - t, 4),
+      smoothWheel: true,
+      syncTouch: false,
+    },
+    snappy: {
+      duration: 0.75,
+      easing: (t: number) => 1 - Math.pow(1 - t, 2.2),
+      smoothWheel: true,
+      syncTouch: false,
+    },
+  };
 
+  let lenis: Lenis | null = null;
+  let rafHandle = 0;
+  let currentMode: ScrollMode | null = null;
+
+  function rafLoop(time: number) {
+    lenis?.raf(time);
+    rafHandle = requestAnimationFrame(rafLoop);
+  }
+
+  function applyMode(mode: ScrollMode) {
+    if (mode === currentMode) return;
+    currentMode = mode;
+
+    // Tear down the old instance first — keeps the RAF loop owning at most
+    // one Lenis at a time so callbacks can't double-fire during the swap.
+    if (lenis) {
+      lenis.destroy();
+      lenis = null;
+    }
+    if (rafHandle) {
+      cancelAnimationFrame(rafHandle);
+      rafHandle = 0;
+    }
+
+    const opts = PRESETS[mode];
+    if (!opts) {
+      // Native mode — Lenis stays uninstalled, listeners on window.scrollY
+      // get the browser's events as normal.
+      delete window.lenis;
+      return;
+    }
+
+    lenis = new Lenis(opts);
     window.lenis = lenis;
-
-    // Lenis suppresses native scroll events while it's animating so it stays
-    // the single source of truth. Re-fire them so listeners that read
-    // window.scrollY on the native event (TopBar) keep working without
-    // needing to know Lenis exists.
+    // Re-fire native-style scroll events so non-Lenis consumers (TopBar,
+    // WaveField, HorizontalTOC's scroll RAF) keep working.
     lenis.on("scroll", () => {
       window.dispatchEvent(new Event("scroll"));
     });
+    rafHandle = requestAnimationFrame(rafLoop);
+  }
 
-    let rafHandle = 0;
-    const raf = (time: number) => {
-      lenis.raf(time);
-      rafHandle = requestAnimationFrame(raf);
-    };
-    rafHandle = requestAnimationFrame(raf);
+  function pickMode(): ScrollMode {
+    const m = window.__wfConfig?.scroll?.mode as ScrollMode | undefined;
+    return m && m in PRESETS ? m : "default";
+  }
 
-    window.addEventListener("beforeunload", () => {
-      cancelAnimationFrame(rafHandle);
-      lenis.destroy();
+  if (REDUCED) {
+    // Always native under reduced-motion. We don't bother wiring up the
+    // config listener — the user explicitly opted out of animation.
+    currentMode = "native";
+  } else {
+    // Initial mount uses whatever's in __wfConfig (the WaveTuner hydrates
+    // its defaults before our first read because both scripts run on
+    // DOMContentLoaded; if we're earlier, we get "default" and the
+    // wf-config-change __init event swaps us into the saved choice).
+    applyMode(pickMode());
+    window.addEventListener("wf-config-change", (e) => {
+      const key = (e as CustomEvent).detail?.key;
+      if (key === "scroll.mode" || key === "__init") applyMode(pickMode());
     });
   }
+
+  window.addEventListener("beforeunload", () => {
+    if (rafHandle) cancelAnimationFrame(rafHandle);
+    lenis?.destroy();
+  });
 </script>
