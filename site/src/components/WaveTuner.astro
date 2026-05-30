@@ -62,6 +62,7 @@ function fmt(v: number, f: Slider["fmt"]) {
     <button class="wf-tab is-active" data-tab-btn="main"       type="button" role="tab" aria-selected="true">main</button>
     <button class="wf-tab"           data-tab-btn="transition" type="button" role="tab" aria-selected="false">transition</button>
     <button class="wf-tab"           data-tab-btn="horiz"      type="button" role="tab" aria-selected="false">horizontal</button>
+    <button class="wf-tab"           data-tab-btn="rail"       type="button" role="tab" aria-selected="false">rail</button>
     <button class="wf-tab"           data-tab-btn="images"     type="button" role="tab" aria-selected="false">images</button>
   </div>
 
@@ -111,6 +112,24 @@ function fmt(v: number, f: Slider["fmt"]) {
           <input type="range" min={s.min} max={s.max} step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} />
         </div>
       ))}
+    </div>
+
+    <!-- ── RAIL TAB ─────────────────────────────────────────────── -->
+    <!-- The bottom progress rail in the HorizontalTOC. Five variants to
+         try out — all of them update via a CSS custom property in the
+         scroll RAF (no width transition, no React re-render per frame),
+         so none of them should lag behind the scroll. -->
+    <div class="wf-tab-panel" data-tab-panel="rail" role="tabpanel" hidden>
+      <div class="wf-row">
+        <div class="wf-label">VARIANT</div>
+        <div class="wf-pills wf-pills--stack" data-wf-pills="rail.variant">
+          <button class="wf-pill is-active" data-pill="fat-fixed"        type="button">fat bar (full width)</button>
+          <button class="wf-pill"           data-pill="thin-fixed"       type="button">thin bar (centered)</button>
+          <button class="wf-pill"           data-pill="line-thread"      type="button">line + text fills L→R</button>
+          <button class="wf-pill"           data-pill="active-text"      type="button">just text, active in accent</button>
+          <button class="wf-pill"           data-pill="cumulative-text"  type="button">just text, fills section-by-section</button>
+        </div>
+      </div>
     </div>
 
     <!-- ── IMAGES TAB ───────────────────────────────────────────── -->
@@ -181,6 +200,12 @@ function fmt(v: number, f: Slider["fmt"]) {
       opacityLight: 0.22,
       fadeStart: 0.25,
       fadeEnd: 0.65,
+    },
+    rail: {
+      // HorizontalTOC subscribes to wf-config-change and swaps its rail
+      // markup based on this value. See WaveTuner.astro RAIL TAB.
+      variant: "fat-fixed" as
+        "fat-fixed" | "thin-fixed" | "line-thread" | "active-text" | "cumulative-text",
     },
     images: {
       left:  { x: 0, y: 0, rot: 225, scale: 1.0, mirrorH: false, mirrorV: false },
@@ -435,6 +460,10 @@ function fmt(v: number, f: Slider["fmt"]) {
   }
   .wf-label span { color: #f4ede2; font-weight: 600; }
   .wf-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+  /* For long, sentence-style pill labels (e.g. rail variants) — stack them
+     in a single column so each option is one tap target on its own line. */
+  .wf-pills--stack { flex-direction: column; align-items: stretch; }
+  .wf-pills--stack .wf-pill { text-align: left; }
   .wf-pill {
     padding: 4px 8px;
     background: transparent;

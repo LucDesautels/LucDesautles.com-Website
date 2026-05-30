@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { TocSection } from "@/data/content";
 
 interface Props { sections: TocSection[]; }
@@ -77,15 +77,50 @@ function lerpHex(a: string, b: string, t: number): string {
   return `rgb(${r},${g},${bl})`;
 }
 
+type RailVariant =
+  | "fat-fixed"
+  | "thin-fixed"
+  | "line-thread"
+  | "active-text"
+  | "cumulative-text";
+
 export default function HorizontalTOC({ sections }: Props) {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const stickyRef = useRef<HTMLDivElement | null>(null);
   const stripRef = useRef<HTMLDivElement | null>(null);
+  const railRef = useRef<HTMLDivElement | null>(null);
 
   const [activeIdx, setActiveIdx] = useState(0);
-  const [progress, setProgress] = useState(0);
   const [outerHeight, setOuterHeight] = useState<number | null>(null);
   const [enabled, setEnabled] = useState(false);
+  const [railVariant, setRailVariant] = useState<RailVariant>("fat-fixed");
+
+  // The bottom rail's progress used to live in React state, which forced a
+  // re-render every scroll frame and then queued a CSS width transition on
+  // top of that. Result: the orange fill catch-up was visibly behind the
+  // scroll and stuttered in steps. We now write progress directly onto a
+  // CSS custom property on the rail element each scroll frame — no React
+  // re-render, no CSS transition — so the fill stays in lockstep.
+  const setRailProgress = (p: number) => {
+    railRef.current?.style.setProperty("--rail-p", p.toFixed(4));
+  };
+
+  // Pick the rail variant from the live WaveTuner config (window.__wfConfig
+  // .rail.variant). Updates fire only when the user toggles it, so there
+  // is no per-frame React cost.
+  useEffect(() => {
+    const pick = () => {
+      const v = (window as any).__wfConfig?.rail?.variant as RailVariant | undefined;
+      if (v) setRailVariant(v);
+    };
+    pick();
+    const handler = (e: Event) => {
+      const k = (e as CustomEvent).detail?.key as string | undefined;
+      if (k === "rail.variant" || k === "__init") pick();
+    };
+    window.addEventListener("wf-config-change", handler);
+    return () => window.removeEventListener("wf-config-change", handler);
+  }, []);
 
   // Measure on mount + on resize. Decide whether to enable the scroll-jack.
   useLayoutEffect(() => {
@@ -125,6 +160,7 @@ export default function HorizontalTOC({ sections }: Props) {
         stripRef.current.style.transform = "";
         stripRef.current.style.removeProperty("--enter");
       }
+      setRailProgress(0);
       if (stickyRef.current) {
         stickyRef.current.style.backgroundColor = sections[0]?.tone ?? "";
         stickyRef.current.classList.remove("htoc__sticky--dark");
@@ -171,10 +207,12 @@ export default function HorizontalTOC({ sections }: Props) {
       }
       strip.style.setProperty("--shift-x", `${shiftX.toFixed(2)}px`);
 
-      // Overall progress for the rail + opacity ramp.
+      // Overall progress for the rail + opacity ramp. The rail subscribes
+      // via a CSS custom property (no React re-render, no width transition)
+      // so it tracks the scroll in real time without queuing catch-up frames.
       const p = totalScroll > 0 ? scrolled / totalScroll : 0;
       strip.style.setProperty("--enter", String(Math.min(1, p * 6.5)));
-      setProgress(p);
+      setRailProgress(p);
 
       // Active section = whichever section's center is closest to the visible
       // center, in strip coordinates.
@@ -363,28 +401,98 @@ export default function HorizontalTOC({ sections }: Props) {
           </div>
         </div>
 
-        {/* Bottom rail — orange fill + section labels overlaid on top + counter. */}
-        <div className="htoc__rail-wrap">
-          <div className="htoc__rail">
-            <div
-              className="htoc__rail-fill"
-              style={{ width: `${Math.max(2, progress * 100).toFixed(1)}%` }}
-            />
-            <div className="htoc__rail-labels">
+        {/* Bottom rail — one of five variants picked from the WaveTuner.
+            Progress comes from a CSS custom property (--rail-p) set in the
+            scroll RAF, so the fill paints in lockstep with the scroll. */}
+        <div
+          ref={railRef}
+          className={`htoc__rail-wrap htoc__rail-wrap--${railVariant}`}
+        >
+          {(railVariant === "fat-fixed" || railVariant === "thin-fixed") && (
+            <div className="htoc__rail">
+              <div className="htoc__rail-fill" />
+              <div className="htoc__rail-labels">
+                {sections.map((sec, i) => (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => jumpTo(i)}
+                    className={`htoc__rail-label${i === activeIdx ? " htoc__rail-label--active" : ""}`}
+                    style={{ left: `${((i + 0.5) / sections.length) * 100}%` }}
+                    aria-current={i === activeIdx ? "true" : undefined}
+                  >
+                    {sec.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {railVariant === "line-thread" && (
+            // Inline-flex row of labels separated by line segments. A second,
+            // identical row sits on top in accent colour, clipped from the
+            // left by inset(0 (1-p)*100% 0 0) — so as the user scrolls, the
+            // accent layer wipes over the muted layer continuously, filling
+            // both the line segments and the text in a single sweep.
+            <div className="htoc__thread">
+              <div className="htoc__thread-row htoc__thread-row--muted">
+                {sections.map((sec, i) => (
+                  <React.Fragment key={sec.id}>
+                    {i > 0 && <span className="htoc__thread-seg" aria-hidden="true" />}
+                    <button
+                      type="button"
+                      onClick={() => jumpTo(i)}
+                      className="htoc__thread-lbl"
+                      aria-current={i === activeIdx ? "true" : undefined}
+                    >
+                      {sec.label}
+                    </button>
+                  </React.Fragment>
+                ))}
+              </div>
+              <div className="htoc__thread-row htoc__thread-row--accent" aria-hidden="true">
+                {sections.map((sec, i) => (
+                  <React.Fragment key={sec.id}>
+                    {i > 0 && <span className="htoc__thread-seg" />}
+                    <span className="htoc__thread-lbl">{sec.label}</span>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {railVariant === "active-text" && (
+            <div className="htoc__textrail">
               {sections.map((sec, i) => (
                 <button
                   key={sec.id}
                   type="button"
                   onClick={() => jumpTo(i)}
-                  className={`htoc__rail-label${i === activeIdx ? " htoc__rail-label--active" : ""}`}
-                  style={{ left: `${((i + 0.5) / sections.length) * 100}%` }}
+                  className={`htoc__textrail-lbl${i === activeIdx ? " is-active" : ""}`}
                   aria-current={i === activeIdx ? "true" : undefined}
                 >
                   {sec.label}
                 </button>
               ))}
             </div>
-          </div>
+          )}
+
+          {railVariant === "cumulative-text" && (
+            <div className="htoc__textrail htoc__textrail--cumulative">
+              {sections.map((sec, i) => (
+                <button
+                  key={sec.id}
+                  type="button"
+                  onClick={() => jumpTo(i)}
+                  className={`htoc__textrail-lbl${i <= activeIdx ? " is-passed" : ""}${i === activeIdx ? " is-active" : ""}`}
+                  aria-current={i === activeIdx ? "true" : undefined}
+                >
+                  {sec.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="htoc__counter">
             {String(activeIdx + 1).padStart(2, "0")} / {String(sections.length).padStart(2, "0")}
           </div>
@@ -504,7 +612,12 @@ export default function HorizontalTOC({ sections }: Props) {
           transition: color .35s ease;
         }
 
-        /* Bottom rail with overlaid labels */
+        /* ── Bottom rail ────────────────────────────────────────────────
+           One container, five variant skins. Progress comes from --rail-p
+           (0..1) which the scroll RAF writes to the wrap element directly,
+           so the fill paints in lockstep with the scroll. No CSS width
+           transitions anywhere — those queue catch-up frames and made the
+           old rail visibly lag and step. */
         .htoc__rail-wrap {
           position: absolute;
           left: 0;
@@ -516,20 +629,42 @@ export default function HorizontalTOC({ sections }: Props) {
           align-items: center;
           z-index: 3;
         }
-        .htoc__rail {
+
+        /* ▸ Variant A — fat bar (current style, lag-free) */
+        .htoc__rail-wrap--fat-fixed .htoc__rail {
           flex: 1;
           position: relative;
           height: 36px;
           background: rgba(26,23,20,0.10);
           transition: background-color .35s ease;
         }
+        /* ▸ Variant B — thin bar, centered, narrower */
+        .htoc__rail-wrap--thin-fixed { justify-content: center; }
+        .htoc__rail-wrap--thin-fixed .htoc__rail {
+          flex: 0 1 min(720px, 80%);
+          position: relative;
+          height: 6px;
+          border-radius: 3px;
+          background: rgba(26,23,20,0.12);
+          transition: background-color .35s ease;
+        }
+        .htoc__rail-wrap--thin-fixed .htoc__rail-fill { border-radius: inherit; }
+        .htoc__rail-wrap--thin-fixed .htoc__rail-label {
+          /* Move labels off the thin bar so they don't overlap a 6px strip. */
+          top: -22px;
+          font-size: 10px;
+          padding: 2px 6px;
+        }
+
+        /* Shared fill — width comes from --rail-p, no transition. */
         .htoc__rail-fill {
           position: absolute;
           left: 0;
           top: 0;
           bottom: 0;
           background: var(--accent);
-          transition: width .12s linear;
+          width: calc(max(var(--rail-p, 0), 0.02) * 100%);
+          transition: none;
         }
         .htoc__rail-labels {
           position: absolute;
@@ -558,6 +693,100 @@ export default function HorizontalTOC({ sections }: Props) {
           color: var(--accent-ink);
           font-weight: 700;
         }
+
+        /* ▸ Variant C — line + text fills L→R.
+           Two stacked rows: muted (always visible) and accent (clipped from
+           the right by inset(0 (1-p)*100% 0 0)). The accent layer wipes over
+           the muted one as scroll progresses, sweeping a single orange tide
+           across both the line segments and the text in one continuous pass. */
+        .htoc__rail-wrap--line-thread { padding: 0 var(--page-pad); }
+        .htoc__thread {
+          flex: 1;
+          position: relative;
+          height: 28px;
+        }
+        .htoc__thread-row {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-family: var(--font-mono);
+          font-size: 11px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          font-weight: 500;
+          white-space: nowrap;
+        }
+        .htoc__thread-row--muted { color: var(--ink-mute); }
+        .htoc__thread-row--accent {
+          color: var(--accent);
+          pointer-events: none;
+          /* Wipe-from-left clip driven by --rail-p. */
+          clip-path: inset(0 calc((1 - var(--rail-p, 0)) * 100%) 0 0);
+          -webkit-clip-path: inset(0 calc((1 - var(--rail-p, 0)) * 100%) 0 0);
+        }
+        .htoc__thread-row--accent .htoc__thread-seg { background: var(--accent); }
+        .htoc__thread-row--muted  .htoc__thread-seg { background: rgba(26,23,20,0.18); }
+        .htoc__thread-seg {
+          flex: 1;
+          height: 1px;
+          min-width: 24px;
+        }
+        .htoc__thread-lbl {
+          flex: 0 0 auto;
+          background: transparent;
+          border: 0;
+          padding: 4px 10px;
+          cursor: pointer;
+          color: inherit;
+          font: inherit;
+          letter-spacing: inherit;
+          text-transform: inherit;
+        }
+        .htoc__thread-row--muted .htoc__thread-lbl:hover { color: var(--accent); }
+
+        /* ▸ Variants D & E — text-only rails.
+           D (active-text):     only the current label is in accent.
+           E (cumulative-text): every label up to and including the current
+                                one is in accent, painted in section steps. */
+        .htoc__textrail {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 0 4px;
+        }
+        .htoc__textrail-lbl {
+          flex: 0 1 auto;
+          background: transparent;
+          border: 0;
+          padding: 4px 10px;
+          cursor: pointer;
+          font-family: var(--font-mono);
+          font-size: 11px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          font-weight: 500;
+          color: var(--ink-mute);
+          white-space: nowrap;
+          transition: color .2s ease, font-weight .15s;
+        }
+        .htoc__textrail-lbl:hover { color: var(--accent); }
+        .htoc__textrail-lbl.is-active { color: var(--accent); font-weight: 700; }
+        .htoc__textrail--cumulative .htoc__textrail-lbl.is-passed { color: var(--accent); }
+        .htoc__textrail--cumulative .htoc__textrail-lbl.is-active { font-weight: 700; }
+
+        /* Dark-section variants of the new rails. The active / passed
+           selectors carry the same class-count as the dark override, so
+           they need to come AFTER it to win — they're declared here in
+           the right order. */
+        .htoc__sticky--dark .htoc__thread-row--muted { color: var(--dark-mute); }
+        .htoc__sticky--dark .htoc__thread-row--muted .htoc__thread-seg { background: rgba(255,255,255,0.18); }
+        .htoc__sticky--dark .htoc__textrail-lbl { color: var(--dark-mute); }
+        .htoc__sticky--dark .htoc__textrail-lbl.is-active { color: var(--accent); }
+        .htoc__sticky--dark .htoc__textrail--cumulative .htoc__textrail-lbl.is-passed { color: var(--accent); }
         .htoc__counter {
           font-family: var(--font-mono);
           font-size: 12px;
