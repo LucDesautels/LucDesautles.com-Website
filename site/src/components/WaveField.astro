@@ -1,26 +1,49 @@
 ---
-// Global animated wavy-line background. All tuning lives on
-// window.__wfConfig.main (driven by the WaveTuner panel). The canvas reads
-// from the live config every frame and listens for "wf-config-change" to
-// rebuild structural state (e.g. line count).
+// Global animated wavy-line background — a single canvas paints across the
+// entire page (no per-section sub-canvases, no hole punches). The canvas reads
+// from window.__wfConfig.main every frame and listens for "wf-config-change"
+// to rebuild structural state (e.g. line count).
 //
-// Coherent 2D ocean-swell sampling (waveField()) keeps adjacent lines in
-// phase like contour lines of a single surface. A small hole is punched out
-// of the canvas where the HorizontalTOC section is on screen, since that
-// section paints its own wave layer behind its tiles.
+// Continuity across HorizontalTOC:
+//   - The horizontal scroll-jack publishes its current strip translateX +
+//     dominant section tone via window.__wfState. The wave sampler offsets
+//     its x by that translateX while the htoc region is on-screen, so the
+//     wave pattern slides horizontally in lockstep with the tiles.
+//   - The stroke colour lerps from dark-ink (light sections) → light-ink
+//     (dark sections) based on the htoc's published tone darkness, with
+//     opacity from horiz.opacityDark / horiz.opacityLight (with optional
+//     fade ease + fade window from main config).
+//
+// Interaction model is intentionally small:
+//   - Hover: "drape" only (cursor pulls nearby line baselines toward it).
+//   - Click: "droplet" only (an expanding ring is visible; lines bend
+//     outward at the ring's leading edge — same coherent wavefield treats
+//     it as a radial bump, so there's nothing janky to reconcile).
 ---
 <canvas class="wavefield" data-wavefield aria-hidden="true"></canvas>
 
 <script>
-  type HoverMode = "push" | "drape" | "vortex" | "wake" | "sway";
-  type ClickMode = "drop" | "slow" | "wide" | "tight" | "ring" | "shove" | "trail" | "multi" | "burst";
-
   const ENABLED = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canvas = document.querySelector<HTMLCanvasElement>("[data-wavefield]");
   if (canvas && ENABLED) init(canvas);
 
   function getCfg() {
     return (window as any).__wfConfig as any;
+  }
+
+  // ── Shared cross-component state, written by HorizontalTOC each frame ─
+  type WfState = {
+    htocShiftX: number;    // current strip translateX (px); 0 outside htoc
+    htocActive: number;    // 0..1 — how much the htoc region is on-screen
+    htocDarkness: number;  // 0..1 — current dominant section darkness
+    htocBounds: { top: number; bottom: number } | null;
+    htocPinOffset: number; // accumulated scroll spent inside the pin range
+  };
+  function getState(): WfState {
+    return ((window as any).__wfState as WfState) ?? {
+      htocShiftX: 0, htocActive: 0, htocDarkness: 0, htocBounds: null,
+      htocPinOffset: 0,
+    };
   }
 
   function init(canvas: HTMLCanvasElement) {
@@ -39,12 +62,13 @@
     resize();
     window.addEventListener("resize", () => { resize(); rebuildLines(); });
 
-    // ── Click shockwaves + trail wakes (declared early — rebuildLines
-    //     touches both to invalidate in-flight state on resize). ─────
-    type Shock = { x: number; yDoc: number; t0: number; mode: ClickMode; hitLines?: Set<number> };
-    const shocks: Shock[] = [];
-    type Wake = { lineIdx: number; x: number; vx: number; sign: number; t0: number; amp: number; life: number };
-    const wakes: Wake[] = [];
+    // ── Click droplets — visible expanding ring + radial line push ────
+    type Drop = { x: number; yDoc: number; t0: number };
+    const drops: Drop[] = [];
+    const DROP_LIFE = 3.2;     // seconds
+    const DROP_SPEED = 240;    // px/s — radius growth
+    const DROP_FW = 110;       // px — bell-curve front-width
+    const DROP_AMP = 36;       // px — peak line displacement at the ring
 
     // ── Document-anchored line catalogue ──────────────────────────
     type Line = { yDoc: number; amp: number };
@@ -70,9 +94,6 @@
           amp:  20 + j2 * 10,
         });
       }
-      // In-flight wakes reference line indices, so clear them on rebuild.
-      wakes.length = 0;
-      for (const s of shocks) s.hitLines?.clear();
     }
     rebuildLines();
 
@@ -87,83 +108,23 @@
 
     // ── Cursor tracking (viewport coords) ─────────────────────────
     const cursor = { x: -9999, y: -9999, has: false };
-    const wakeTrail: Array<{ x: number; y: number; t: number }> = [];
-    const WAKE_TRAIL_TTL = 1.4;
     window.addEventListener("pointermove", (e) => {
       cursor.x = e.clientX;
       cursor.y = e.clientY;
       cursor.has = true;
-      const cfg = getCfg();
-      if (cfg?.main?.hoverMode === "wake") {
-        const now = performance.now();
-        const last = wakeTrail[wakeTrail.length - 1];
-        if (!last || (now - last.t) > 16) {
-          wakeTrail.push({ x: e.clientX, y: e.clientY, t: now });
-          if (wakeTrail.length > 120) wakeTrail.shift();
-        }
-      }
     }, { passive: true });
     window.addEventListener("pointerleave", () => { cursor.has = false; });
 
-    // ── Click shockwaves (DOC coords so they scroll with the page) ────
+    // ── Click → spawn droplet (DOC coords so they scroll with page) ───
     window.addEventListener("pointerdown", (e) => {
       if ((e.target as HTMLElement)?.closest("[data-wf-tuner]")) return;
-      const cfg = getCfg();
-      const mode = (cfg?.main?.clickMode as ClickMode) ?? "drop";
-      const shock: Shock = {
+      drops.push({
         x: e.clientX,
         yDoc: e.clientY + window.scrollY,
         t0: performance.now(),
-        mode,
-      };
-      if (mode === "trail") shock.hitLines = new Set();
-      shocks.push(shock);
-      if (shocks.length > 12) shocks.shift();
+      });
+      if (drops.length > 12) drops.shift();
     }, { passive: true });
-
-    // ── Trail wakes — propagate displacements along wave lines ────
-    const TRAIL_SPEED = 220;
-    const TRAIL_LIFE = 4.0;
-    const TRAIL_PUSH_AMP = 30;
-    const WAKE_VX = 220;
-    const WAKE_LIFE = 2.4;
-    const WAKE_R = 110;
-
-    function processTrailHits(s: Shock, now: number) {
-      const age = (now - s.t0) / 1000;
-      if (age > TRAIL_LIFE) return;
-      const r = age * TRAIL_SPEED;
-      if (!s.hitLines) s.hitLines = new Set();
-      for (let i = 0; i < lines.length; i++) {
-        if (s.hitLines.has(i)) continue;
-        const dy = lines[i].yDoc - s.yDoc;
-        if (Math.abs(dy) > r) continue;
-        s.hitLines.add(i);
-        // Spawn one wake travelling left, one right — the bell push at the
-        // collision moment is delivered by the wakes themselves.
-        const sign = dy >= 0 ? 1 : -1;
-        const amp = TRAIL_PUSH_AMP * (1 - age / TRAIL_LIFE) * 0.8 + 8;
-        wakes.push({ lineIdx: i, x: s.x, vx: -WAKE_VX, sign, t0: now, amp, life: WAKE_LIFE });
-        wakes.push({ lineIdx: i, x: s.x, vx: +WAKE_VX, sign, t0: now, amp, life: WAKE_LIFE });
-      }
-    }
-
-    function wakeOffset(lineIdx: number, x: number, now: number): number {
-      let acc = 0;
-      for (const w of wakes) {
-        if (w.lineIdx !== lineIdx) continue;
-        const age = (now - w.t0) / 1000;
-        if (age > w.life) continue;
-        const curX = w.x + w.vx * age;
-        const dist = Math.abs(x - curX);
-        if (dist > WAKE_R) continue;
-        const k = 1 - dist / WAKE_R;
-        const bell = k * k * (3 - 2 * k);
-        const decay = 1 - age / w.life;
-        acc += w.sign * bell * decay * w.amp;
-      }
-      return acc;
-    }
 
     // ── Coherent ocean-swell wave field ───────────────────────────
     function waveField(x: number, yDoc: number, t: number, speedMul: number): number {
@@ -174,224 +135,51 @@
       return a * 0.52 + b * 0.28 + c * 0.30;
     }
 
-    // ── Hover-mode displacements ──────────────────────────────────
-    function hoverOffset(x: number, baseY: number, now: number, mul: number, mode: HoverMode): number {
+    // ── Hover (drape only): cursor pulls nearby baselines toward it ──
+    function drapeOffset(x: number, baseY: number, now: number, mul: number): number {
       if (!cursor.has || mul <= 0) return 0;
       const dx = x - cursor.x;
       const dy = baseY - cursor.y;
       const dist = Math.hypot(dx, dy);
-
-      switch (mode) {
-        case "push": {
-          const R = 360;
-          if (dist > R) return 0;
-          const k = 1 - dist / R;
-          const bell = k * k * (3 - 2 * k);
-          const ny = dy / (dist || 1);
-          return ny * bell * 56 * mul;
-        }
-        case "drape": {
-          const R = 720;
-          const k = Math.max(0, 1 - dist / R);
-          const bell = k * k;
-          const pull = (cursor.y - baseY) * 0.40 * bell;
-          const ripple = Math.sin(dist * 0.014 - now * 0.0024) /
-                         (1 + dist * 0.004) * 11;
-          return (pull + ripple) * mul;
-        }
-        case "vortex": {
-          const R = 380;
-          if (dist > R) return 0;
-          const k = 1 - dist / R;
-          const bell = k * k;
-          const ty = dx / (dist || 1);
-          return ty * bell * 70 * mul;
-        }
-        case "wake": {
-          let acc = 0;
-          for (const w of wakeTrail) {
-            const age = (now - w.t) / 1000;
-            if (age > WAKE_TRAIL_TTL) continue;
-            const wdx = x - w.x;
-            const wdy = baseY - w.y;
-            const wd = Math.hypot(wdx, wdy);
-            const R = 180;
-            if (wd > R) continue;
-            const k = 1 - wd / R;
-            const bell = k * k;
-            const decay = 1 - age / WAKE_TRAIL_TTL;
-            const ny = wdy / (wd || 1);
-            acc += ny * bell * decay * 48;
-          }
-          return acc * mul;
-        }
-        case "sway": {
-          const phase = dist * 0.012 - now * 0.0030;
-          return (Math.sin(phase) / (1 + dist * 0.0035) * 26) * mul;
-        }
-      }
-      return 0;
+      const R = 720;
+      const k = Math.max(0, 1 - dist / R);
+      const bell = k * k;
+      const pull = (cursor.y - baseY) * 0.40 * bell;
+      const ripple = Math.sin(dist * 0.014 - now * 0.0024) /
+                     (1 + dist * 0.004) * 11;
+      return (pull + ripple) * mul;
     }
 
-    // ── Click-mode displacements (returns wave displacement only) ─
-    function clickOffset(x: number, baseY: number, baseYDoc: number, now: number): number {
+    // ── Droplet displacement: bell-curve at the expanding ring edge ───
+    function dropletOffset(x: number, baseYDoc: number, now: number): number {
       let acc = 0;
-      for (const s of shocks) {
-        const age = (now - s.t0) / 1000;
-        const dx = x - s.x;
-        const dy = baseYDoc - s.yDoc;
+      for (const d of drops) {
+        const age = (now - d.t0) / 1000;
+        if (age > DROP_LIFE) continue;
+        const dx = x - d.x;
+        const dy = baseYDoc - d.yDoc;
         const dist = Math.hypot(dx, dy);
-
-        switch (s.mode) {
-          case "drop": {
-            const SPEED = 240, LIFE = 3.4, FW = 110, AMP = 32;
-            if (age > LIFE) break;
-            const r = age * SPEED;
-            const off = dist - r;
-            if (Math.abs(off) > FW) break;
-            const bell = Math.cos((off / FW) * (Math.PI / 2));
-            const decay = 1 - age / LIFE;
-            const ny = dy / (dist || 1);
-            acc += -bell * decay * AMP * ny;
-            break;
-          }
-          case "slow": {
-            const SPEED = 130, LIFE = 5.2, FW = 130, AMP = 44;
-            if (age > LIFE) break;
-            const r = age * SPEED;
-            const off = dist - r;
-            if (Math.abs(off) > FW) break;
-            const bell = Math.cos((off / FW) * (Math.PI / 2));
-            const decay = 1 - (age / LIFE) * (age / LIFE);
-            const ny = dy / (dist || 1);
-            acc += -bell * decay * AMP * ny;
-            break;
-          }
-          case "wide": {
-            const SPEED = 220, LIFE = 4.5, FW = 220, AMP = 30;
-            if (age > LIFE) break;
-            const r = age * SPEED;
-            const off = dist - r;
-            if (Math.abs(off) > FW) break;
-            const bell = Math.cos((off / FW) * (Math.PI / 2));
-            const decay = 1 - age / LIFE;
-            const ny = dy / (dist || 1);
-            acc += -bell * decay * AMP * ny;
-            break;
-          }
-          case "tight": {
-            const SPEED = 290, LIFE = 2.6, FW = 55, AMP = 60;
-            if (age > LIFE) break;
-            const r = age * SPEED;
-            const off = dist - r;
-            if (Math.abs(off) > FW) break;
-            const bell = Math.pow(Math.cos((off / FW) * (Math.PI / 2)), 2);
-            const decay = 1 - age / LIFE;
-            const ny = dy / (dist || 1);
-            acc += -bell * decay * AMP * ny;
-            break;
-          }
-          case "ring": {
-            const SPEED = 200, LIFE = 3.8;
-            if (age > LIFE) break;
-            const rings = [
-              { offset: 0,   amp: 22 },
-              { offset: 70,  amp: 16 },
-              { offset: 140, amp: 11 },
-            ];
-            const decay = 1 - age / LIFE;
-            for (const ring of rings) {
-              const r = age * SPEED - ring.offset;
-              if (r < 0) continue;
-              const off = dist - r;
-              const FW = 55;
-              if (Math.abs(off) > FW) continue;
-              const bell = Math.cos((off / FW) * (Math.PI / 2));
-              const ny = dy / (dist || 1);
-              acc += -bell * decay * ring.amp * ny;
-            }
-            break;
-          }
-          case "shove": {
-            const SPEED = 210, LIFE = 3.6, FW = 75, AMP = 30;
-            if (age > LIFE) break;
-            const r = age * SPEED;
-            const off = dist - r;
-            if (Math.abs(off) > FW) break;
-            const bell = Math.cos((off / FW) * (Math.PI / 2));
-            const decay = 1 - age / LIFE;
-            const ny = dy / (dist || 1);
-            acc += bell * decay * AMP * ny;
-            break;
-          }
-          case "trail": {
-            // No direct push from the shock — the ring spawns wakes at
-            // each line crossing, and wakeOffset() carries the push along
-            // each crossed line over time.
-            break;
-          }
-          case "multi": {
-            const SPEED = 220, LIFE = 3.6, FW = 90;
-            const rings = [
-              { delay: 0.00, amp: 38 },
-              { delay: 0.32, amp: 26 },
-              { delay: 0.62, amp: 16 },
-            ];
-            for (const ring of rings) {
-              const a = age - ring.delay;
-              if (a < 0 || a > LIFE) continue;
-              const r = a * SPEED;
-              const off = dist - r;
-              if (Math.abs(off) > FW) continue;
-              const bell = Math.cos((off / FW) * (Math.PI / 2));
-              const decay = 1 - a / LIFE;
-              const ny = dy / (dist || 1);
-              acc += -bell * decay * ring.amp * ny;
-            }
-            break;
-          }
-          case "burst": {
-            const LIFE = 3.2;
-            if (age > LIFE) break;
-            const SPEED = 260;
-            const r = age * SPEED;
-            const off = dist - r;
-            const FW = 140;
-            if (Math.abs(off) > FW) break;
-            const u = off / FW;
-            const profile = Math.cos(u * Math.PI) * (1 - Math.abs(u));
-            const decay = 1 - age / LIFE;
-            const ny = dy / (dist || 1);
-            acc += -profile * decay * 56 * ny;
-            break;
-          }
-        }
+        const r = age * DROP_SPEED;
+        const off = dist - r;
+        if (Math.abs(off) > DROP_FW) continue;
+        const bell = Math.cos((off / DROP_FW) * (Math.PI / 2));
+        const decay = 1 - age / DROP_LIFE;
+        const ny = dy / (dist || 1);
+        acc += -bell * decay * DROP_AMP * ny;
       }
       return acc;
     }
 
-    function modeLifetime(mode: ClickMode): number {
-      switch (mode) {
-        case "drop":  return 3.4;
-        case "slow":  return 5.2;
-        case "wide":  return 4.5;
-        case "tight": return 2.6;
-        case "ring":  return 3.8;
-        case "shove": return 3.6;
-        case "trail": return 4.0;
-        case "multi": return 4.3;
-        case "burst": return 3.2;
-      }
+    // ── Colour helpers ────────────────────────────────────────────────
+    // Lerps stroke + opacity between "dark ink on light bg" and "light ink
+    // on dark bg" by the htoc darkness factor, with a tunable smoothstep
+    // window so the boundary doesn't pop.
+    function smoothstep(edge0: number, edge1: number, x: number): number {
+      if (edge0 === edge1) return x < edge0 ? 0 : 1;
+      const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+      return t * t * (3 - 2 * t);
     }
-
-    // ── HorizontalTOC hole — section paints its own waves ────────
-    function htocHole(): { x: number; y: number; w: number; h: number } | null {
-      const sticky = document.querySelector(".htoc__sticky");
-      if (!sticky) return null;
-      const r = sticky.getBoundingClientRect();
-      if (r.height <= 0 || r.bottom <= 0 || r.top >= H) return null;
-      return { x: r.left - 2, y: r.top - 2, w: r.width + 4, h: r.height + 4 };
-    }
+    function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 
     // ── Render loop ───────────────────────────────────────────────
     let running = !document.hidden;
@@ -409,37 +197,74 @@
     function tick() {
       if (!running) return;
       const now = performance.now();
-      const scrollY = window.scrollY;
+      const realScrollY = window.scrollY;
       const cfg = getCfg() || {};
       const mainCfg = cfg.main || {};
-      const hoverMode = (mainCfg.hoverMode as HoverMode) ?? "drape";
+      const horizCfg = cfg.horiz || {};
       const cursorMul = mainCfg.cursorReact ?? 1;
       const speedMul = mainCfg.naturalSpeed ?? 1;
       const ampMul = mainCfg.naturalAmp ?? 1;
       const thickness = mainCfg.thickness ?? 1.6;
-      const opacity = mainCfg.opacity ?? 0.22;
+      const opacityLight = mainCfg.opacity ?? 0.22;          // light-bg stroke alpha
+      const opacityDark = horizCfg.opacityDark ?? 0.32;      // dark-bg stroke alpha
+      const fadeStart = horizCfg.fadeStart ?? 0.25;          // smoothstep edge0
+      const fadeEnd   = horizCfg.fadeEnd   ?? 0.65;          // smoothstep edge1
 
-      // Cull old shocks (use the longest possible LIFE so nothing dies early).
-      for (let i = shocks.length - 1; i >= 0; i--) {
-        if ((now - shocks[i].t0) / 1000 > modeLifetime(shocks[i].mode) + 0.1) {
-          shocks.splice(i, 1);
-        }
+      const st = getState();
+      // Dark-ness drives stroke color + opacity blending.
+      const darkness = smoothstep(fadeStart, fadeEnd, st.htocDarkness ?? 0);
+
+      // Subtract the htoc's accumulated pin offset from the real scrollY.
+      // During pin, the offset grows linearly with realScrollY, so the
+      // effective value stays at pinStartY (waves freeze vertically).
+      // After pin, the offset is constant, so effectiveScrollY tracks
+      // realScrollY again — continuous across the exit boundary, no snap.
+      const scrollY = realScrollY - (st.htocPinOffset ?? 0);
+
+      // Fade the wave field out below the IMPACTFUL / COMPETITIVE ROBOTICS
+      // wordmark — past that point only the RoboticsTransition's own
+      // animation belongs in the strip between wordmark and dark panels.
+      // We anchor to the wordmark element; once its bottom is above the
+      // viewport top, the fade is complete.
+      let waveAlphaMul = 1;
+      const fadeAnchor = document.querySelector(".ric__wordmark") as HTMLElement | null;
+      if (fadeAnchor) {
+        const fb = fadeAnchor.getBoundingClientRect().bottom;
+        // fb > FADE_START_Y: fully visible; fb < FADE_END_Y: fully hidden.
+        const FADE_START_Y = 240;
+        const FADE_END_Y = -40;
+        const t = (fb - FADE_END_Y) / (FADE_START_Y - FADE_END_Y);
+        waveAlphaMul = Math.max(0, Math.min(1, t));
       }
-      // Trail shocks: process new line crossings → spawn wakes.
-      for (const s of shocks) if (s.mode === "trail") processTrailHits(s, now);
-      // Cull dead wakes.
-      for (let i = wakes.length - 1; i >= 0; i--) {
-        if ((now - wakes[i].t0) / 1000 > wakes[i].life) wakes.splice(i, 1);
+
+      // Cull old drops.
+      for (let i = drops.length - 1; i >= 0; i--) {
+        if ((now - drops[i].t0) / 1000 > DROP_LIFE + 0.1) drops.splice(i, 1);
       }
-      // Cull hover-wake trail.
-      while (wakeTrail.length && (now - wakeTrail[0].t) / 1000 > WAKE_TRAIL_TTL) wakeTrail.shift();
 
       ctx.clearRect(0, 0, W, H);
-      ctx.strokeStyle = `rgba(26, 23, 20, ${opacity})`;
-      ctx.lineWidth = thickness;
 
       // ── Wave lines ───────────────────────────────────────────────
       const stepX = 6;
+      // X-shift for wave sampling — slides the pattern horizontally with
+      // the htoc strip. Scaled by htocActive (0 outside htoc, 1 inside) so
+      // the rest of the page isn't influenced by a phantom shift value.
+      const shiftX = (st.htocShiftX || 0) * (st.htocActive ?? 0);
+
+      // Stroke colour: lerp 26,23,20 (dark ink) ↔ 244,237,226 (light ink).
+      const r = Math.round(lerp(26, 244, darkness));
+      const g = Math.round(lerp(23, 237, darkness));
+      const b = Math.round(lerp(20, 226, darkness));
+      const alpha = lerp(opacityLight, opacityDark, darkness) * waveAlphaMul;
+      ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      ctx.lineWidth = thickness;
+      // Cheap early-out when fully faded — saves a chunk of CPU while
+      // the user is parked in the wordmark / robotics area.
+      if (waveAlphaMul <= 0.001) {
+        rafHandle = requestAnimationFrame(tick);
+        return;
+      }
+
       for (let li = 0; li < lines.length; li++) {
         const cfgLine = lines[li];
         const baseY = cfgLine.yDoc - scrollY;
@@ -447,98 +272,39 @@
 
         ctx.beginPath();
         for (let x = -20; x <= W + 20; x += stepX) {
-          let y = baseY + cfgLine.amp * ampMul * waveField(x, cfgLine.yDoc, now, speedMul);
-          y += hoverOffset(x, baseY, now, cursorMul, hoverMode);
-          y += clickOffset(x, baseY, cfgLine.yDoc, now);
-          y += wakeOffset(li, x, now);
+          // sx is the *sampling* coord (advances with horiz scroll); the
+          // line is still *drawn* at x so it visually slides without the
+          // baseline budging.
+          const sx = x - shiftX;
+          let y = baseY + cfgLine.amp * ampMul * waveField(sx, cfgLine.yDoc, now, speedMul);
+          y += drapeOffset(x, baseY, now, cursorMul);
+          y += dropletOffset(x, cfgLine.yDoc, now);
           if (x === -20) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
         ctx.stroke();
       }
 
-      // ── Visible expanding rings for "ring" / "shove" / "trail" ────
-      for (const s of shocks) {
-        if (s.mode !== "ring" && s.mode !== "shove" && s.mode !== "trail") continue;
-        const age = (now - s.t0) / 1000;
-
-        if (s.mode === "trail") {
-          // Trail's ring is drawn as small arcs around the circle, with
-          // arc-ranges consumed where the ring has already crossed wave
-          // lines. The wake takes over from there.
-          if (age > TRAIL_LIFE) continue;
-          const r = age * TRAIL_SPEED;
-          const decay = 1 - age / TRAIL_LIFE;
-          const cx = s.x;
-          const cy = s.yDoc - scrollY;
-          if (cy < -800 || cy > H + 800) continue;
-          // Build consumed arc ranges from already-hit lines.
-          const blocks: Array<{ center: number; halfW: number }> = [];
-          if (s.hitLines) {
-            for (const idx of s.hitLines) {
-              const ln = lines[idx];
-              if (!ln) continue;
-              const dy = ln.yDoc - s.yDoc;
-              if (Math.abs(dy) >= r) continue;
-              const halfW = Math.acos(Math.abs(dy) / r);
-              const center = dy >= 0 ? Math.PI / 2 : -Math.PI / 2;
-              blocks.push({ center, halfW });
-            }
-          }
-          ctx.strokeStyle = `rgba(26, 23, 20, ${0.34 * decay})`;
-          ctx.lineWidth = 1.5;
-          const N = 96;
-          const seg = (Math.PI * 2) / N;
-          for (let i = 0; i < N; i++) {
-            const a = (i / N) * Math.PI * 2 - Math.PI;
-            let consumed = false;
-            for (const b of blocks) {
-              let d = a - b.center;
-              while (d > Math.PI) d -= Math.PI * 2;
-              while (d < -Math.PI) d += Math.PI * 2;
-              if (Math.abs(d) <= b.halfW) { consumed = true; break; }
-            }
-            if (consumed) continue;
-            ctx.beginPath();
-            ctx.arc(cx, cy, r, a, a + seg);
-            ctx.stroke();
-          }
-          continue;
-        }
-
-        // ring / shove (unchanged, single or 3 expanding circles)
-        const LIFE = s.mode === "ring" ? 3.8 : 3.6;
-        if (age > LIFE) continue;
-        const decay = 1 - age / LIFE;
-        const cx = s.x;
-        const cy = s.yDoc - scrollY;
+      // ── Visible expanding rings for droplets ─────────────────────
+      for (const d of drops) {
+        const age = (now - d.t0) / 1000;
+        if (age > DROP_LIFE) continue;
+        const radius = age * DROP_SPEED;
+        const decay = 1 - age / DROP_LIFE;
+        const cx = d.x;
+        const cy = d.yDoc - scrollY;
         if (cy < -800 || cy > H + 800) continue;
-        const ringCount = s.mode === "ring" ? 3 : 1;
-        const ringSpeed = s.mode === "ring" ? 200 : 210;
-        for (let k = 0; k < ringCount; k++) {
-          const r = age * ringSpeed - k * 70;
-          if (r <= 0) continue;
-          const alpha = 0.32 * decay * (1 - k * 0.28);
-          ctx.strokeStyle = `rgba(26, 23, 20, ${alpha})`;
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.stroke();
-        }
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.34 * decay * waveAlphaMul})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.stroke();
       }
-
-      // Punch out the HorizontalTOC sticky region — that section owns its
-      // own wave layer there, so erasing avoids a doubled-up set of lines.
-      const hole = htocHole();
-      if (hole) ctx.clearRect(hole.x, hole.y, hole.w, hole.h);
 
       rafHandle = requestAnimationFrame(tick);
     }
     rafHandle = requestAnimationFrame(tick);
   }
-
-  // CAD image transform updates live in WaveTuner now (so they sit
-  // alongside the rest of the slider plumbing).
 </script>
 
 <style>
@@ -549,6 +315,8 @@
     height: 100vh;
     pointer-events: none;
     z-index: 1;
-    mix-blend-mode: multiply;
+    /* No mix-blend-mode — stroke alpha is set per-frame from the dominant
+       section's tone, so the lines read on both light and dark backgrounds
+       without the multiply blend washing out over dark areas. */
   }
 </style>

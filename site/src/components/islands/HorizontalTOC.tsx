@@ -3,6 +3,53 @@ import type { TocSection } from "@/data/content";
 
 interface Props { sections: TocSection[]; }
 
+// Cross-component channel — the global WaveField reads from this every frame
+// to slide its wave pattern with the horizontal scroll and to colour-shift
+// the lines as the dominant section tone darkens. We never *create* this on
+// the wave-field side; it's populated here as soon as the section mounts.
+type WfState = {
+  htocShiftX: number;
+  htocActive: number;
+  htocDarkness: number;
+  htocBounds: { top: number; bottom: number } | null;
+  // The htoc converts vertical scroll into horizontal strip motion while
+  // it's pinned, so naive yDoc - scrollY positioning would keep dragging
+  // the wave field upward while the user is "scrolling horizontally."
+  //
+  // htocPinOffset is the cumulative scroll distance the user has spent
+  // *inside* the pin range. The WaveField subtracts it from realScrollY
+  // every frame:
+  //   0 before the pin (effectiveScrollY = realScrollY, normal)
+  //   grows linearly 0 → maxTranslate during the pin (effective stays
+  //     at pinStartY → waves freeze vertically)
+  //   stays at maxTranslate after the pin (effective = realScrollY -
+  //     maxTranslate → wave field continues smoothly from where it was
+  //     frozen, with no snap)
+  htocPinOffset: number;
+};
+function publishWfState(patch: Partial<WfState>) {
+  const w = window as any;
+  const cur = (w.__wfState ?? {}) as WfState;
+  w.__wfState = { ...cur, ...patch };
+}
+
+// Relative luminance (0..1) of an "rgb(r,g,b)" or "#rrggbb" colour. Used to
+// translate the section tone into a darkness factor for the wave stroke.
+function luminanceOf(c: string): number {
+  let r = 0, g = 0, b = 0;
+  if (c.startsWith("#")) {
+    r = parseInt(c.slice(1, 3), 16);
+    g = parseInt(c.slice(3, 5), 16);
+    b = parseInt(c.slice(5, 7), 16);
+  } else {
+    const m = c.match(/(\d+(?:\.\d+)?)/g);
+    if (!m || m.length < 3) return 1;
+    r = +m[0]; g = +m[1]; b = +m[2];
+  }
+  // ITU-R BT.601 luma — good enough for "is this background dark?"
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
 // Per-tile vertical offsets — bigger range, deliberately erratic so tiles
 // don't read as a baseline-aligned row. Pattern is deterministic for SSR.
 const VERT_OFFSETS = [-220, 80, -100, 160, -260, 40, 120, -160, 200, -60, -180, 100];
@@ -34,7 +81,6 @@ export default function HorizontalTOC({ sections }: Props) {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const stickyRef = useRef<HTMLDivElement | null>(null);
   const stripRef = useRef<HTMLDivElement | null>(null);
-  const wavesRef = useRef<HTMLCanvasElement | null>(null);
 
   const [activeIdx, setActiveIdx] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -71,7 +117,8 @@ export default function HorizontalTOC({ sections }: Props) {
   }, [sections]);
 
   // Scroll driver: sets strip translateX, sticky background color, dark/light
-  // class, and an "enter" custom prop the tiles use to fade in.
+  // class, an "enter" custom prop the tiles use to fade in, and publishes
+  // window.__wfState for the global WaveField to read.
   useEffect(() => {
     if (!enabled) {
       if (stripRef.current) {
@@ -82,6 +129,10 @@ export default function HorizontalTOC({ sections }: Props) {
         stickyRef.current.style.backgroundColor = sections[0]?.tone ?? "";
         stickyRef.current.classList.remove("htoc__sticky--dark");
       }
+      publishWfState({
+        htocShiftX: 0, htocActive: 0, htocDarkness: 0, htocBounds: null,
+        htocPinOffset: 0,
+      });
       return;
     }
     let raf = 0;
@@ -162,11 +213,43 @@ export default function HorizontalTOC({ sections }: Props) {
       }
       const c1 = sections[seg]?.tone ?? "#f1ede3";
       const c2 = sections[Math.min(seg + 1, sections.length - 1)]?.tone ?? c1;
-      sticky.style.backgroundColor = lerpHex(c1, c2, t);
+      const lerped = lerpHex(c1, c2, t);
+      sticky.style.backgroundColor = lerped;
 
       // Dark text mode follows the dominant section.
       const dominantDark = !!sections[best]?.dark;
       sticky.classList.toggle("htoc__sticky--dark", dominantDark);
+
+      // ── Publish state for the global WaveField ────────────────────
+      // htocActive ramps 0→1 around the sticky region so the wave shift
+      // and the tone-darkness influence fade in smoothly rather than
+      // popping the moment the section appears.
+      const r = sticky.getBoundingClientRect();
+      const inView = Math.max(0, Math.min(vh, r.bottom)) - Math.max(0, r.top);
+      const active = Math.max(0, Math.min(1, inView / vh));
+      // 1 - luminance ⇒ darkness factor. Dark backgrounds (Robotics) → 1;
+      // cream backgrounds → ~0. The WaveField does its own smoothstep on
+      // top of this, so we just hand off the raw value.
+      const darkness = 1 - luminanceOf(lerped);
+
+      // Vertical-scroll freeze: while the sticky is pinned the user is
+      // actually scrolling vertically but visually it should read as
+      // *horizontal* motion. pinOffset is the accumulated scroll the
+      // user has spent inside the pin range — clamped to [0, maxTranslate].
+      // The WaveField uses effectiveScrollY = realScrollY - pinOffset, so
+      // during pin the effective value stays at pinStartY (waves freeze),
+      // and after pin it tracks realScrollY again with the pin period
+      // subtracted (no snap at the exit boundary).
+      const pinStartY = outer.offsetTop;
+      const pinOffset = Math.max(0, Math.min(maxTranslate, window.scrollY - pinStartY));
+
+      publishWfState({
+        htocShiftX: shiftX,
+        htocActive: active,
+        htocDarkness: darkness * active, // only count darkness while on-screen
+        htocBounds: { top: r.top, bottom: r.bottom },
+        htocPinOffset: pinOffset,
+      });
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
@@ -179,114 +262,8 @@ export default function HorizontalTOC({ sections }: Props) {
     };
   }, [enabled, sections]);
 
-  // Ambient wavy-line background for the section. The canvas is the first
-  // child of .htoc__sticky, so it paints behind the tiles + labels (a true
-  // background, not an overlay). Lines drift gently in place — they don't
-  // scroll, since the section is pinned. Stroke colour follows the dominant
-  // tone: pale lines on the dark Robotics section, dark ink elsewhere.
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const canvas = wavesRef.current;
-    const sticky = stickyRef.current;
-    if (!canvas || !sticky) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let W = 0, H = 0, DPR = 1;
-    const resize = () => {
-      DPR = Math.min(window.devicePixelRatio || 1, 2);
-      W = sticky.clientWidth;
-      H = sticky.clientHeight || window.innerHeight;
-      canvas.width = Math.floor(W * DPR);
-      canvas.height = Math.floor(H * DPR);
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    };
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(sticky);
-
-    // Lines spaced down the section. Count + amp pulled live from
-    // window.__wfConfig.horiz (driven by the WaveTuner panel) so we can
-    // sweep parameters interactively.
-    type Line = { yRel: number; amp: number };
-    let lineCfg: Line[] = [];
-    const rebuild = () => {
-      const cfg = (window as any).__wfConfig?.horiz ?? {};
-      const N = Math.max(2, Math.round(cfg.lineCount ?? 5));
-      lineCfg = [];
-      for (let i = 0; i < N; i++) {
-        // Even spacing with a touch of jitter so they don't grid up.
-        const seed = i * 1.61803398;
-        const j = Math.sin(seed * 4.32) * 0.5 + 0.5;
-        const yRel = (i + 0.5) / N + (j - 0.5) * (0.45 / N);
-        const j2 = Math.sin(seed * 2.71) * 0.5 + 0.5;
-        lineCfg.push({ yRel: Math.max(0.05, Math.min(0.95, yRel)), amp: 22 + j2 * 12 });
-      }
-    };
-    rebuild();
-    const waveField = (x: number, y: number, t: number): number => {
-      const a = Math.sin(x * 0.0068 + y * 0.0021 - t * 0.00055);
-      const b = Math.sin(x * 0.0115 - y * 0.0033 - t * 0.00082);
-      const c = Math.sin(x * 0.0043 + y * 0.0012 - t * 0.00040);
-      return a * 0.52 + b * 0.28 + c * 0.30;
-    };
-
-    const onCfgChange = (e: Event) => {
-      const key = (e as CustomEvent).detail?.key as string | undefined;
-      if (key === "horiz.lineCount" || key === "__init") rebuild();
-    };
-    window.addEventListener("wf-config-change", onCfgChange);
-
-    let raf = 0;
-    let alive = true;
-    const draw = () => {
-      if (!alive) return;
-      const now = performance.now();
-      const dark = sticky.classList.contains("htoc__sticky--dark");
-      const cfg = (window as any).__wfConfig?.horiz ?? {};
-      const thickness = cfg.thickness ?? 1.6;
-      const opDark = cfg.opacityDark ?? 0.32;
-      const opLight = cfg.opacityLight ?? 0.10;
-      const speedMul = cfg.naturalSpeed ?? 1;
-      const ampMul = cfg.naturalAmp ?? 1;
-      ctx.clearRect(0, 0, W, H);
-      ctx.strokeStyle = dark
-        ? `rgba(255, 255, 255, ${opDark})`
-        : `rgba(26, 23, 20, ${opLight})`;
-      ctx.lineWidth = thickness;
-      const stepX = 8;
-      const ts = now * speedMul;
-      for (const c of lineCfg) {
-        const baseY = c.yRel * H;
-        ctx.beginPath();
-        for (let x = -20; x <= W + 20; x += stepX) {
-          const y = baseY + c.amp * ampMul * waveField(x, baseY, ts);
-          if (x === -20) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-      raf = requestAnimationFrame(draw);
-    };
-    raf = requestAnimationFrame(draw);
-
-    const onVis = () => {
-      if (document.hidden) {
-        if (raf) cancelAnimationFrame(raf);
-      } else if (alive) {
-        raf = requestAnimationFrame(draw);
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-
-    return () => {
-      alive = false;
-      if (raf) cancelAnimationFrame(raf);
-      ro.disconnect();
-      document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("wf-config-change", onCfgChange);
-    };
-  }, []);
+  // (No internal wave canvas — the global WaveField now paints across this
+  // section too, driven by the wfState we publish from the scroll effect.)
 
   // Click a rail label → solve for the scrollY that lands the section's left
   // edge at the viewport's left edge, then scroll there.
@@ -332,9 +309,7 @@ export default function HorizontalTOC({ sections }: Props) {
       aria-label="Field log — scroll to explore"
     >
       <div ref={stickyRef} className="htoc__sticky" style={{ backgroundColor: sections[0]?.tone }}>
-        {/* Ambient wave background — first child so it paints behind the
-            tiles and labels rather than over them. */}
-        <canvas ref={wavesRef} className="htoc__waves" aria-hidden="true" />
+        {/* (Wave background now comes from the global WaveField — no local canvas.) */}
 
         {/* Top-left small section label */}
         <div className="htoc__corner">
@@ -447,15 +422,7 @@ export default function HorizontalTOC({ sections }: Props) {
           overflow: hidden;
         }
 
-        /* Ambient wave background — absolutely positioned, first child, so it
-           sits behind .htoc__viewport (tiles), .htoc__corner and the rail. */
-        .htoc__waves {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          pointer-events: none;
-        }
+        /* (Removed: .htoc__waves — waves now come from the global WaveField.) */
 
         /* Top-left tiny label */
         .htoc__corner {
@@ -492,9 +459,9 @@ export default function HorizontalTOC({ sections }: Props) {
           display: inline-flex;
           align-items: center;
           will-change: transform, opacity;
-          /* JS sets --shift-x (px) and --enter (0..1). Horizontal motion runs
-             throughout the section's scroll, so the entrance is mostly the
-             quick opacity ramp + a small upward slide. */
+          /* JS sets --shift-x (px) and --enter (0..1). Horizontal motion
+             runs throughout the whole section scroll, so the entrance is
+             mostly the quick opacity ramp + a small upward slide. */
           transform: translate3d(var(--shift-x, 0px), calc((1 - var(--enter, 0)) * 40px), 0);
           opacity: var(--enter, 0);
         }
