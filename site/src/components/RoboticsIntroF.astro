@@ -75,6 +75,14 @@ import HandLabel from "./HandLabel.astro";
 <style>
   .ric {
     position: relative;
+    /* Sit one viewport above where the document flow would put us, with
+       a higher z-index than the HorizontalTOC sticky. Result: as the
+       user scrolls through the last vh of the htoc outer (the exit
+       drift phase), this section rises up from the bottom of the
+       viewport over the pinned gallery — gallery stays put, RIF
+       progressively covers it from the bottom. */
+    margin-top: -100vh;
+    z-index: 5;
     background: var(--bg);
     color: var(--ink);
     font-family: var(--font-body);
