@@ -274,10 +274,14 @@
       const shiftScale = horizCfg.shiftScale ?? 0.4;
       const shiftX = -pinOffset * shiftScale;
 
-      // Stroke colour: lerp 26,23,20 (dark ink) ↔ 244,237,226 (light ink).
-      const r = Math.round(lerp(26, 244, darkness));
-      const g = Math.round(lerp(23, 237, darkness));
-      const b = Math.round(lerp(20, 226, darkness));
+      // Stroke colour: lerp dark ink ↔ light ink (or accent when accentLines on).
+      const accentLines = !!(horizCfg.accentLines);
+      const lightR = accentLines ? 217 : 244;
+      const lightG = accentLines ? 106 : 237;
+      const lightB = accentLines ? 54  : 226;
+      const r = Math.round(lerp(26, lightR, darkness));
+      const g = Math.round(lerp(23, lightG, darkness));
+      const b = Math.round(lerp(20, lightB, darkness));
       const alpha = lerp(opacityLight, opacityDark, darkness) * waveAlphaMul;
       ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
       ctx.lineWidth = thickness;

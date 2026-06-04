@@ -404,9 +404,13 @@ const N = 5; // slides per column
       paused = true;
       clearTimer();
       clearHoverIntent();
+      // Move to <body> so it escapes .rp's stacking context and z-index: 100
+      // wins against any sibling section with a higher local z-index.
+      if (lb.parentElement !== document.body) document.body.appendChild(lb);
       lb.hidden = false;
       lb.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
+      (window as any).lenis?.stop();
       lbRender();
       // Animate in.
       requestAnimationFrame(() => lb.classList.add("is-open"));
@@ -420,6 +424,7 @@ const N = 5; // slides per column
       lb.classList.remove("is-open");
       lb.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
+      (window as any).lenis?.start();
       window.setTimeout(() => { lb.hidden = true; }, 220);
       // Per spec: timer resets and gets a fresh full interval.
       restart();
@@ -619,7 +624,7 @@ const N = 5; // slides per column
     display: block;
     height: 100%;
     width: 0%;
-    background: var(--dark-ink);
+    background: var(--accent);
   }
   @keyframes rp-fill { from { width: 0%; } to { width: 100%; } }
 
@@ -650,7 +655,7 @@ const N = 5; // slides per column
     background: rgba(255, 255, 255, 0.04);
   }
   .row.is-active .row__indicator {
-    background: var(--dark-ink);
+    background: var(--accent);
   }
   .row__inner { display: block; }
   .row__title {
