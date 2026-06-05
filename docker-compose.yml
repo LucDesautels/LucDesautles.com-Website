@@ -1,0 +1,36 @@
+# Docker Compose for serving the Astro site behind Caddy with auto-HTTPS.
+#
+# Usage on the server:
+#   1. Point lucdesautels.com (and optionally www.lucdesautels.com) DNS A/AAAA
+#      records at the server's public IP.
+#   2. Create a .env file next to this compose file (see .env.example).
+#   3. `docker compose up -d --build`
+#
+# For local testing:
+#   SITE_HOST=:80 docker compose up --build
+#   (then open http://localhost)
+
+services:
+  web:
+    build:
+      context: ./site
+      dockerfile: Dockerfile
+    image: luc-desautels-site:latest
+    container_name: luc-desautels-site
+    restart: unless-stopped
+    environment:
+      # Override per-environment via .env. In prod set SITE_HOST=lucdesautels.com
+      # (Caddy will then auto-issue a Let's Encrypt cert on first request).
+      SITE_HOST: ${SITE_HOST:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Persist Caddy's certificate + ACME state across container rebuilds so
+      # you don't hit Let's Encrypt rate limits on every redeploy.
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

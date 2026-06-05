@@ -581,7 +581,36 @@ function fmt(v: number, f: Slider["fmt"]) {
   }
   .wf-slider input[type="range"] {
     width: 100%;
-    accent-color: var(--accent);
+    -webkit-appearance: none;
+    appearance: none;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    outline: none;
+    cursor: pointer;
+  }
+  .wf-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #ddd6cc;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  }
+  .wf-slider input[type="range"]::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #ddd6cc;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  }
+  .wf-slider input[type="range"]::-moz-range-track {
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.15);
   }
   .wf-numinput {
     width: 100%;
