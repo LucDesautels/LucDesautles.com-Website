@@ -5,7 +5,7 @@ import react from "@astrojs/react";
 
 // https://astro.build/config
 export default defineConfig({
-  // Update this when you deploy. Used for canonical URLs.
+  // Used for canonical URLs and (eventually) the sitemap.
   site: "https://lucdesautels.com",
   integrations: [react()],
   vite: {

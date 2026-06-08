@@ -126,10 +126,22 @@ const N = 5; // slides per column
           ))}
 
           <button class="rplb__nav rplb__nav--prev" data-rplb-prev aria-label="Previous slide" type="button">
-            <span class="rplb__arrow">‹</span>
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block">
+              <rect x="9"  y="0"  width="3" height="3"/>
+              <rect x="6"  y="3"  width="3" height="3"/>
+              <rect x="3"  y="6"  width="3" height="3"/>
+              <rect x="6"  y="9"  width="3" height="3"/>
+              <rect x="9"  y="12" width="3" height="3"/>
+            </svg>
           </button>
           <button class="rplb__nav rplb__nav--next" data-rplb-next aria-label="Next slide" type="button">
-            <span class="rplb__arrow">›</span>
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block">
+              <rect x="3"  y="0"  width="3" height="3"/>
+              <rect x="6"  y="3"  width="3" height="3"/>
+              <rect x="9"  y="6"  width="3" height="3"/>
+              <rect x="6"  y="9"  width="3" height="3"/>
+              <rect x="3"  y="12" width="3" height="3"/>
+            </svg>
           </button>
 
           <!-- First-open tutorial: explains the click-to-navigate halves.
@@ -163,7 +175,19 @@ const N = 5; // slides per column
         </aside>
       </div>
 
-      <button class="rplb__close" data-rplb-close type="button" aria-label="Close">×</button>
+      <button class="rplb__close" data-rplb-close type="button" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block">
+          <rect x="0"  y="0"  width="3" height="3"/>
+          <rect x="12" y="0"  width="3" height="3"/>
+          <rect x="3"  y="3"  width="3" height="3"/>
+          <rect x="9"  y="3"  width="3" height="3"/>
+          <rect x="6"  y="6"  width="3" height="3"/>
+          <rect x="3"  y="9"  width="3" height="3"/>
+          <rect x="9"  y="9"  width="3" height="3"/>
+          <rect x="0"  y="12" width="3" height="3"/>
+          <rect x="12" y="12" width="3" height="3"/>
+        </svg>
+      </button>
     </div>
   </div>
 </section>
@@ -404,9 +428,13 @@ const N = 5; // slides per column
       paused = true;
       clearTimer();
       clearHoverIntent();
+      // Move to <body> so it escapes .rp's stacking context and z-index: 100
+      // wins against any sibling section with a higher local z-index.
+      if (lb.parentElement !== document.body) document.body.appendChild(lb);
       lb.hidden = false;
       lb.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
+      (window as any).lenis?.stop();
       lbRender();
       // Animate in.
       requestAnimationFrame(() => lb.classList.add("is-open"));
@@ -420,6 +448,7 @@ const N = 5; // slides per column
       lb.classList.remove("is-open");
       lb.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
+      (window as any).lenis?.start();
       window.setTimeout(() => { lb.hidden = true; }, 220);
       // Per spec: timer resets and gets a fresh full interval.
       restart();
@@ -619,7 +648,7 @@ const N = 5; // slides per column
     display: block;
     height: 100%;
     width: 0%;
-    background: var(--dark-ink);
+    background: var(--accent);
   }
   @keyframes rp-fill { from { width: 0%; } to { width: 100%; } }
 
@@ -650,7 +679,7 @@ const N = 5; // slides per column
     background: rgba(255, 255, 255, 0.04);
   }
   .row.is-active .row__indicator {
-    background: var(--dark-ink);
+    background: var(--accent);
   }
   .row__inner { display: block; }
   .row__title {
@@ -869,14 +898,14 @@ const N = 5; // slides per column
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(0, 0, 0, 0.4);
-    color: var(--dark-ink);
+    width: 44px;
+    height: 44px;
+    border-radius: 0;
+    border: 3px solid var(--accent);
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--accent);
     cursor: pointer;
-    opacity: 0.55;
+    opacity: 0.7;
     transition: opacity 180ms ease, transform 180ms ease;
     display: grid;
     place-items: center;
@@ -887,7 +916,6 @@ const N = 5; // slides per column
   }
   .rplb__nav--prev { left: 14px; }
   .rplb__nav--next { right: 14px; }
-  .rplb__arrow { font-size: 28px; line-height: 1; }
 
   .rplb__info {
     display: flex;
@@ -933,21 +961,19 @@ const N = 5; // slides per column
 
   .rplb__close {
     position: absolute;
-    top: 14px;
-    right: 14px;
+    top: 36px;
+    right: 24px;
     width: 36px;
     height: 36px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--dark-ink);
-    font-size: 24px;
+    border-radius: 0;
+    border: 3px solid var(--accent);
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--accent);
     cursor: pointer;
     display: grid;
     place-items: center;
-    line-height: 1;
   }
-  .rplb__close:hover { background: rgba(255, 255, 255, 0.14); }
+  .rplb__close:hover { background: rgba(217, 106, 54, 0.18); }
 
   @media (max-width: 760px) {
     .rplb__main { grid-template-columns: 1fr; }

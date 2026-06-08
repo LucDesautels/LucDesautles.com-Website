@@ -225,12 +225,18 @@ export default function HorizontalTOC({ sections }: Props) {
   // The outer is sized to:
   //   vh  (entrance: strip slides in from right)
   // + maxTranslate  (pin: strip slides left under the viewport)
-  // + exit drift   (smoothed deceleration past pin end where the images
-  //                 continue sliding left into the section below — gives
-  //                 the strip a "filleted" exit corner instead of an
-  //                 instant stop)
-  // Keep these constants in sync with the smoothing math in `update()`.
-  const EXIT_DRIFT_VH = 0.4;   // exit tail = 40% of one viewport height
+  // + exit drift   (one vh of smoothed deceleration past pin end — the
+  //                 images keep sliding left while the next section
+  //                 (RoboticsIntroF) rises up over the pinned gallery
+  //                 from the bottom. The reveal duration is exactly vh
+  //                 so RIF travels from viewport-bottom to viewport-top
+  //                 over the drift phase; the htoc sticky stays pinned
+  //                 for the whole reveal, since pin-range end =
+  //                 outerHeight - vh = vh + maxTranslate, i.e. exit-
+  //                 drift-end.)
+  // Keep these constants in sync with the smoothing math in `update()`
+  // and with .ric's `margin-top` override in BaseLayout / index.astro.
+  const EXIT_DRIFT_VH = 1.0;   // exit tail = one full viewport height
   useLayoutEffect(() => {
     const measure = () => {
       const strip = stripRef.current;
@@ -393,17 +399,18 @@ export default function HorizontalTOC({ sections }: Props) {
 
       // Vertical-scroll freeze: while the sticky is pinned the user is
       // actually scrolling vertically but visually it should read as
-      // *horizontal* motion. pinOffset is the accumulated scroll the
-      // user has spent inside the pin range — clamped to [0, maxTranslate].
-      // The WaveField uses effectiveScrollY = realScrollY - pinOffset, so
-      // during pin the effective value stays at pinStartY (waves freeze),
-      // and after pin it tracks realScrollY again with the pin period
-      // subtracted (no snap at the exit boundary). The exit drift past
-      // pin end intentionally does NOT add to pinOffset — vertical
-      // scrolling should resume the moment the user is past the pin, even
-      // while the horizontal drift continues.
+      // *horizontal* motion. The freeze now spans pin AND exit drift —
+      // during exit drift the next section (RoboticsIntroF) is rising
+      // up over the gallery from below, and we don't want the wave
+      // field underneath to be visibly scrolling vertically at the same
+      // time (the two motions would fight). htocMaxTranslate is the
+      // cap the WaveField uses, so we publish maxTranslate + exitDrift
+      // here. After the reveal completes (RIF covers the viewport), the
+      // wave field resumes natural scrolling — but by then it's hidden
+      // behind RIF anyway.
       const pinStartY = outer.offsetTop;
-      const pinOffset = Math.max(0, Math.min(maxTranslate, window.scrollY - pinStartY));
+      const freezeRange = maxTranslate + exitDrift;
+      const pinOffset = Math.max(0, Math.min(freezeRange, window.scrollY - pinStartY));
 
       publishWfState({
         htocShiftX: shiftX,
@@ -413,7 +420,7 @@ export default function HorizontalTOC({ sections }: Props) {
         htocPinOffset: pinOffset,
         htocWaveShiftX: waveShiftX,
         htocPinStartY: pinStartY,
-        htocMaxTranslate: maxTranslate,
+        htocMaxTranslate: freezeRange,
       });
     };
     const onScroll = () => {
