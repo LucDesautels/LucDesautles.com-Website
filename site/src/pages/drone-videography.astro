@@ -1,0 +1,54 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopBar from "@/components/TopBar.astro";
+---
+<BaseLayout
+  title="Drone Videography · Luc Desautels"
+  description="Nature drone videography — landscapes and natural environments filmed from above."
+>
+  <TopBar />
+
+  <main class="dv" id="main">
+    <section class="dv__lander shell">
+      <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · DRONE VIDEOGRAPHY</div>
+      <h1 class="dv__title">
+        Drone<br />
+        <span class="dv__italic">Videography</span><span class="dv__period">.</span>
+      </h1>
+      <p class="dv__body">
+        Landscapes and natural environments filmed from above. Content coming soon.
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .dv {
+    min-height: 100vh;
+    padding-top: 120px;
+  }
+  .dv__lander {
+    padding: 80px var(--page-pad) 120px;
+  }
+  .dv__title {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 10vw, 110px);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: 16px 0 0;
+    color: var(--ink);
+  }
+  .dv__italic {
+    font-style: italic;
+  }
+  .dv__period { color: var(--trim); }
+  .dv__body {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: var(--ink-dim);
+    margin: 32px 0 0;
+    max-width: 480px;
+    line-height: 1.6;
+  }
+</style>

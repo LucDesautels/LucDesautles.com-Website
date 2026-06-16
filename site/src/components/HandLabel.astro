@@ -19,10 +19,10 @@ const {
   style={`font-size:${size}px;color:${color};transform:rotate(${rotate}deg);transform-origin:${align === "right" ? "right center" : "left center"};`}
 >
   <div class="hand__inner">
-    <slot />
+    <span class="hand__text"><slot /></span>
     {underline && (
       <svg class="hand__underline" viewBox="0 0 200 14" preserveAspectRatio="none">
-        <path d="M2 8 C 50 2, 120 12, 198 5" stroke={color} stroke-width="2.4" fill="none" stroke-linecap="round" />
+        <path class="hand__underline-path" d="M2 8 C 50 2, 120 12, 198 5" stroke={color} stroke-width="2.4" fill="none" stroke-linecap="round" />
       </svg>
     )}
   </div>
@@ -35,6 +35,26 @@ const {
     display: inline-block;
   }
   .hand__inner { position: relative; padding-bottom: 2px; }
+  /* inline-block so a clip-path text-reveal (cursive handwriting mode) has a
+     box to wipe. Overflow visible keeps tall cursive ascenders from clipping. */
+  .hand__text { display: inline-block; overflow: visible; }
+  /* Highlight-sweep bar (orange) for the "highlight" text-reveal mode. ::before
+     paints behind the text; RoboticsIntroF drives --hl (0→1 sweep) and
+     --hl-op (0 = hidden) on the label wrapper, which inherit down to here. */
+  .hand__inner::before {
+    content: "";
+    position: absolute;
+    left: -4px;
+    right: -4px;
+    top: 8%;
+    bottom: 14%;
+    background: var(--accent);
+    opacity: var(--hl-op, 0);
+    transform: scaleX(var(--hl, 0));
+    transform-origin: left center;
+    border-radius: 3px;
+    pointer-events: none;
+  }
   .hand__underline {
     position: absolute;
     left: -4px;

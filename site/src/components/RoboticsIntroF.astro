@@ -1,9 +1,39 @@
 ---
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
 import RoboticsTransition from "./RoboticsTransition.astro";
 import Heart from "./Heart.astro";
 import HandLabel from "./HandLabel.astro";
+
+// The two flanking robotics images are pulled straight from src/Uploaded Media/.
+// Files are sorted by name (numeric-aware), so the FIRST becomes the LEFT image
+// and the SECOND the RIGHT — drop new files in and rename to reorder (e.g.
+// "1.png" left, "3.jpg" right). Astro's image pipeline re-encodes whatever lands
+// here into size-capped WebP, so even a multi-megabyte source ships small.
+const mediaGlob = import.meta.glob<{ default: ImageMetadata }>(
+  "../Uploaded Media/*.{png,jpg,jpeg,webp,avif,gif,PNG,JPG,JPEG,WEBP,AVIF,GIF}",
+  { eager: true },
+);
+const mediaImages = Object.entries(mediaGlob)
+  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+  .map(([, mod]) => mod.default);
+const leftImg: ImageMetadata | undefined = mediaImages[0];
+const rightImg: ImageMetadata | undefined = mediaImages[1];
+
+// Cap the long edge so a huge source (e.g. a 2500×3300 px PNG) doesn't ship at
+// full resolution; Astro derives the matching short edge and emits WebP. Sized
+// with headroom so the wf-tuner SCALE control can push the image well past 1×
+// (up to 4×) before it starts to soften.
+const LONG_EDGE = 1500;
+function cap(img: ImageMetadata) {
+  const long = Math.max(img.width, img.height);
+  const k = Math.min(1, LONG_EDGE / long);
+  return { width: Math.round(img.width * k), height: Math.round(img.height * k) };
+}
+const leftDims = leftImg ? cap(leftImg) : { width: 0, height: 0 };
+const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
 ---
-<section class="ric" aria-labelledby="robotics-wordmark">
+<section class="ric" aria-labelledby="robotics-wordmark" data-rsec="robotics-intro">
   <RoboticsTransition />
 
   <div class="ric__topbar">
@@ -11,30 +41,64 @@ import HandLabel from "./HandLabel.astro";
     <div class="eyebrow">Two programs · one workshop</div>
   </div>
 
-  <!-- Left CAD (intentionally oversized + clipped) -->
-  <img
-    class="ric__cad ric__cad--left"
-    src="/cad/sailfish-front-exploded.png"
-    alt=""
-    aria-hidden="true"
-    loading="lazy"
-    decoding="async"
-  />
-  <div class="ric__hand ric__hand--left">
-    <HandLabel rotate={-40} size={56}>Project Sailfish</HandLabel>
+  <!-- Left robotics image — swoops in from off-screen left as the section
+       scrolls in; the resting transform is owned by the wf-tuner "images" tab. -->
+  <div class="ric__cad-wrap ric__cad-wrap--left" data-cad-wrap="left" aria-hidden="true">
+    {leftImg && (
+      <Image
+        class="ric__cad ric__cad--left"
+        src={leftImg}
+        alt=""
+        width={leftDims.width}
+        height={leftDims.height}
+        format="webp"
+        quality={78}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+      />
+    )}
+  </div>
+  <!-- Outer element carries the scroll reveal (slide / cursive slide-out);
+       inner [data-hand-label] keeps the wf-tuner translate+rotate. The Caveat
+       label shows in slide/highlight/none; the Vara target renders genuine
+       stroke-by-stroke handwriting in cursive mode (see script). -->
+  <div class="ric__hand ric__hand--left" data-hand-anim="left">
+    <div class="ric__hand-tf" data-hand-label="left">
+      <div class="ric__hand-caveat">
+        <HandLabel rotate={-40} size={56}>Project Sailfish</HandLabel>
+      </div>
+      <div class="ric__hand-vara" id="ric-vara-left" data-vara-text="Project Sailfish" aria-hidden="true"></div>
+      <svg class="ric__vara-ul" id="ric-ul-left" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 8 C 50 2, 120 12, 198 5" /></svg>
+    </div>
   </div>
 
-  <!-- Right CAD (mirrored vertically, also clipped) -->
-  <img
-    class="ric__cad ric__cad--right"
-    src="/cad/sailfish-3d-exploded.png"
-    alt=""
-    aria-hidden="true"
-    loading="lazy"
-    decoding="async"
-  />
-  <div class="ric__hand ric__hand--right">
-    <HandLabel rotate={40} size={56} align="right">FTC Team 16366</HandLabel>
+  <!-- Right robotics image — swoops in from off-screen right; resting
+       transform is owned by the wf-tuner "images" tab. -->
+  <div class="ric__cad-wrap ric__cad-wrap--right" data-cad-wrap="right" aria-hidden="true">
+    {rightImg && (
+      <Image
+        class="ric__cad ric__cad--right"
+        src={rightImg}
+        alt=""
+        width={rightDims.width}
+        height={rightDims.height}
+        format="webp"
+        quality={78}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+      />
+    )}
+  </div>
+  <div class="ric__hand ric__hand--right" data-hand-anim="right">
+    <div class="ric__hand-tf" data-hand-label="right">
+      <div class="ric__hand-caveat">
+        <HandLabel rotate={40} size={56} align="right">FTC Team 16366</HandLabel>
+      </div>
+      <div class="ric__hand-vara" id="ric-vara-right" data-vara-text="FTC Team 16366" aria-hidden="true"></div>
+      <svg class="ric__vara-ul" id="ric-ul-right" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path d="M2 8 C 50 2, 120 12, 198 5" /></svg>
+    </div>
   </div>
 
   <!-- Centered wordmark -->
@@ -72,6 +136,254 @@ import HandLabel from "./HandLabel.astro";
   </div>
 </section>
 
+<script>
+  import Vara from "vara";
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Scroll-driven reveal for the robotics intro.
+  //
+  // IMAGES always swoop in: each starts fully off-screen and slides to its
+  // wf-tuner resting position; rest is reached when the section has scrolled in
+  // by images.restPct% of a viewport height (wf-tuner ▸ images ▸ REST AT %).
+  //
+  // TEXT reveal (wf-tuner ▸ text ▸ REVEAL MODE → text.mode):
+  //   slide     — wordmark + blurbs + labels translate in with the images.
+  //   highlight — an orange bar sweeps across each label (left, then right),
+  //               scrubbed over the WRITE START→END rise window.
+  //   cursive   — Vara draws each label as genuine stroke-by-stroke handwriting
+  //               (left, then right). It TRIGGERS once the label has risen past
+  //               WRITE START% of the viewport, then plays autonomously on its
+  //               own clock — it does NOT reverse or pause when scrolling stops.
+  //               The WRITE START→END window sets the write duration. Once both
+  //               are written they couple to the image slide and ride out on
+  //               scroll-up.
+  //   none      — text rests in place; only the images swoop.
+  // The wordmark + blurbs slide in for every animated mode.
+  // ───────────────────────────────────────────────────────────────────────
+  const SWOOP_START = 1.0;    // rect.top / vh where the swoop begins
+  const EDGE_BUFFER = 80;     // extra px so the image clears the viewport edge
+  const VARA_SIZE = 56;       // Vara fontSize used to build the paths
+  const VARA_TARGET_H = 70;   // each label is scaled so its rendered line is this
+                              // many px tall at labels.size 56 (keeps L/R consistent
+                              // despite Vara sizing the two strings differently)
+  const FONT_FILE: Record<string, string> = {
+    satisfy: "satisfy.json", shadows: "shadows.json",
+    parisienne: "parisienne.json", pacifico: "pacifico.json",
+  };
+
+  const section = document.querySelector<HTMLElement>(".ric");
+  const leftWrap = document.querySelector<HTMLElement>('[data-cad-wrap="left"]');
+  const rightWrap = document.querySelector<HTMLElement>('[data-cad-wrap="right"]');
+  const leftImg = leftWrap?.querySelector<HTMLElement>(".ric__cad");
+  const rightImg = rightWrap?.querySelector<HTMLElement>(".ric__cad");
+
+  if (section) {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const leftFrame  = Array.from(section.querySelectorAll<HTMLElement>(".ric__col--left, .ric__blurb--left"));
+    const rightFrame = Array.from(section.querySelectorAll<HTMLElement>(".ric__col--right, .ric__blurb--right"));
+    const leftHand   = section.querySelector<HTMLElement>('[data-hand-anim="left"]');
+    const rightHand  = section.querySelector<HTMLElement>('[data-hand-anim="right"]');
+    const leftVaraEl  = section.querySelector<HTMLElement>("#ric-vara-left");
+    const rightVaraEl = section.querySelector<HTMLElement>("#ric-vara-right");
+    const leftUl  = section.querySelector<SVGSVGElement>("#ric-ul-left");
+    const rightUl = section.querySelector<SVGSVGElement>("#ric-ul-right");
+    const handColor = getComputedStyle(document.documentElement).getPropertyValue("--hand").trim() || "#c14a1f";
+
+    const cfg = () => (window as any).__wfConfig;
+    const getMode = () => (cfg()?.text?.mode as string) || "slide";
+    const getRestPct = () => { const v = cfg()?.images?.restPct; return typeof v === "number" ? v : 75; };
+    const getFont = () => (cfg()?.text?.font as string) || "satisfy";
+    const writeStart = () => { const v = cfg()?.text?.writeStart; return typeof v === "number" ? v : 15; };
+    const writeMs = () => Math.max(300, Math.min(8000, (cfg()?.text?.writeSpeed ?? 2) * 1000));
+
+    const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+    const phase = (x: number, a: number, b: number) => clamp01((x - a) / (b - a));
+    const setVar = (el: HTMLElement | null, name: string, val: string) => el?.style.setProperty(name, val);
+    const setX = (els: HTMLElement[], px: number) => { const t = `translateX(${px.toFixed(1)}px)`; for (const el of els) el.style.transform = t; };
+    const setHandX = (el: HTMLElement | null, px: number) => setVar(el, "--hand-x", px.toFixed(1) + "px");
+    const setHighlight = (hand: HTMLElement | null, sweep: number, on: boolean) => {
+      setVar(hand, "--hl", sweep.toFixed(3));
+      setVar(hand, "--hl-op", on ? "0.4" : "0");
+    };
+
+    let offLeft = 0, offRight = 0, labelOffset = 600;
+
+    function measure() {
+      const vw = window.innerWidth;
+      leftWrap?.style.setProperty("--swoop", "0px");
+      rightWrap?.style.setProperty("--swoop", "0px");
+      if (leftImg)  offLeft  = -(leftImg.getBoundingClientRect().right + EDGE_BUFFER);
+      if (rightImg) offRight = vw - rightImg.getBoundingClientRect().left + EDGE_BUFFER;
+      labelOffset = leftHand?.offsetTop ?? rightHand?.offsetTop ?? 600;
+    }
+
+    // ── Vara handwriting (cursive mode) ──────────────────────────────────
+    // Two instances (left/right). Built lazily / on font change. autoAnimation
+    // is off — we call draw() with a duration once the scroll trigger fires, so
+    // the write plays on its own clock and never reverses.
+    let varaL: any = null, varaR: any = null;
+    let readyL = false, readyR = false, builtFont = "";
+    let triggered = false, cursiveDone = false;
+
+    // Size the Vara SVG so its rendered line is VARA_TARGET_H px tall (×
+    // labels.size/56), normalized per label by its own intrinsic height so the
+    // two strings end up the same on-screen size. Vara sets no viewBox, so we add
+    // one (the content bounds) and let the width/height attributes scale it —
+    // that keeps the box in normal flow, so the underline sits right beneath.
+    function sizeVara(side: "left" | "right") {
+      const svg = (side === "left" ? leftVaraEl : rightVaraEl)?.querySelector("svg");
+      if (!svg) return;
+      let w = 0, h = 0;
+      try { const bb = (svg as any).getBBox(); w = bb.x + bb.width; h = bb.y + bb.height; } catch {}
+      if (!h) return;
+      const size = cfg()?.labels?.[side]?.size ?? 56;
+      const s = (size / 56) * (VARA_TARGET_H / h);
+      svg.setAttribute("viewBox", `0 0 ${Math.ceil(w)} ${Math.ceil(h)}`);
+      svg.setAttribute("width", String(Math.max(1, Math.round(w * s))));
+      svg.setAttribute("height", String(Math.max(1, Math.round(h * s))));
+    }
+    function resetUnderline(ul: SVGSVGElement | null) {
+      const path = ul?.querySelector("path");
+      if (!path) return;
+      const len = (path as any).getTotalLength?.() || 200;
+      path.style.transition = "none";
+      path.style.strokeDasharray = String(len);
+      path.style.strokeDashoffset = String(len); // hidden until drawn
+    }
+    function drawUnderline(side: "left" | "right") {
+      const ul = side === "left" ? leftUl : rightUl;
+      const vs = (side === "left" ? leftVaraEl : rightVaraEl)?.querySelector("svg");
+      const path = ul?.querySelector("path");
+      if (!ul || !path) return;
+      if (vs) ul.style.width = (parseFloat(vs.getAttribute("width") || "200")) + "px"; // match text width
+      const len = (path as any).getTotalLength?.() || 200;
+      path.style.strokeDasharray = String(len);
+      path.style.strokeDashoffset = String(len);
+      requestAnimationFrame(() => {
+        path.style.transition = "stroke-dashoffset 450ms ease-out";
+        path.style.strokeDashoffset = "0";
+      });
+    }
+
+    function buildVara() {
+      if (!leftVaraEl || !rightVaraEl || reduce) return;
+      builtFont = getFont();
+      leftVaraEl.innerHTML = ""; rightVaraEl.innerHTML = "";
+      resetUnderline(leftUl); resetUnderline(rightUl);
+      readyL = readyR = false; triggered = cursiveDone = false;
+      const font = "/fonts/vara/" + (FONT_FILE[builtFont] || FONT_FILE.satisfy);
+      // Fresh options object per instance — Vara mutates them internally, and a
+      // shared reference makes the second label inherit the first's scale.
+      // width: large → Vara never wraps the label onto a second line.
+      const mkOpts = (): any => ({ fontSize: VARA_SIZE, strokeWidth: 1.8, color: handColor, autoAnimation: false });
+      const mkText = (el: HTMLElement) => [{ text: el.dataset.varaText || "", id: "t", duration: writeMs(), width: 3000, ...mkOpts() }];
+      // Build sequentially: Vara uses shared temporary DOM nodes while measuring,
+      // so two instances building at once corrupt the first one's layout (it
+      // scatters / wraps). Build the right label only once the left is ready.
+      varaL = new Vara("#ric-vara-left", font, mkText(leftVaraEl), mkOpts());
+      varaL.ready(() => {
+        sizeVara("left"); readyL = true;
+        varaR = new Vara("#ric-vara-right", font, mkText(rightVaraEl), mkOpts());
+        varaR.ready(() => { sizeVara("right"); readyR = true; });
+        varaR.animationEnd(() => { drawUnderline("right"); cursiveDone = true; });
+      });
+      varaL.animationEnd(() => { drawUnderline("left"); if (readyR && varaR) varaR.draw("t", writeMs()); });
+    }
+
+    function setCursiveActive(on: boolean) {
+      section!.classList.toggle("is-cursive", on && !reduce);
+    }
+
+    function update() {
+      const vh = window.innerHeight;
+      const mode = getMode();
+      setCursiveActive(mode === "cursive");
+
+      const restPct = getRestPct();
+      const END = Math.min(0.95, Math.max(0, (100 - restPct) / 100));
+      const rectTop = section!.getBoundingClientRect().top;
+      const p = reduce ? 1 : clamp01((SWOOP_START - rectTop / vh) / (SWOOP_START - END));
+      const swL = offLeft * (1 - p);
+      const swR = offRight * (1 - p);
+      leftWrap?.style.setProperty("--swoop", swL.toFixed(1) + "px");
+      rightWrap?.style.setProperty("--swoop", swR.toFixed(1) + "px");
+
+      // wordmark + blurbs ride with the images in every animated mode
+      const fOn = mode !== "none";
+      setX(leftFrame,  fOn ? swL : 0);
+      setX(rightFrame, fOn ? swR : 0);
+
+      // how far the labels have risen into the viewport, 0 = bottom edge
+      const riseFrac = reduce ? 1 : clamp01((vh - (rectTop + labelOffset)) / vh);
+      const ws = writeStart();
+      const win = clamp01((riseFrac * 100 - ws) / 45); // highlight sweeps over a 45% rise span
+
+      if (mode === "highlight") {
+        setHandX(leftHand, 0); setHandX(rightHand, 0);
+        setHighlight(leftHand,  phase(win, 0, 0.5), true);
+        setHighlight(rightHand, phase(win, 0.5, 1), true);
+        return;
+      }
+      setHighlight(leftHand, 0, false);
+      setHighlight(rightHand, 0, false);
+
+      if (mode === "cursive") {
+        if (!varaL || builtFont !== getFont()) buildVara();
+        if (!triggered && readyL && varaL && riseFrac * 100 >= ws) {
+          triggered = true;
+          varaL.draw("t", writeMs()); // left first; right fires on left's animationEnd
+        }
+        // couple to the image slide only once both labels are fully written
+        setHandX(leftHand,  cursiveDone ? swL : 0);
+        setHandX(rightHand, cursiveDone ? swR : 0);
+        return;
+      }
+
+      // slide / none
+      const on = mode === "slide";
+      setHandX(leftHand,  on ? swL : 0);
+      setHandX(rightHand, on ? swR : 0);
+    }
+
+    let ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { update(); ticking = false; });
+    }
+    function remeasure() { measure(); update(); }
+
+    measure();
+    update();
+    // Lenis re-fires native "scroll" events on window, covering both the
+    // smooth-scroll and native (reduced-motion) paths.
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", remeasure);
+    window.addEventListener("load", remeasure);
+    window.addEventListener("wf-config-change", (e) => {
+      const key = (e as CustomEvent).detail?.key as string | undefined;
+      if (!key) return;
+      // Switching into cursive or changing the cursive font rebuilds Vara (fresh
+      // replay). The write window (start/end) is read live at draw() time.
+      if (key === "__init" || key === "text.mode" || key === "text.font") {
+        const cursive = getMode() === "cursive";
+        setCursiveActive(cursive);
+        // __init must not double-build (update() may have already built); a mode
+        // or font change forces a fresh build (replay / font swap).
+        if (cursive && (key !== "__init" || !varaL || builtFont !== getFont())) buildVara();
+      }
+      if (key === "__init" || key.startsWith("images.") || key.startsWith("text.") || key.startsWith("labels.")) {
+        remeasure();
+      }
+      // live label-size changes re-scale the Vara SVGs without a rebuild
+      if (key.startsWith("labels.") && getMode() === "cursive") {
+        sizeVara("left"); sizeVara("right");
+      }
+    });
+  }
+</script>
+
 <style>
   .ric {
     position: relative;
@@ -103,30 +415,59 @@ import HandLabel from "./HandLabel.astro";
     flex-wrap: wrap;
   }
 
-  .ric__cad {
+  /* The wrapper owns the absolute placement + the scroll-driven swoop
+     (translateX via --swoop, set per frame in JS). The inner <img> owns the
+     wf-tuner transform (translate / rotate / scale / mirror). Keeping them on
+     separate elements means the swoop and the tuner never overwrite each other:
+     resting position = CSS base placement + whatever the panel dials in. */
+  .ric__cad-wrap {
     position: absolute;
-    pointer-events: none;
-    height: auto;
     z-index: 1;
+    pointer-events: none;
+    transform: translateX(var(--swoop, 0px));
+    will-change: transform;
   }
-  .ric__cad--left {
-    width: 1400px;
-    left: -400px;
-    top: 80px;
-    transform: rotate(225deg);
-    transform-origin: center center;
-  }
-  .ric__cad--right {
-    width: 1100px;
-    right: -560px;
-    top: 80px;
-    transform: scaleY(-1);
+  .ric__cad-wrap--left  { left: 2vw;  top: 110px; width: clamp(300px, 33vw, 540px); }
+  .ric__cad-wrap--right { right: 3vw; top: 64px;  width: clamp(190px, 20vw, 320px); }
+  .ric__cad {
+    display: block;
+    width: 100%;
+    height: auto;
+    pointer-events: none;
     transform-origin: center center;
   }
 
-  .ric__hand { position: absolute; top: 600px; z-index: 4; }
+  /* Outer carries the scroll reveal slide (translateX via --hand-x, set per
+     frame in JS); inner .ric__hand-tf keeps the wf-tuner translate+rotate so
+     the two never overwrite each other. */
+  .ric__hand {
+    position: absolute;
+    top: 600px;
+    z-index: 4;
+    transform: translateX(var(--hand-x, 0px));
+    will-change: transform;
+  }
   .ric__hand--left { left: 120px; }
   .ric__hand--right { right: 120px; text-align: right; }
+  .ric__hand-tf { display: inline-block; }
+  /* Cursive mode swaps the Caveat label for the Vara handwriting target. The
+     size is baked into the SVG's viewBox + width/height (in JS) so layout flow
+     stays correct and the underline sits right beneath the text. */
+  .ric__hand-vara { display: none; }
+  .ric__hand-vara :global(svg) { display: block; }
+  /* Underline strokes itself in after each label finishes writing (JS sets the
+     width to the rendered text width and animates stroke-dashoffset → 0). */
+  .ric__vara-ul {
+    display: none;
+    height: 13px;
+    overflow: visible;
+    margin-top: -6px;
+  }
+  .ric__hand--right .ric__vara-ul { margin-left: auto; }
+  .ric__vara-ul :global(path) { fill: none; stroke: var(--hand); stroke-width: 2.4; stroke-linecap: round; }
+  .ric.is-cursive .ric__hand-caveat { display: none; }
+  .ric.is-cursive .ric__hand-vara,
+  .ric.is-cursive .ric__vara-ul { display: block; }
 
   .ric__wordmark {
     position: relative;
@@ -214,8 +555,8 @@ import HandLabel from "./HandLabel.astro";
   .ric__cta:hover { background: var(--accent); color: var(--accent-ink); }
 
   @media (max-width: 960px) {
-    .ric__cad--left  { width: 800px; left: -260px; top: 60px; }
-    .ric__cad--right { width: 700px; right: -320px; top: 60px; }
+    .ric__cad-wrap--left  { width: clamp(230px, 40vw, 400px); left: 1vw; top: 80px; }
+    .ric__cad-wrap--right { width: clamp(150px, 26vw, 250px); right: 1vw; top: 52px; }
     .ric__hand { top: 480px; }
     .ric__hand--left { left: 24px; }
     .ric__hand--right { right: 24px; }

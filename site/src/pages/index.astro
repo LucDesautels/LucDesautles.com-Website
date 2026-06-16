@@ -15,10 +15,10 @@ import { META_GROUPS, TOC } from "@/data/content";
 ---
 <BaseLayout>
   <TopBar />
-  <Hero />
+  <div data-rsec="hero"><Hero /></div>
 
   <!-- Gallery — only visible in "full picture" filter. -->
-  <div data-filters="full">
+  <div data-filters="full" data-rsec="gallery">
     <HorizontalTOC sections={TOC} client:visible />
   </div>
 
@@ -32,21 +32,23 @@ import { META_GROUPS, TOC } from "@/data/content";
 
   <!-- Academics — always rendered. The Engineering filter hides its header
        + Education group via CSS so only the Research group shows. -->
-  <MetaSection meta={META_GROUPS[0]} num={4} />
+  <div data-rsec="academics">
+    <MetaSection meta={META_GROUPS[0]} num={4} firstSection />
+  </div>
 
   <!-- Well-rounded — full + non-engineering. -->
-  <div data-filters="full non-eng">
+  <div data-filters="full non-eng" data-rsec="wellrounded">
     <MetaSection meta={META_GROUPS[1]} num={5} />
   </div>
 
   <!-- Experiences (quirky) — full + non-engineering. -->
-  <div data-filters="full non-eng">
+  <div data-filters="full non-eng" data-rsec="experiences">
     <MetaSection meta={META_GROUPS[2]} num={6} quirky />
   </div>
 
   <!-- Principles + Footer — always visible. -->
-  <Principles />
-  <Footer />
+  <div data-rsec="principles"><Principles /></div>
+  <div data-rsec="footer"><Footer /></div>
 
   <!-- Floating filter indicator (sticky bottom-right when a filter is on). -->
   <FilterIndicator client:load />

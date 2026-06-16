@@ -6,8 +6,12 @@ interface Props {
   meta: MetaGroup;
   num: number;
   quirky?: boolean;
+  /** Pass true on the very first MetaSection rendered (§04 Academics) so the
+   *  first standout chip keeps the full "★ Standout" label. All other standout
+   *  chips show just "★". */
+  firstSection?: boolean;
 }
-const { meta, num, quirky } = Astro.props;
+const { meta, num, quirky, firstSection } = Astro.props;
 ---
 <section class="ms" id={meta.id}>
   <div class="ms__inner shell">
@@ -24,10 +28,23 @@ const { meta, num, quirky } = Astro.props;
     </div>
 
     {meta.groups.map((g, gi) => {
-      const standout = g.items.find((i) => i.standout) ?? g.items[0];
-      const rest = g.items.filter((i) => i !== standout);
+      const standoutItem = g.items.find((i) => i.standout);
+      const hasStandout = !!standoutItem;
+      // When no standout is flagged, render all items in an equal-column grid.
+      const allItems = hasStandout ? g.items.filter((i) => i !== standoutItem) : g.items;
+      // Four-card layout: standout + 3 siblings → standout spans 2 rows.
+      const isFourCard = hasStandout && allItems.length >= 3;
+      // Only the very first group of the very first section keeps the full chip.
+      const isFirstChip = !!firstSection && gi === 0;
+
+      const groupClass = [
+        "group",
+        !hasStandout && "group--equal",
+        isFourCard && "group--four",
+      ].filter(Boolean).join(" ");
+
       return (
-        <div class="group" data-group-id={g.id}>
+        <div class={groupClass} data-group-id={g.id}>
           <div class="group__head">
             <span class="eyebrow">
               {String(gi + 1).padStart(2, "0")} / {String(meta.groups.length).padStart(2, "0")}
@@ -35,25 +52,43 @@ const { meta, num, quirky } = Astro.props;
             <h3 class="group__title">{g.title}.</h3>
           </div>
           <div class="group__grid">
-            <!-- Standout (tab style) -->
-            <article class={`standout${quirky ? " standout--tilt" : ""}`}>
-              <div class="standout__tab">★ Standout</div>
-              <Placeholder label={standout.title} aspect="4/3" />
-              <div class="standout__body">
-                <h4 class="standout__title">{standout.title}</h4>
-                <p class="standout__text">{standout.body}</p>
-              </div>
-            </article>
+            {standoutItem && (
+              <article class={`standout${quirky ? " standout--tilt" : ""}`}>
+                <div class={`standout__tab${isFirstChip ? "" : " standout__tab--star"}`}>
+                  {isFirstChip ? "★ Standout" : "★"}
+                </div>
+                <Placeholder label={standoutItem.title} aspect="4/3" />
+                <div class="standout__body">
+                  <h4 class="standout__title">{standoutItem.title}</h4>
+                  <p class="standout__text">{standoutItem.body}</p>
+                  {standoutItem.href && (
+                    <a class="card-link" href={standoutItem.href}>
+                      Take a look
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                        <path d="M2.5 9.5L9.5 2.5M9.5 2.5H4.5M9.5 2.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </a>
+                  )}
+                </div>
+              </article>
+            )}
 
-            <!-- Two siblings -->
-            {rest.map((it, i) => (
+            {allItems.map((it, i) => (
               <article
-                class="item"
-                style={quirky ? `transform:rotate(${i === 0 ? 1.5 : -1.2}deg);` : undefined}
+                class={`item${it.outlined ? " item--outlined" : ""}`}
+                style={quirky && !it.outlined ? `transform:rotate(${i === 0 ? 1.5 : -1.2}deg);` : undefined}
               >
                 <Placeholder label={it.title} aspect="4/3" />
                 <h4 class="item__title">{it.title}</h4>
                 <p class="item__text">{it.body}</p>
+                {it.href && (
+                  <a class="card-link" href={it.href}>
+                    Take a look
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                      <path d="M2.5 9.5L9.5 2.5M9.5 2.5H4.5M9.5 2.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </a>
+                )}
               </article>
             ))}
           </div>
@@ -115,8 +150,22 @@ const { meta, num, quirky } = Astro.props;
     gap: 18px;
     align-items: stretch;
   }
+
+  /* Equal-column layout (no standout item in the group) */
+  .group--equal .group__grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  /* Four-card layout: standout spans two rows, 3 siblings on the right */
+  .group--four .standout {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
   @media (max-width: 960px) {
     .group__grid { grid-template-columns: 1fr; }
+    .group--equal .group__grid { grid-template-columns: 1fr; }
+    .group--four .standout { grid-row: auto; grid-column: auto; }
   }
 
   /* Standout — tab style with orange border + shadow */
@@ -131,6 +180,8 @@ const { meta, num, quirky } = Astro.props;
     border: 2px solid #d66e3a;
   }
   .standout--tilt { transform: rotate(-1deg); }
+
+  /* Full chip: "★ Standout" */
   .standout__tab {
     position: absolute;
     top: -13px;
@@ -144,6 +195,15 @@ const { meta, num, quirky } = Astro.props;
     text-transform: uppercase;
     font-weight: 600;
   }
+
+  /* Compact star-only chip */
+  .standout__tab--star {
+    padding: 5px 8px;
+    letter-spacing: 0;
+    font-size: 12px;
+    line-height: 1;
+  }
+
   .standout__body {
     border-left: 3px solid var(--trim);
     padding-left: 14px;
@@ -174,6 +234,12 @@ const { meta, num, quirky } = Astro.props;
     display: flex;
     flex-direction: column;
   }
+
+  /* Outlined item (orange border, like standout outline but item-sized) */
+  .item--outlined {
+    border: 2px solid #d66e3a;
+  }
+
   .item__title {
     font-family: var(--font-display);
     font-size: 22px;
@@ -190,4 +256,18 @@ const { meta, num, quirky } = Astro.props;
     margin: 0;
     line-height: 1.55;
   }
+
+  .card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 12px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    color: #06b6d4;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .card-link:hover { color: #0891b2; }
 </style>

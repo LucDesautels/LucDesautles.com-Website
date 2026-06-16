@@ -67,12 +67,29 @@
     window.addEventListener("resize", () => { resize(); rebuildLines(); });
 
     // ── Click droplets — visible expanding ring + radial line push ────
-    type Drop = { x: number; yDoc: number; t0: number };
+    type Drop = { x: number; yDoc: number; t0: number; mode: "droplet" | "split" | "ripple"; aboveIdx: number; belowIdx: number };
     const drops: Drop[] = [];
     const DROP_LIFE = 3.2;     // seconds
     const DROP_SPEED = 240;    // px/s — radius growth
     const DROP_FW = 110;       // px — bell-curve front-width
     const DROP_AMP = 36;       // px — peak line displacement at the ring
+    // "split" click mode — the disturbance only pushes the nearest line ABOVE
+    // and BELOW the click apart, then ripples outward horizontally and fades
+    // (it never reaches other lines; the sideways part just keeps expanding +
+    // decaying, always spanning the band between those two lines).
+    const SPLIT_LIFE = 3.0;    // seconds
+    const SPLIT_SPEED = 340;   // px/s — horizontal half-width growth
+    const SPLIT_AMP = 30;      // px — how far apart the two bounding lines push
+    // "ripple" click mode — best of both: a visible circle expands (like droplet)
+    // but only the two bracketing lines react, and ONLY where/when the ring's
+    // edge actually reaches them (nothing moves ahead of the front). Once the
+    // ring spans the band it "lands" — the circle fades and the opened band keeps
+    // spreading horizontally to the ring's reach, then decays.
+    const RIPPLE_LIFE = 3.2;   // seconds
+    const RIPPLE_SPEED = 300;  // px/s — ring radius growth
+    const RIPPLE_FW = 95;      // px — soft front width where the band ramps open
+    const RIPPLE_AMP = 32;     // px — how far apart the band opens
+    const RIPPLE_RINGFADE = 55;// px past the band where the visible circle fades out
 
     // ── Document-anchored line catalogue ──────────────────────────
     type Line = { yDoc: number; amp: number };
@@ -121,12 +138,21 @@
 
     // ── Click → spawn droplet (DOC coords so they scroll with page) ───
     window.addEventListener("pointerdown", (e) => {
-      if ((e.target as HTMLElement)?.closest("[data-wf-tuner]")) return;
-      drops.push({
-        x: e.clientX,
-        yDoc: e.clientY + window.scrollY,
-        t0: performance.now(),
-      });
+      if ((e.target as HTMLElement)?.closest("[data-wf-tuner], [data-lt]")) return;
+      const cm = getCfg()?.main?.clickMode;
+      const mode = cm === "split" ? "split" : cm === "ripple" ? "ripple" : "droplet";
+      const yDoc = e.clientY + window.scrollY;
+      // Split + ripple lock onto the nearest line above + below the click point.
+      let aboveIdx = -1, belowIdx = -1;
+      if (mode === "split" || mode === "ripple") {
+        let bestA = -Infinity, bestB = Infinity;
+        for (let i = 0; i < lines.length; i++) {
+          const ly = lines[i].yDoc;
+          if (ly <= yDoc && ly > bestA) { bestA = ly; aboveIdx = i; }
+          if (ly >= yDoc && ly < bestB) { bestB = ly; belowIdx = i; }
+        }
+      }
+      drops.push({ x: e.clientX, yDoc, t0: performance.now(), mode, aboveIdx, belowIdx });
       if (drops.length > 12) drops.shift();
     }, { passive: true });
 
@@ -158,6 +184,7 @@
     function dropletOffset(x: number, baseYDoc: number, now: number): number {
       let acc = 0;
       for (const d of drops) {
+        if (d.mode === "split") continue;
         const age = (now - d.t0) / 1000;
         if (age > DROP_LIFE) continue;
         const dx = x - d.x;
@@ -169,7 +196,59 @@
         const bell = Math.cos((off / DROP_FW) * (Math.PI / 2));
         const decay = 1 - age / DROP_LIFE;
         const ny = dy / (dist || 1);
-        acc += -bell * decay * DROP_AMP * ny;
+        // +ny pushes the line radially OUTWARD, so the wave travels AWAY from
+        // the click point instead of pinching toward it.
+        acc += bell * decay * DROP_AMP * ny;
+      }
+      return acc;
+    }
+
+    // Split mode — only the two lines bracketing the click move, pushed apart,
+    // with a dome that widens outward (|x − clickX| < age·speed) and fades. The
+    // dome always spans the band between the two lines (no gap), and the
+    // sideways edges just keep expanding + decaying since they hit nothing.
+    function splitOffset(x: number, lineIdx: number, now: number): number {
+      let acc = 0;
+      for (const d of drops) {
+        if (d.mode !== "split") continue;
+        if (lineIdx !== d.aboveIdx && lineIdx !== d.belowIdx) continue;
+        const age = (now - d.t0) / 1000;
+        if (age > SPLIT_LIFE) continue;
+        const r = age * SPLIT_SPEED;
+        if (r < 1) continue;
+        const hx = Math.abs(x - d.x);
+        if (hx > r) continue;
+        const env = 0.5 * (1 + Math.cos((Math.PI * hx) / r)); // 1 at centre → 0 at the front
+        const decay = 1 - age / SPLIT_LIFE;
+        const dir = lineIdx === d.aboveIdx ? -1 : 1; // above pushes up, below pushes down
+        acc += dir * env * decay * SPLIT_AMP;
+      }
+      return acc;
+    }
+
+    // Ripple mode — the expanding circle reaches the two bracketing lines and
+    // opens the band only as far as the ring's edge has actually travelled. A
+    // point moves only once the ring crosses it (r ≥ its distance), so nothing
+    // jumps ahead of the front; behind the front the band stays open (occupying
+    // the space) out to the ring's horizontal reach, then the whole thing fades.
+    function rippleOffset(x: number, lineIdx: number, baseYDoc: number, now: number): number {
+      let acc = 0;
+      for (const d of drops) {
+        if (d.mode !== "ripple") continue;
+        if (lineIdx !== d.aboveIdx && lineIdx !== d.belowIdx) continue;
+        const age = (now - d.t0) / 1000;
+        if (age > RIPPLE_LIFE) continue;
+        const r = age * RIPPLE_SPEED;
+        const dy = baseYDoc - d.yDoc;
+        const ady = Math.abs(dy);
+        if (r <= ady) continue;                       // ring hasn't reached this line yet
+        const reach = Math.sqrt(r * r - dy * dy);     // how far along the line the ring has spread
+        const hx = Math.abs(x - d.x);
+        if (hx > reach) continue;                      // ahead of the front → untouched
+        const env = Math.min(1, (reach - hx) / RIPPLE_FW); // soft ramp at the front, full inside
+        const decay = 1 - age / RIPPLE_LIFE;
+        const dir = dy < 0 ? -1 : 1;                   // above opens up, below opens down
+        acc += dir * env * decay * RIPPLE_AMP;
       }
       return acc;
     }
@@ -252,7 +331,9 @@
 
       // Cull old drops.
       for (let i = drops.length - 1; i >= 0; i--) {
-        if ((now - drops[i].t0) / 1000 > DROP_LIFE + 0.1) drops.splice(i, 1);
+        const m = drops[i].mode;
+        const life = m === "split" ? SPLIT_LIFE : m === "ripple" ? RIPPLE_LIFE : DROP_LIFE;
+        if ((now - drops[i].t0) / 1000 > life + 0.1) drops.splice(i, 1);
       }
 
       ctx.clearRect(0, 0, W, H);
@@ -306,6 +387,8 @@
           let y = baseY + cfgLine.amp * ampMul * waveField(sx, cfgLine.yDoc, now, speedMul);
           y += drapeOffset(x, baseY, now, cursorMul);
           y += dropletOffset(x, cfgLine.yDoc, now);
+          y += splitOffset(x, li, now);
+          y += rippleOffset(x, li, cfgLine.yDoc, now);
           if (x === -20) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
@@ -314,13 +397,39 @@
 
       // ── Visible expanding rings for droplets ─────────────────────
       for (const d of drops) {
+        if (d.mode === "split") continue; // split has no visible ring
         const age = (now - d.t0) / 1000;
-        if (age > DROP_LIFE) continue;
-        const radius = age * DROP_SPEED;
-        const decay = 1 - age / DROP_LIFE;
         const cx = d.x;
         const cy = d.yDoc - scrollY;
         if (cy < -800 || cy > H + 800) continue;
+
+        if (d.mode === "ripple") {
+          // Same expanding circle as droplet, but it fades out once it has
+          // spanned the band (the disturbance carries on horizontally in the
+          // lines from there).
+          if (age > RIPPLE_LIFE) continue;
+          const radius = age * RIPPLE_SPEED;
+          const above = lines[d.aboveIdx], below = lines[d.belowIdx];
+          const dyMax = Math.max(
+            above ? Math.abs(d.yDoc - above.yDoc) : 0,
+            below ? Math.abs(below.yDoc - d.yDoc) : 0,
+          );
+          const decay = 1 - age / RIPPLE_LIFE;
+          // full opacity until the ring reaches the band edges, then fade off.
+          const land = Math.max(0, Math.min(1, (dyMax + RIPPLE_RINGFADE - radius) / RIPPLE_RINGFADE));
+          const a = 0.34 * decay * land * waveAlphaMul;
+          if (a <= 0.002) continue;
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.stroke();
+          continue;
+        }
+
+        if (age > DROP_LIFE) continue;
+        const radius = age * DROP_SPEED;
+        const decay = 1 - age / DROP_LIFE;
         ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.34 * decay * waveAlphaMul})`;
         ctx.lineWidth = 1.5;
         ctx.beginPath();

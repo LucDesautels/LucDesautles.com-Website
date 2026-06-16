@@ -1,0 +1,135 @@
+---
+// Easter egg: click fast enough anywhere and a tiny CPS (clicks-per-second)
+// meter pops up — rolling sparkline, current + best CPS, and a nudge to say hi.
+const CONTACT = "mailto:luc@desautels.net";
+---
+<div class="cps" data-cps aria-hidden="true">
+  <canvas class="cps__graph" data-cps-graph width="120" height="34"></canvas>
+  <div class="cps__nums">
+    <div class="cps__now"><span data-cps-now>0</span><small>cps</small></div>
+    <div class="cps__best">best <span data-cps-best>0</span></div>
+  </div>
+  <a class="cps__hi" href={CONTACT}>fast hands — say hi?</a>
+</div>
+
+<script>
+  const SHOW_AT = 5;      // cps that pops it open
+  const HIDE_AFTER = 2600; // ms of calm before it fades away
+  const BUF = 60;          // sparkline samples
+  const SAMPLE_MS = 90;    // sparkline sample cadence
+
+  const root = document.querySelector<HTMLElement>("[data-cps]");
+  const canvas = document.querySelector<HTMLCanvasElement>("[data-cps-graph]");
+  const nowEl = document.querySelector<HTMLElement>("[data-cps-now]");
+  const bestEl = document.querySelector<HTMLElement>("[data-cps-best]");
+
+  if (root && canvas && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const ctx = canvas.getContext("2d")!;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = 120 * DPR; canvas.height = 34 * DPR; ctx.scale(DPR, DPR);
+
+    let times: number[] = [];        // recent click timestamps
+    const hist: number[] = new Array(BUF).fill(0);
+    let best = 0;
+    let active = false;
+    let lastClick = 0;
+    let lastSample = 0;
+    let raf = 0;
+
+    function accent() {
+      return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#d96a36";
+    }
+
+    window.addEventListener("pointerdown", (e) => {
+      if ((e.target as HTMLElement)?.closest("[data-wf-tuner], [data-lt], [data-cps]")) return;
+      const now = performance.now();
+      times.push(now);
+      lastClick = now;
+      if (!raf) raf = requestAnimationFrame(loop);
+    }, { passive: true });
+
+    function drawGraph(cps: number) {
+      ctx.clearRect(0, 0, 120, 34);
+      const max = Math.max(6, best, ...hist);
+      const col = accent();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i < BUF; i++) {
+        const x = (i / (BUF - 1)) * 120;
+        const y = 33 - (hist[i] / max) * 31;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      // soft fill under the line
+      ctx.lineTo(120, 34); ctx.lineTo(0, 34); ctx.closePath();
+      ctx.globalAlpha = 0.14; ctx.fillStyle = col; ctx.fill(); ctx.globalAlpha = 1;
+    }
+
+    function loop() {
+      const now = performance.now();
+      times = times.filter((t) => now - t <= 1000);
+      const cps = times.length;
+      if (cps > best) best = cps;
+
+      if (now - lastSample >= SAMPLE_MS) {
+        lastSample = now;
+        hist.push(cps); hist.shift();
+      }
+
+      if (cps >= SHOW_AT && !active) { active = true; root!.classList.add("is-on"); }
+      if (active && cps === 0 && now - lastClick > HIDE_AFTER) {
+        active = false; root!.classList.remove("is-on");
+      }
+
+      if (active) {
+        if (nowEl) nowEl.textContent = String(cps);
+        if (bestEl) bestEl.textContent = String(best);
+        drawGraph(cps);
+      }
+
+      // keep ticking while shown or while clicks are still fresh; else sleep
+      if (active || now - lastClick < HIDE_AFTER) raf = requestAnimationFrame(loop);
+      else raf = 0;
+    }
+  }
+</script>
+
+<style>
+  .cps {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    z-index: 240;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 9px 11px;
+    background: rgba(20, 18, 16, 0.92);
+    border: 1px solid var(--accent);
+    color: #f4ede2;
+    font-family: var(--font-mono);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+  .cps.is-on { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+  .cps__graph { display: block; width: 120px; height: 34px; }
+  .cps__nums { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .cps__now { font-size: 20px; font-weight: 700; line-height: 1; color: var(--accent); }
+  .cps__now small { font-size: 9px; font-weight: 500; margin-left: 2px; color: rgba(244, 237, 226, 0.6); letter-spacing: 0.1em; }
+  .cps__best { font-size: 10px; letter-spacing: 0.08em; color: rgba(244, 237, 226, 0.65); }
+  .cps__hi {
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    text-decoration: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    padding-top: 5px;
+  }
+  .cps__hi:hover { text-decoration: underline; }
+</style>

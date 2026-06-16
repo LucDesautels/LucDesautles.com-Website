@@ -21,7 +21,7 @@ export default function FilterPills() {
   }, []);
 
   return (
-    <div className="filter-pills" role="group" aria-label="Content filter">
+    <div className="filter-pills" role="group" aria-label="Content filter" data-rsec="filter">
       <span className="filter-pills__intro">Show me —</span>
       {FILTERS.map((f) => {
         const isActive = active === f.id;

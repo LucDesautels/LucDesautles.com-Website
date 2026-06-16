@@ -2,6 +2,8 @@
 import "@/styles/tokens.css";
 import WaveField from "@/components/WaveField.astro";
 import WaveTuner from "@/components/WaveTuner.astro";
+import LayoutTuner from "@/components/LayoutTuner.astro";
+import CpsCounter from "@/components/CpsCounter.astro";
 import SmoothScroll from "@/components/SmoothScroll.astro";
 
 interface Props {
@@ -82,10 +84,55 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://desautels.n
     <a class="skip-link" href="#main">Skip to content</a>
     <SmoothScroll />
     <WaveTuner />
+    <LayoutTuner />
+    <CpsCounter />
     <WaveField />
     <slot />
 
     <style is:global>
+      /* LayoutTuner: per-text-type sizing. Each element's scale =
+         --ts-all × --ts-<type>. Those vars are set on :root (the global page
+         default) and optionally overridden on a [data-rsec] wrapper (inherited
+         otherwise — that's the global→section cascade, for free). Block text
+         only so nested inline runs don't compound. zoom reflows, so it stays
+         layout-correct. Per-section ZOOM is a separate inline el.style.zoom.
+         Gated behind html[data-ts-text] (set by LayoutTuner only when some text
+         scale ≠ 1) so the DEFAULT page carries no `zoom` at all — a literal
+         zoom:1 still trips the browser's zoomed render path and jitters the
+         position:sticky robotics band on scroll. */
+      /* The site mixes semantic headings with BEM-named spans/divs for text, so
+         the map covers both tags AND class-name conventions (__title, __body,
+         …) to catch everything. All rules share specificity, so ORDER decides
+         overlaps: body is the broad catch first; eyebrow/header/subtitle/title
+         come after to win for the recognised kinds (h2.ms__title → title,
+         h4.rplb__title → subtitle, span.row__title → header, …). */
+      [data-ts-text] [data-rsec] :where(p, li, blockquote, dd, figcaption,
+        [class*="__body"], [class*="__text"], [class*="__caption"], [class*="__desc"],
+        [class*="__meta"], [class*="__hint"], [class*="__blurb"], [class*="__note"],
+        [class*="label"], [class*="__value"], [class*="__detail"], [class*="__quote"],
+        [class*="__cite"], [class*="__role"], [class*="__copy"], [class*="__period"],
+        [class*="__quirk"], [class*="__tagline"], [class*="cta"], [class*="pill"],
+        [class*="chip"], [class*="__domain"], [class*="__intro"], [class*="__email"],
+        [class*="tile-cap"], .pr__d, .sub__all, .sub__empty,
+        .ft__links a, .ft__right div) {
+        zoom: calc(var(--ts-all, 1) * var(--ts-body, 1));
+      }
+      [data-ts-text] [data-rsec] :where(.eyebrow, [class*="eyebrow"], [class*="__counter"], [class*="__num"],
+        [class*="__tag"], [class*="__kicker"], [class*="__corner-mark"], [class*="__tab"]) {
+        zoom: calc(var(--ts-all, 1) * var(--ts-eyebrow, 1));
+      }
+      [data-ts-text] [data-rsec] :where(h3, .ric__small, [class*="__title"], [class*="__heading"], .pr__t) {
+        zoom: calc(var(--ts-all, 1) * var(--ts-header, 1));
+      }
+      [data-ts-text] [data-rsec] :where(h4, h5, h6, [class*="__subtitle"], [class*="__deck"], [class*="__lede"]) {
+        zoom: calc(var(--ts-all, 1) * var(--ts-subtitle, 1));
+      }
+      [data-ts-text] [data-rsec] :where(h1, h2, .ric__big, [class*="hero__name"]) {
+        zoom: calc(var(--ts-all, 1) * var(--ts-title, 1));
+      }
+      /* the cursive Vara/Caveat label has its own sizing — keep it out of the sweep */
+      [data-ts-text] [data-rsec] :where(.hand, .hand__text) { zoom: 1; }
+
       .skip-link {
         position: fixed;
         top: 8px;

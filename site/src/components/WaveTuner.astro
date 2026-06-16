@@ -52,11 +52,22 @@ function imgSliders(side: "left" | "right", defaults: { rot: number }): Slider[]
     { key: `images.${side}.x`,     label: "X (PX)",  min: -9999, max: 9999, step: 1,    value: 0,         fmt: "int", freeform: true },
     { key: `images.${side}.y`,     label: "Y (PX)",  min: -9999, max: 9999, step: 1,    value: 0,         fmt: "int", freeform: true },
     { key: `images.${side}.rot`,   label: "ROTATE",  min: 0,     max: 360,  step: 1,    value: defaults.rot, fmt: "int" },
-    { key: `images.${side}.scale`, label: "SCALE",   min: 0.3,   max: 2,    step: 0.05, value: 1,         fmt: "2dp" },
+    { key: `images.${side}.scale`, label: "SCALE",   min: 0.25,  max: 4,    step: 0.05, value: 1,         fmt: "2dp" },
   ];
 }
-const leftImgSliders  = imgSliders("left",  { rot: 225 });
+const leftImgSliders  = imgSliders("left",  { rot: 0 });
 const rightImgSliders = imgSliders("right", { rot: 0 });
+
+function labelSliders(side: "left" | "right"): Slider[] {
+  return [
+    { key: `labels.${side}.x`,   label: "X (PX)",  min: -9999, max: 9999, step: 1,   value: 0, fmt: "int", freeform: true },
+    { key: `labels.${side}.y`,   label: "Y (PX)",  min: -9999, max: 9999, step: 1,   value: 0, fmt: "int", freeform: true },
+    { key: `labels.${side}.rot`, label: "ROTATE",  min: -180,  max: 180,  step: 0.5, value: 0, fmt: "1dp" },
+    { key: `labels.${side}.size`,label: "SIZE (PX)",min: 20,   max: 120,  step: 1,   value: side === "left" ? 56 : 56, fmt: "int" },
+  ];
+}
+const leftLabelSliders  = labelSliders("left");
+const rightLabelSliders = labelSliders("right");
 
 function fmt(v: number, f: Slider["fmt"]) {
   if (f === "int")  return Math.round(v).toString();
@@ -73,6 +84,8 @@ function fmt(v: number, f: Slider["fmt"]) {
     <button class="wf-tab"           data-tab-btn="rail"       type="button" role="tab" aria-selected="false">rail</button>
     <button class="wf-tab"           data-tab-btn="scroll"     type="button" role="tab" aria-selected="false">scroll</button>
     <button class="wf-tab"           data-tab-btn="images"     type="button" role="tab" aria-selected="false">images</button>
+    <button class="wf-tab"           data-tab-btn="labels"     type="button" role="tab" aria-selected="false">labels</button>
+    <button class="wf-tab"           data-tab-btn="text"       type="button" role="tab" aria-selected="false">text</button>
   </div>
 
   <div class="wf-tuner__body">
@@ -90,6 +103,14 @@ function fmt(v: number, f: Slider["fmt"]) {
       <div class="wf-slider" data-slider>
         <label class="wf-label">ZOOM × <span data-readout>1.000</span></label>
         <input type="range" min="0.5" max="1.2" step="0.025" value="1" data-key="main.zoom" data-fmt="3dp" />
+      </div>
+      <div class="wf-row">
+        <div class="wf-label">CLICK</div>
+        <div class="wf-pills" data-wf-pills="main.clickMode">
+          <button class="wf-pill is-active" data-pill="droplet" type="button">droplet (away)</button>
+          <button class="wf-pill"           data-pill="split"   type="button">split</button>
+          <button class="wf-pill"           data-pill="ripple"  type="button">ripple</button>
+        </div>
       </div>
     </div>
 
@@ -163,6 +184,12 @@ function fmt(v: number, f: Slider["fmt"]) {
 
     <!-- ── IMAGES TAB ───────────────────────────────────────────── -->
     <div class="wf-tab-panel" data-tab-panel="images" role="tabpanel" hidden>
+      <div class="wf-subhead">SWOOP-IN</div>
+      <div class="wf-slider" data-slider>
+        <label class="wf-label">REST AT (% VH) <span data-readout>75</span></label>
+        <input type="range" min="20" max="100" step="1" value="75" data-key="images.restPct" data-fmt="int" />
+      </div>
+
       <div class="wf-subhead">LEFT IMAGE</div>
       {leftImgSliders.map((s) => (
         <div class="wf-slider" data-slider>
@@ -192,11 +219,82 @@ function fmt(v: number, f: Slider["fmt"]) {
       ))}
       <div class="wf-row">
         <button class="wf-toggle" data-toggle data-key="images.right.mirrorH" type="button">Mirror H</button>
-        <button class="wf-toggle is-on" data-toggle data-key="images.right.mirrorV" type="button">Mirror V</button>
+        <button class="wf-toggle" data-toggle data-key="images.right.mirrorV" type="button">Mirror V</button>
+      </div>
+    </div>
+
+    <!-- ── LABELS TAB ──────────────────────────────────────────────── -->
+    <div class="wf-tab-panel" data-tab-panel="labels" role="tabpanel" hidden>
+      <div class="wf-subhead">PROJECT SAILFISH</div>
+      {leftLabelSliders.map((s) => (
+        <div class="wf-slider" data-slider>
+          <label class="wf-label">{s.label} <span data-readout>{fmt(s.value, s.fmt)}</span></label>
+          {s.freeform ? (
+            <input type="number" step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} class="wf-numinput" />
+          ) : (
+            <input type="range" min={s.min} max={s.max} step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} />
+          )}
+        </div>
+      ))}
+
+      <div class="wf-subhead">FTC TEAM 16366</div>
+      {rightLabelSliders.map((s) => (
+        <div class="wf-slider" data-slider>
+          <label class="wf-label">{s.label} <span data-readout>{fmt(s.value, s.fmt)}</span></label>
+          {s.freeform ? (
+            <input type="number" step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} class="wf-numinput" />
+          ) : (
+            <input type="range" min={s.min} max={s.max} step={s.step} value={s.value} data-key={s.key} data-fmt={s.fmt} />
+          )}
+        </div>
+      ))}
+    </div>
+
+    <!-- ── TEXT TAB ────────────────────────────────────────────────── -->
+    <!-- How the section's text appears as you scroll into the robotics
+         intro. RoboticsIntroF.astro listens for text.mode and drives the
+         reveal off the same scroll progress as the image swoop. -->
+    <div class="wf-tab-panel" data-tab-panel="text" role="tabpanel" hidden>
+      <div class="wf-row">
+        <div class="wf-label">REVEAL MODE</div>
+        <div class="wf-pills wf-pills--stack" data-wf-pills="text.mode">
+          <button class="wf-pill"           data-pill="slide"     type="button">slide in with images</button>
+          <button class="wf-pill"           data-pill="highlight" type="button">orange highlight sweep</button>
+          <button class="wf-pill is-active" data-pill="cursive"   type="button">cursive handwriting</button>
+          <button class="wf-pill"           data-pill="none"      type="button">none (static)</button>
+        </div>
+      </div>
+      <div class="wf-subhead">CURSIVE WRITING</div>
+      <div class="wf-slider" data-slider>
+        <label class="wf-label">TRIGGER AT (%) <span data-readout>15</span></label>
+        <input type="range" min="0" max="95" step="1" value="15" data-key="text.writeStart" data-fmt="int" />
+      </div>
+      <div class="wf-slider" data-slider>
+        <label class="wf-label">WRITE SPEED (s) <span data-readout>2.0</span></label>
+        <input type="range" min="0.4" max="6" step="0.1" value="2" data-key="text.writeSpeed" data-fmt="1dp" />
+      </div>
+      <div class="wf-row">
+        <div class="wf-label">FONT</div>
+        <div class="wf-pills" data-wf-pills="text.font">
+          <button class="wf-pill is-active" data-pill="satisfy"    type="button">satisfy</button>
+          <button class="wf-pill"           data-pill="shadows"    type="button">shadows</button>
+          <button class="wf-pill"           data-pill="parisienne" type="button">parisienne</button>
+          <button class="wf-pill"           data-pill="pacifico"   type="button">pacifico</button>
+        </div>
+      </div>
+      <div class="wf-tuner__hint" style="padding:8px 0 0">
+        TRIGGER = how far the label has risen up the viewport before the pen
+        starts; SPEED = seconds per label. Once it starts it plays to the end on
+        its own — scrolling away won't stop it.
       </div>
     </div>
   </div>
 
+  <div class="wf-tuner__io">
+    <button class="wf-tuner__iobtn" data-wf-copy  type="button">⧉ copy all</button>
+    <button class="wf-tuner__iobtn" data-wf-paste type="button">⤓ paste</button>
+  </div>
+  <div class="wf-tuner__meta" data-wf-meta>…</div>
   <div class="wf-tuner__hint">temporary · drag to taste · click anywhere to fire click effect</div>
 </div>
 
@@ -213,6 +311,10 @@ function fmt(v: number, f: Slider["fmt"]) {
       naturalAmp: 1.0,
       cursorReact: 1.0,
       zoom: 1.0,
+      // click effect: "droplet" (expanding ring pushing all lines away), "split"
+      // (pushes only the two bracketing lines apart), or "ripple" (expanding ring
+      // that only opens the bracketing band, as/where the ring's edge reaches it).
+      clickMode: "droplet" as "droplet" | "split" | "ripple",
     },
     transition: {
       mode: "water",
@@ -245,10 +347,32 @@ function fmt(v: number, f: Slider["fmt"]) {
       mode: "default" as "native" | "subtle" | "default" | "soft" | "snappy",
     },
     images: {
-      left:  { x: 0, y: 0, rot: 225, scale: 1.0, mirrorH: false, mirrorV: false },
-      right: { x: 0, y: 0, rot: 0,   scale: 1.0, mirrorH: false, mirrorV: true  },
+      // Bump __v whenever these defaults change meaningfully — a stale saved
+      // config gets its images branch reset on load (see hydrate below).
+      __v: 2,
+      // % of a viewport-height scrolled when the swoop reaches its resting
+      // position (RoboticsIntroF maps this to SWOOP_END). 75 = the original
+      // "three-quarters in" feel.
+      restPct: 75,
+      left:  { x: 0, y: 0, rot: 0, scale: 1.0, mirrorH: false, mirrorV: false },
+      right: { x: 0, y: 0, rot: 0, scale: 1.0, mirrorH: false, mirrorV: false },
+    },
+    labels: {
+      left:  { x: 0, y: 0, rot: 0, size: 56 },
+      right: { x: 0, y: 0, rot: 0, size: 56 },
+    },
+    text: {
+      // RoboticsIntroF reads this to pick the text-reveal animation as the
+      // section scrolls in. See the TEXT TAB above.
+      mode: "cursive" as "slide" | "highlight" | "cursive" | "none",
+      // cursive (Vara handwriting): writing TRIGGERS once the label has risen
+      // writeStart% of the viewport, then plays for writeSpeed seconds per label.
+      writeStart: 15,
+      writeSpeed: 2.0,
+      font: "satisfy" as "satisfy" | "shadows" | "parisienne" | "pacifico",
     },
   } as const;
+  const IMAGES_VERSION = DEFAULTS.images.__v;
 
   type AnyCfg = Record<string, any>;
   function deepClone<T>(o: T): T { return JSON.parse(JSON.stringify(o)); }
@@ -266,10 +390,23 @@ function fmt(v: number, f: Slider["fmt"]) {
   // Hydrate from localStorage, but always start from defaults so missing
   // keys in saved data don't leave us with undefined.
   const cfg: AnyCfg = deepClone(DEFAULTS);
+  let savedImagesV: unknown;
   try {
     const raw = localStorage.getItem("wf-config");
-    if (raw) mergeInto(cfg, JSON.parse(raw));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      savedImagesV = parsed?.images?.__v;
+      mergeInto(cfg, parsed);
+    }
   } catch {}
+  // The flanking images switched from CAD renders to photos, so the old saved
+  // image transforms (225° left rotation, mirrored right) no longer apply.
+  // Reset just the images branch when the saved version is stale — wave,
+  // transition, scroll, etc. tuning is left untouched.
+  if (savedImagesV !== IMAGES_VERSION) {
+    cfg.images = deepClone(DEFAULTS.images);
+    try { localStorage.setItem("wf-config", JSON.stringify(cfg)); } catch {}
+  }
   (window as any).__wfConfig = cfg;
 
   function getAt(path: string): any {
@@ -312,10 +449,41 @@ function fmt(v: number, f: Slider["fmt"]) {
       `rotate(${c.rot ?? 0}deg) ` +
       `scale(${sx}, ${sy})`;
     el.style.transformOrigin = "center center";
+    // Live size readout on this side's SCALE slider: rendered width in px
+    // (layout width × scale — rotation-independent, aspect ratio locked).
+    const scale = c.scale ?? 1;
+    const readout = tuner
+      ?.querySelector<HTMLElement>(`input[data-key="images.${side}.scale"]`)
+      ?.closest("[data-slider]")
+      ?.querySelector<HTMLElement>("[data-readout]");
+    if (readout) {
+      const w = Math.round(el.offsetWidth * scale);
+      readout.textContent = w > 0 ? `${scale.toFixed(2)}× · ${w}px` : `${scale.toFixed(2)}×`;
+    }
   }
   function applyCadImagesAll() {
     applyCadImage("left");
     applyCadImage("right");
+  }
+
+  // ── Hand-label transform updater ─────────────────────────────────
+  // Listens for labels.* slider changes and rewrites the translate +
+  // rotate on the .ric__hand wrapper elements (data-hand-label attr).
+  // Font size is applied directly to the .hand element inside.
+  function applyHandLabel(side: "left" | "right") {
+    const c = (cfg as any).labels?.[side];
+    if (!c) return;
+    const wrapper = document.querySelector<HTMLElement>(`[data-hand-label="${side}"]`);
+    if (!wrapper) return;
+    wrapper.style.transform =
+      `translate(${c.x ?? 0}px, ${c.y ?? 0}px) rotate(${c.rot ?? 0}deg)`;
+    // Font size lives on the inner .hand element
+    const hand = wrapper.querySelector<HTMLElement>(".hand");
+    if (hand) hand.style.fontSize = `${c.size ?? 56}px`;
+  }
+  function applyHandLabelsAll() {
+    applyHandLabel("left");
+    applyHandLabel("right");
   }
 
   const tuner = document.querySelector<HTMLElement>("[data-wf-tuner]");
@@ -324,6 +492,8 @@ function fmt(v: number, f: Slider["fmt"]) {
   // elements aren't in the DOM yet (different page render order).
   applyCadImagesAll();
   requestAnimationFrame(applyCadImagesAll);
+  applyHandLabelsAll();
+  requestAnimationFrame(applyHandLabelsAll);
 
   // ── Collapse / expand ────────────────────────────────────────────────────
   const fab = document.querySelector<HTMLElement>("[data-wf-fab]");
@@ -340,11 +510,11 @@ function fmt(v: number, f: Slider["fmt"]) {
   tuner?.querySelector("[data-wf-close]")?.addEventListener("click", () => setCollapsed(true));
   fab?.addEventListener("click", () => setCollapsed(false));
 
-  function initTuner(tuner: HTMLElement) {
-    // ── Sync every slider/number/toggle/pill DOM to the live config ──
+  // ── Re-sync every control's DOM to the live cfg (used on init + after paste) ──
+  function syncDom() {
+    if (!tuner) return;
     tuner.querySelectorAll<HTMLInputElement>("input[data-key]").forEach((input) => {
-      const key = input.dataset.key!;
-      const value = getAt(key);
+      const value = getAt(input.dataset.key!);
       if (typeof value === "number") {
         input.value = String(value);
         const readout = input.closest("[data-slider]")?.querySelector<HTMLElement>("[data-readout]");
@@ -352,19 +522,106 @@ function fmt(v: number, f: Slider["fmt"]) {
       }
     });
     tuner.querySelectorAll<HTMLElement>("[data-toggle][data-key]").forEach((btn) => {
-      const on = !!getAt(btn.dataset.key!);
-      btn.classList.toggle("is-on", on);
+      btn.classList.toggle("is-on", !!getAt(btn.dataset.key!));
     });
     tuner.querySelectorAll<HTMLElement>("[data-wf-pills]").forEach((group) => {
-      const key = group.dataset.wfPills!;
-      const value = getAt(key);
-      group.querySelectorAll<HTMLElement>("[data-pill]").forEach((b) => {
-        b.classList.toggle("is-active", b.dataset.pill === value);
-      });
+      const value = getAt(group.dataset.wfPills!);
+      group.querySelectorAll<HTMLElement>("[data-pill]").forEach((b) => b.classList.toggle("is-active", b.dataset.pill === value));
     });
+  }
+
+  // ── device / viewport meta + global copy-paste ──────────────────────────
+  function gcd(a: number, b: number): number { return b ? gcd(b, a % b) : a; }
+  function deviceMeta() {
+    const w = window.innerWidth, h = window.innerHeight;
+    const g = gcd(w, h) || 1;
+    const dpr = Math.round((window.devicePixelRatio || 1) * 100) / 100;
+    const sw = window.screen?.width ?? 0, sh = window.screen?.height ?? 0;
+    return {
+      viewport: `${w}×${h}`, aspect: `${Math.round(w / g)}:${Math.round(h / g)}`,
+      aspectRatio: Math.round((w / h) * 1000) / 1000, screen: `${sw}×${sh}`,
+      physical: `${Math.round(sw * dpr)}×${Math.round(sh * dpr)}`, dpr,
+      orientation: w >= h ? "landscape" : "portrait", ua: navigator.userAgent,
+    };
+  }
+  function updateMeta() {
+    const m = deviceMeta();
+    const el = tuner?.querySelector<HTMLElement>("[data-wf-meta]");
+    if (el) el.textContent = `${m.viewport} · ${m.aspect} (${m.aspectRatio}) · ${m.orientation} · dpr ${m.dpr} · screen ${m.screen} · zoom ${cfg.main.zoom}`;
+  }
+
+  // Root zoom only when ≠ 1 — a literal `zoom: 1` still puts the page on the
+  // browser's zoomed render path, which makes position:sticky sections (the
+  // robotics side-by-side band) jitter while scrolling. Clearing it at 1 keeps
+  // the default page on the normal render path.
+  function applyRootZoom(z: number) {
+    if (z && z !== 1) document.documentElement.style.setProperty("zoom" as any, String(z));
+    else document.documentElement.style.removeProperty("zoom");
+  }
+
+  // Re-apply everything after a paste: sync DOM, push to every subsystem (__init),
+  // and redo the appliers that don't run each frame (zoom, images, labels).
+  function applyAfterPaste() {
+    syncDom();
+    applyRootZoom(cfg.main.zoom);
+    fire("__init", cfg);
+    applyCadImagesAll();
+    applyHandLabelsAll();
+    updateMeta();
+  }
+
+  tuner?.querySelector("[data-wf-copy]")?.addEventListener("click", async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    // Everything: the full wf config, the per-section layout config, and the
+    // device/aspect metadata — one blob to hand back for responsive defaults.
+    const payload = { meta: deviceMeta(), wfConfig: cfg, layout: (window as any).__layoutConfig ?? null };
+    const text = JSON.stringify(payload, null, 2);
+    try { await navigator.clipboard.writeText(text); btn.textContent = "✓ copied!"; }
+    catch { window.prompt("Copy this:", text); btn.textContent = "⧉ copy all"; }
+    setTimeout(() => { btn.textContent = "⧉ copy all"; }, 1400);
+  });
+
+  tuner?.querySelector("[data-wf-paste]")?.addEventListener("click", async (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    let text = "";
+    try { text = await navigator.clipboard.readText(); } catch {}
+    if (!text) text = window.prompt("Paste settings JSON:") || "";
+    if (!text) return;
+    try {
+      const parsed = JSON.parse(text);
+      const incoming = parsed.wfConfig ?? (parsed.meta || parsed.layout ? null : parsed);
+      if (incoming && typeof incoming === "object") { mergeInto(cfg, incoming); persist(); applyAfterPaste(); }
+      if (parsed.layout && (window as any).__layoutConfig) {
+        const lc = (window as any).__layoutConfig;
+        // New shape: { global, sections }. (Old flat { hero: {...} } still works.)
+        const inc = parsed.layout.global || parsed.layout.sections ? parsed.layout : { sections: parsed.layout };
+        if (inc.global) Object.assign(lc.global, inc.global);
+        if (inc.sections) for (const k of Object.keys(inc.sections)) {
+          if (!lc.sections[k]) continue;
+          const s = inc.sections[k];
+          if (typeof s.zoom === "number") lc.sections[k].zoom = s.zoom;
+          if (s.text) Object.assign(lc.sections[k].text, s.text);
+        }
+        try { localStorage.setItem("layout-config", JSON.stringify(lc)); } catch {}
+        window.dispatchEvent(new Event("layout-apply"));
+      }
+      btn.textContent = "✓ applied!";
+    } catch { btn.textContent = "✗ bad JSON"; }
+    setTimeout(() => { btn.textContent = "⤓ paste"; }, 1600);
+  });
+
+  updateMeta();
+  window.addEventListener("resize", updateMeta, { passive: true });
+  window.addEventListener("wf-config-change", (e) => {
+    if ((e as CustomEvent).detail?.key === "main.zoom") updateMeta();
+  });
+
+  function initTuner(tuner: HTMLElement) {
+    // ── Sync every slider/number/toggle/pill DOM to the live config ──
+    syncDom();
 
     // Apply zoom on load (since it isn't reapplied each frame elsewhere).
-    document.documentElement.style.setProperty("zoom" as any, String(cfg.main.zoom));
+    applyRootZoom(cfg.main.zoom);
     fire("__init", cfg);
 
     // ── Tab switching ──────────────────────────────────────────────
@@ -400,10 +657,9 @@ function fmt(v: number, f: Slider["fmt"]) {
       const readout = input.closest("[data-slider]")?.querySelector<HTMLElement>("[data-readout]");
       if (readout) readout.textContent = formatVal(value, input.dataset.fmt ?? null);
       // Apply page zoom immediately when changed.
-      if (key === "main.zoom") {
-        document.documentElement.style.setProperty("zoom" as any, String(value));
-      }
+      if (key === "main.zoom") applyRootZoom(value);
       if (key.startsWith("images.")) applyCadImagesAll();
+      if (key.startsWith("labels.")) applyHandLabelsAll();
       persist();
       fire(key, value);
     };
@@ -656,6 +912,31 @@ function fmt(v: number, f: Slider["fmt"]) {
     gap: 8px;
   }
   .wf-tab-panel.is-active { display: flex; }
+  .wf-tuner__io {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px 0;
+  }
+  .wf-tuner__iobtn {
+    flex: 1;
+    padding: 6px 8px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #f4ede2;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .wf-tuner__iobtn:hover { border-color: var(--accent); color: var(--accent); }
+  .wf-tuner__meta {
+    padding: 7px 12px 0;
+    font-size: 9px;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+    color: rgba(244, 237, 226, 0.6);
+    word-break: break-word;
+  }
   .wf-tuner__hint {
     padding: 6px 12px 10px;
     font-size: 9px;

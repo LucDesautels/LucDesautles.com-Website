@@ -5,7 +5,7 @@ import Placeholder from "./Placeholder.astro";
 const cols = ROBOTICS; // [Sailfish, FTC]
 const N = 5; // slides per column
 ---
-<section class="rp" id="sailfish" data-rp>
+<section class="rp" id="sailfish" data-rp data-rsec="robotics-panels">
   <!-- Sticky band: column headers + media + progress bars ─────────────── -->
   <div class="rp__stickytop">
     <div class="rp__shell shell">
@@ -18,6 +18,7 @@ const N = 5; // slides per column
                 <div class="col__counter">{String(ci + 1).padStart(2, "0")} / 02</div>
               </div>
               <h3 class="col__title">{p.title}</h3>
+              {p.subtitle && <div class="col__subtitle">{p.subtitle}</div>}
             </div>
 
             <div class="col__media">
@@ -84,7 +85,7 @@ const N = 5; // slides per column
   </div>
 
   <!-- Lightbox: rendered once, toggles visibility on click. ────────────── -->
-  <div class="rplb" data-rplb hidden aria-hidden="true">
+  <div class="rplb" data-rplb hidden aria-hidden="true" data-rsec="lightbox">
     <div class="rplb__backdrop" data-rplb-close></div>
     <div class="rplb__panel" role="dialog" aria-modal="true" aria-labelledby="rplb-title">
       <div class="rplb__bars" data-rplb-bars>
@@ -555,6 +556,10 @@ const N = 5; // slides per column
     background: var(--dark);
     padding: calc(var(--topbar-h) + 14px) 0 18px;
     border-bottom: 1px solid var(--dark-line-soft);
+    /* Isolate this band's layout so its sticky release/re-engage at the section
+       bottom doesn't trigger a wider main-thread reflow — that reflow is what
+       hitches Lenis (JS / main-thread scroll) while native scroll stays smooth. */
+    contain: layout;
   }
 
   .rp__grid { display: grid; gap: 28px; }
@@ -588,6 +593,14 @@ const N = 5; // slides per column
     text-transform: uppercase;
     letter-spacing: -0.01em;
     font-weight: 600;
+  }
+  .col__subtitle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 8px;
   }
 
   /* ── Media (image stack + bars) ──────────────────────────────────── */

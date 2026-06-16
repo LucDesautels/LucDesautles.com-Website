@@ -1,0 +1,417 @@
+---
+// TEMPORARY second control panel (top-right). Per-section ZOOM + per-text-type
+// SIZE, with a GLOBAL (whole-page) default that every section follows until you
+// override it. Copy "for this device" grabs the device aspect/resolution + all
+// the levels to hand back for baking in responsive defaults. Removed with the
+// rest of the tuners once values are baked in.
+
+const TYPES = [
+  { key: "all",      label: "ALL TEXT" },
+  { key: "eyebrow",  label: "§ EYEBROW" },
+  { key: "title",    label: "TITLE" },
+  { key: "header",   label: "HEADER" },
+  { key: "subtitle", label: "SUBTITLE" },
+  { key: "body",     label: "BODY" },
+];
+
+// Granular page sections (data-rsec="<key>" hooks live on the components).
+const SECTIONS = [
+  { key: "hero",            label: "Hero" },
+  { key: "filter",          label: "Domain filter" },
+  { key: "gallery",         label: "Gallery (TOC)",        warn: true },
+  { key: "robotics-intro",  label: "Robotics — intro",     warn: true },
+  { key: "robotics-panels", label: "Robotics — side-by-side", warn: true },
+  { key: "subprojects",     label: "Robotics — sub-projects" },
+  { key: "lightbox",        label: "Lightbox",             warn: true },
+  { key: "academics",       label: "Academics" },
+  { key: "wellrounded",     label: "Well-rounded" },
+  { key: "experiences",     label: "Experiences" },
+  { key: "principles",      label: "Principles" },
+  { key: "footer",          label: "Footer" },
+];
+---
+<div class="lt" data-lt role="region" aria-label="Layout tuner (temporary)">
+  <div class="lt__head">
+    <span class="lt__title">layout · text + zoom</span>
+    <button class="lt__close" data-lt-close type="button" aria-label="Close layout tuner">✕</button>
+  </div>
+
+  <div class="lt__body">
+    <!-- GLOBAL defaults — every section follows these until overridden -->
+    <div class="lt__sec lt__sec--global">
+      <div class="lt__seclabel">GLOBAL · whole page</div>
+      {TYPES.map((t) => (
+        <div class="lt__slider" data-lt-slider data-rkey={`global.${t.key}`}>
+          <label class="lt__lab">{t.label} <span class="lt__ro" data-lt-ro>1.00</span></label>
+          <div class="lt__track">
+            <input type="range" min="0.6" max="1.6" step="0.01" value="1" />
+            <span class="lt__tick" data-lt-tick></span>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- per-section (collapsible) -->
+    {SECTIONS.map((s) => (
+      <div class="lt__sec lt__sec--collapsed" data-lt-group={s.key}>
+        <button class="lt__sechead" data-lt-toggle type="button">
+          <span class="lt__caret">▸</span>
+          <span class="lt__secname">{s.label}</span>
+          {s.warn && <span class="lt__warn" title="zoom on this section can disturb its pinned scroll — text is safe">⚠</span>}
+        </button>
+        <div class="lt__secbody">
+          <div class="lt__slider lt__slider--zoom" data-lt-slider data-rkey={`${s.key}.zoom`}>
+            <label class="lt__lab">ZOOM <span class="lt__ro" data-lt-ro>1.00</span></label>
+            <div class="lt__track">
+              <input type="range" min="0.5" max="1.6" step="0.01" value="1" />
+              <span class="lt__tick" data-lt-tick></span>
+            </div>
+          </div>
+          {TYPES.map((t) => (
+            <div class="lt__slider lt__slider--text" data-lt-slider data-rkey={`${s.key}.text.${t.key}`}>
+              <label class="lt__lab" data-lt-reset title="double-click to follow the global default">
+                {t.label} <span class="lt__ro" data-lt-ro>1.00</span>
+              </label>
+              <div class="lt__track">
+                <input type="range" min="0.6" max="1.6" step="0.01" value="1" />
+                <span class="lt__tick" data-lt-tick></span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <div class="lt__foot">
+    <div class="lt__io">
+      <button class="lt__btn" data-lt-copy type="button">⧉ copy for this device</button>
+      <button class="lt__btn" data-lt-reset-all type="button">reset</button>
+    </div>
+    <div class="lt__meta" data-lt-meta>…</div>
+  </div>
+</div>
+
+<button class="lt__fab" data-lt-fab type="button" aria-label="Open layout tuner">▦</button>
+
+<script>
+  const TYPE_KEYS = ["all", "eyebrow", "title", "header", "subtitle", "body"];
+  const SECTION_KEYS = [
+    "hero", "filter", "gallery", "robotics-intro", "robotics-panels",
+    "subprojects", "lightbox", "academics", "wellrounded", "experiences",
+    "principles", "footer",
+  ];
+
+  // ── device meta (shared shape with WaveTuner) ─────────────────────────────
+  function gcd(a: number, b: number): number { return b ? gcd(b, a % b) : a; }
+  function deviceMeta() {
+    const w = window.innerWidth, h = window.innerHeight;
+    const g = gcd(w, h) || 1;
+    const dpr = Math.round((window.devicePixelRatio || 1) * 100) / 100;
+    const sw = window.screen?.width ?? 0, sh = window.screen?.height ?? 0;
+    return {
+      viewport: `${w}×${h}`, aspect: `${Math.round(w / g)}:${Math.round(h / g)}`,
+      aspectRatio: Math.round((w / h) * 1000) / 1000, screen: `${sw}×${sh}`,
+      physical: `${Math.round(sw * dpr)}×${Math.round(sh * dpr)}`, dpr,
+      orientation: w >= h ? "landscape" : "portrait", ua: navigator.userAgent,
+    };
+  }
+  (window as any).__deviceMeta = deviceMeta;
+
+  // ── config ────────────────────────────────────────────────────────────────
+  type Sec = { zoom: number; text: Record<string, number | null> };
+  type Cfg = { global: Record<string, number>; sections: Record<string, Sec> };
+  function blank(): Cfg {
+    const sections: Record<string, Sec> = {};
+    for (const k of SECTION_KEYS) {
+      sections[k] = { zoom: 1, text: Object.fromEntries(TYPE_KEYS.map((t) => [t, null])) };
+    }
+    return { global: Object.fromEntries(TYPE_KEYS.map((t) => [t, 1])), sections };
+  }
+  const cfg = blank();
+  try {
+    const raw = localStorage.getItem("layout-config");
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s?.global) for (const t of TYPE_KEYS) if (typeof s.global[t] === "number") cfg.global[t] = s.global[t];
+      if (s?.sections) for (const k of SECTION_KEYS) {
+        const sec = s.sections[k];
+        if (!sec) continue;
+        if (typeof sec.zoom === "number") cfg.sections[k].zoom = sec.zoom;
+        if (sec.text) for (const t of TYPE_KEYS) {
+          const v = sec.text[t];
+          if (v === null || typeof v === "number") cfg.sections[k].text[t] = v;
+        }
+      }
+    }
+  } catch {}
+  (window as any).__layoutConfig = cfg;
+  function persist() { try { localStorage.setItem("layout-config", JSON.stringify(cfg)); } catch {} }
+
+  // ── apply to the page ─────────────────────────────────────────────────────
+  function applyGlobal() {
+    for (const t of TYPE_KEYS) document.documentElement.style.setProperty(`--ts-${t}`, String(cfg.global[t]));
+  }
+  function applySection(key: string) {
+    const c = cfg.sections[key];
+    const el = document.querySelector<HTMLElement>(`[data-rsec="${key}"]`);
+    if (!c || !el) return;
+    if (c.zoom && c.zoom !== 1) (el.style as any).zoom = String(c.zoom);
+    else el.style.removeProperty("zoom");
+    for (const t of TYPE_KEYS) {
+      const v = c.text[t];
+      if (v != null) el.style.setProperty(`--ts-${t}`, String(v));
+      else el.style.removeProperty(`--ts-${t}`);
+    }
+  }
+  function anyTextScaled(): boolean {
+    for (const t of TYPE_KEYS) if (cfg.global[t] !== 1) return true;
+    for (const k of SECTION_KEYS) for (const t of TYPE_KEYS) {
+      const v = cfg.sections[k].text[t];
+      if (v != null && v !== 1) return true;
+    }
+    return false;
+  }
+  // Gate the per-type zoom CSS (BaseLayout). Off by default → the page carries
+  // no `zoom` at all → the position:sticky robotics band scrolls smoothly.
+  function updateTextFlag() {
+    document.documentElement.toggleAttribute("data-ts-text", anyTextScaled());
+  }
+  function applyAll() { applyGlobal(); for (const k of SECTION_KEYS) applySection(k); updateTextFlag(); }
+
+  // ── path helpers (rkey = "global.title" | "<sec>.zoom" | "<sec>.text.title") ─
+  function rawVal(rkey: string): number | null | undefined {
+    const p = rkey.split(".");
+    if (p[0] === "global") return cfg.global[p[1]];
+    const s = cfg.sections[p[0]]; if (!s) return undefined;
+    if (p[1] === "zoom") return s.zoom;
+    return s.text[p[2]];
+  }
+  // The value a slider "follows" when it isn't overridden — also where the
+  // default tick sits.
+  function followVal(rkey: string): number {
+    const p = rkey.split(".");
+    if (p[0] === "global") return 1;        // global baseline
+    if (p[1] === "zoom") return 1;          // no zoom
+    return cfg.global[p[2]] ?? 1;           // section text → its global level
+  }
+  function effective(rkey: string): number {
+    const raw = rawVal(rkey);
+    return raw == null ? followVal(rkey) : raw;
+  }
+  function writeVal(rkey: string, v: number) {
+    const p = rkey.split(".");
+    if (p[0] === "global") cfg.global[p[1]] = v;
+    else if (p[1] === "zoom") cfg.sections[p[0]].zoom = v;
+    else cfg.sections[p[0]].text[p[2]] = v;
+  }
+  function clearOverride(rkey: string) {
+    const p = rkey.split(".");
+    if (p[0] !== "global" && p[1] === "text") cfg.sections[p[0]].text[p[2]] = null;
+  }
+  const isSectionText = (rkey: string) => { const p = rkey.split("."); return p[0] !== "global" && p[1] === "text"; };
+
+  // ── DOM ───────────────────────────────────────────────────────────────────
+  const panel = document.querySelector<HTMLElement>("[data-lt]");
+  const fab = document.querySelector<HTMLElement>("[data-lt-fab]");
+  const fmt = (v: number) => v.toFixed(2);
+
+  function syncSlider(slider: HTMLElement) {
+    const rkey = slider.dataset.rkey!;
+    const input = slider.querySelector<HTMLInputElement>("input");
+    const ro = slider.querySelector<HTMLElement>("[data-lt-ro]");
+    const tick = slider.querySelector<HTMLElement>("[data-lt-tick]");
+    if (!input) return;
+    const eff = effective(rkey);
+    input.value = String(eff);
+    if (ro) ro.textContent = fmt(eff);
+    const overridden = isSectionText(rkey) && rawVal(rkey) != null;
+    slider.classList.toggle("is-override", overridden);
+    // default tick at the followed value
+    if (tick) {
+      const min = parseFloat(input.min), max = parseFloat(input.max);
+      const pct = ((followVal(rkey) - min) / (max - min)) * 100;
+      tick.style.left = `${Math.max(0, Math.min(100, pct))}%`;
+    }
+  }
+  function syncAll() { panel?.querySelectorAll<HTMLElement>("[data-lt-slider]").forEach(syncSlider); }
+
+  function setCollapsed(on: boolean) {
+    panel?.classList.toggle("is-collapsed", on);
+    fab?.classList.toggle("is-visible", on);
+    try { on ? localStorage.setItem("lt-collapsed", "1") : localStorage.removeItem("lt-collapsed"); } catch {}
+  }
+  function updateMeta() {
+    const m = deviceMeta();
+    const el = panel?.querySelector<HTMLElement>("[data-lt-meta]");
+    if (el) el.textContent = `${m.viewport} · ${m.aspect} (${m.aspectRatio}) · ${m.orientation} · dpr ${m.dpr} · screen ${m.screen}`;
+  }
+
+  if (panel) {
+    syncAll();
+    applyAll();
+    requestAnimationFrame(applyAll); // retry once sections are laid out
+    updateMeta();
+    if (localStorage.getItem("lt-collapsed") === "1") setCollapsed(true);
+
+    panel.addEventListener("input", (e) => {
+      const input = e.target as HTMLInputElement;
+      const slider = input.closest<HTMLElement>("[data-lt-slider]");
+      if (!slider) return;
+      const rkey = slider.dataset.rkey!;
+      const v = Number(input.value);
+      if (!Number.isFinite(v)) return;
+      writeVal(rkey, v);
+      const ro = slider.querySelector<HTMLElement>("[data-lt-ro]");
+      if (ro) ro.textContent = fmt(v);
+      if (rkey.startsWith("global.")) { applyGlobal(); syncAll(); }     // sections that follow update with it
+      else applySection(rkey.split(".")[0]);
+      if (isSectionText(rkey)) slider.classList.add("is-override");
+      updateTextFlag();
+      persist();
+    });
+
+    // double-click a section-text label → drop the override, follow global again
+    panel.addEventListener("dblclick", (e) => {
+      const lab = (e.target as HTMLElement).closest("[data-lt-reset]");
+      const slider = lab?.closest<HTMLElement>("[data-lt-slider]");
+      if (!slider) return;
+      const rkey = slider.dataset.rkey!;
+      if (!isSectionText(rkey)) return;
+      clearOverride(rkey);
+      applySection(rkey.split(".")[0]);
+      syncSlider(slider);
+      updateTextFlag();
+      persist();
+    });
+
+    // collapse / expand per-section groups
+    panel.querySelectorAll<HTMLElement>("[data-lt-toggle]").forEach((btn) => {
+      btn.addEventListener("click", () => btn.closest("[data-lt-group]")?.classList.toggle("lt__sec--collapsed"));
+    });
+
+    panel.querySelector("[data-lt-close]")?.addEventListener("click", () => setCollapsed(true));
+    fab?.addEventListener("click", () => setCollapsed(false));
+
+    panel.querySelector("[data-lt-reset-all]")?.addEventListener("click", () => {
+      const fresh = blank();
+      cfg.global = fresh.global; cfg.sections = fresh.sections;
+      syncAll(); applyAll(); persist();
+    });
+
+    panel.querySelector("[data-lt-copy]")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const text = JSON.stringify({ meta: deviceMeta(), layout: cfg }, null, 2);
+      try { await navigator.clipboard.writeText(text); btn.textContent = "✓ copied!"; }
+      catch { window.prompt("Copy this:", text); btn.textContent = "⧉ copy for this device"; }
+      setTimeout(() => { btn.textContent = "⧉ copy for this device"; }, 1400);
+    });
+
+    window.addEventListener("resize", updateMeta, { passive: true });
+    // WaveTuner's global paste can replace the whole config + ask us to re-apply.
+    window.addEventListener("layout-apply", () => { syncAll(); applyAll(); });
+  }
+</script>
+
+<style>
+  .lt {
+    position: fixed;
+    top: calc(var(--topbar-h, 56px) + 12px);
+    right: 12px;
+    z-index: 200;
+    width: 288px;
+    max-height: calc(100vh - var(--topbar-h, 56px) - 24px);
+    background: rgba(20, 18, 16, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #f4ede2;
+    font-family: var(--font-mono);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .lt.is-collapsed { display: none; }
+  .lt__head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  .lt__title { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  .lt__close {
+    background: transparent; border: none; color: rgba(244, 237, 226, 0.45);
+    font-size: 13px; line-height: 1; cursor: pointer; padding: 2px 4px;
+  }
+  .lt__close:hover { color: #f4ede2; }
+  .lt__body { padding: 6px 10px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+  .lt__sec { display: flex; flex-direction: column; }
+  .lt__sec--global {
+    gap: 5px; padding-bottom: 8px; margin-bottom: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  .lt__seclabel { font-size: 10px; letter-spacing: 0.1em; color: var(--accent); font-weight: 600; padding: 2px 0 4px; }
+  .lt__sechead {
+    display: flex; align-items: center; gap: 7px; width: 100%;
+    background: transparent; border: none; cursor: pointer;
+    color: #f4ede2; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.04em; font-weight: 600; padding: 6px 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  }
+  .lt__caret { color: var(--accent); font-size: 9px; transition: transform 140ms ease; }
+  .lt__sec--collapsed .lt__caret { transform: none; }
+  .lt__sec:not(.lt__sec--collapsed) .lt__caret { transform: rotate(90deg); }
+  .lt__secname { flex: 1; text-align: left; }
+  .lt__warn { color: #e0a24a; cursor: help; }
+  .lt__secbody { display: flex; flex-direction: column; gap: 5px; padding: 2px 0 8px 4px; }
+  .lt__sec--collapsed .lt__secbody { display: none; }
+
+  .lt__slider { display: flex; flex-direction: column; gap: 2px; }
+  .lt__lab {
+    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent); display: flex; justify-content: space-between; cursor: default;
+  }
+  .lt__slider--text .lt__lab { cursor: pointer; }
+  .lt__slider--zoom .lt__lab { color: #cdbfa6; }
+  .lt__ro { color: rgba(244, 237, 226, 0.85); font-weight: 600; }
+  .lt__slider.is-override .lt__ro { color: var(--accent); }
+  .lt__slider.is-override .lt__lab::after { content: "•"; color: var(--accent); margin-left: 4px; }
+
+  .lt__track { position: relative; display: flex; align-items: center; height: 14px; }
+  .lt input[type="range"] {
+    width: 100%; -webkit-appearance: none; appearance: none; height: 3px; margin: 0;
+    border-radius: 2px; background: rgba(255, 255, 255, 0.15); outline: none; cursor: pointer;
+  }
+  .lt input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%;
+    background: #ddd6cc; cursor: pointer; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  }
+  .lt input[type="range"]::-moz-range-thumb {
+    width: 11px; height: 11px; border-radius: 50%; background: #ddd6cc; cursor: pointer; border: none;
+  }
+  /* default-value tick (where "follow global" sits) */
+  .lt__tick {
+    position: absolute; top: -1px; width: 2px; height: 12px; margin-left: -1px;
+    background: rgba(217, 106, 54, 0.85); pointer-events: none; border-radius: 1px;
+  }
+
+  .lt__foot { border-top: 1px solid rgba(255, 255, 255, 0.18); padding: 8px 10px; display: flex; flex-direction: column; gap: 7px; }
+  .lt__io { display: flex; gap: 6px; }
+  .lt__btn {
+    flex: 1; padding: 6px 8px; background: transparent; border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #f4ede2; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; cursor: pointer;
+  }
+  .lt__btn:hover { border-color: var(--accent); color: var(--accent); }
+  .lt__meta {
+    font-size: 9px; line-height: 1.5; letter-spacing: 0.04em; color: rgba(244, 237, 226, 0.6); word-break: break-word;
+  }
+  .lt__fab {
+    position: fixed; top: calc(var(--topbar-h, 56px) + 12px); right: 12px; z-index: 200;
+    width: 36px; height: 36px; background: rgba(20, 18, 16, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.18); color: var(--accent);
+    font-family: var(--font-mono); font-size: 16px; line-height: 1; cursor: pointer;
+    display: none; place-items: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .lt__fab.is-visible { display: grid; }
+  .lt__fab:hover { border-color: var(--accent); }
+</style>

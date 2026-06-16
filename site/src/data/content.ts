@@ -41,6 +41,7 @@ export type RoboticsSlide = {
 export type RoboticsProgram = {
   eyebrow: string;
   title: string;
+  subtitle?: string;
   href: string;
   slides: RoboticsSlide[];
 };
@@ -49,6 +50,7 @@ export const ROBOTICS: RoboticsProgram[] = [
   {
     eyebrow: "Impactful Robotics",
     title: "Project Sailfish",
+    subtitle: "An Altum Robotics initiative.",
     href: "/#sailfish",
     slides: [
       {
@@ -109,7 +111,8 @@ export const ROBOTICS: RoboticsProgram[] = [
   },
   {
     eyebrow: "Competitive Robotics",
-    title: "FTC",
+    title: "FIRST® Tech Challenge",
+    subtitle: "Team 16366 TFS Robotic Unicorns",
     href: "/#ftc",
     slides: [
       {
@@ -188,7 +191,7 @@ export const VALUES = {
   },
 };
 
-export type Item = { standout?: boolean; title: string; body: string };
+export type Item = { standout?: boolean; outlined?: boolean; title: string; body: string; href?: string };
 export type Group = { id: string; title: string; items: Item[] };
 export type MetaGroup = {
   id: string;
@@ -218,8 +221,8 @@ export const META_GROUPS: MetaGroup[] = [
         id: "research",
         title: "Research",
         items: [
-          { standout: true, title: "5.8 GHz video over open water", body: "Investigated 5.8 GHz digital video transmission over water for drone camera systems — multipath, antenna polarization, and range." },
-          { title: "Optimized SAR spiral", body: "Modelled the flight path for a search-and-rescue drone with a parametric optimized spiral considering wind drift and ocean current." },
+          { title: "5.8 GHz video over open water", body: "Investigated 5.8 GHz digital video transmission over water for drone camera systems — multipath, antenna polarization, and range." },
+          { standout: true, title: "Optimized SAR spiral", body: "Modelled the flight path for a search-and-rescue drone with a parametric optimized spiral considering wind drift and ocean current." },
           { title: "Motor & prop efficiency", body: "Efficiency testing on electric drone motors and propellers across a thrust-stand setup, building a usable lookup table for sizing." },
         ],
       },
@@ -244,9 +247,10 @@ export const META_GROUPS: MetaGroup[] = [
         id: "creatives",
         title: "Creatives",
         items: [
-          { standout: true, title: "Nature Drone Videography", body: "Exploring landscapes from above through drone photography and videography of natural environments." },
+          { standout: true, title: "Nature Drone Videography", body: "Exploring landscapes from above through drone photography and videography of natural environments.", href: "/drone-videography" },
           { title: "Violin", body: "10 years of violin in the Celtic and folk fiddle style. I comfortably play 20+ numbers and enjoy jamming with others." },
           { title: "Philosophy", body: "Exploring moral ethics through our school's philosophy club, TOK class, and English coursework." },
+          { outlined: true, title: "Web Design", body: "Designing and coding interactive web experiences — this portfolio included — with motion-first layouts and custom scroll-driven animations." },
         ],
       },
       {
@@ -270,7 +274,7 @@ export const META_GROUPS: MetaGroup[] = [
         id: "summer",
         title: "Summer Programs",
         items: [
-          { standout: true, title: "SHAD", body: "Canada-wide STEM enrichment program connecting students from across the country for intensive design challenges." },
+          { title: "SHAD", body: "Canada-wide STEM enrichment program connecting students from across the country for intensive design challenges." },
           { title: "Waterloo Catalyst", body: "Engineering and entrepreneurship program at the University of Waterloo." },
           { title: "Scouts Jamboree", body: "Large-scale Scouts gathering bringing together members from across the region for outdoor activities and community." },
         ],
@@ -279,8 +283,8 @@ export const META_GROUPS: MetaGroup[] = [
         id: "sidequests",
         title: "Side Quests",
         items: [
-          { standout: true, title: "Light suit night skiing", body: "Skiing the bunny hill at night wearing a fully wired EL-suit. Mostly to make other skiers smile." },
-          { title: "Dance Show MC", body: "Hosted the school dance show. Suit on, jokes prepared, mostly improvised." },
+          { title: "Light suit night skiing", body: "Skiing the bunny hill at night wearing a fully wired EL-suit. Mostly to make other skiers smile." },
+          { standout: true, title: "Dance Show MC", body: "Hosted the school dance show. Suit on, jokes prepared, mostly improvised." },
           { title: "Prank Day", body: "Coordinated school-wide prank day. Logistics ran smoother than most of my robotics builds." },
         ],
       },
@@ -294,7 +298,7 @@ export const META_GROUPS: MetaGroup[] = [
 export const DEDICATED_PAGES = [
   { label: "Impactful Robotics",   href: "/#sailfish" },
   { label: "Competitive Robotics", href: "/#ftc" },
-  { label: "Drone Videography",    href: "/#videography" },
+  { label: "Drone Videography",    href: "/drone-videography" },
   { label: "More Interests",       href: "/#more" },
 ];
 
