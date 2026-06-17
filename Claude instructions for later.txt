@@ -1,0 +1,36 @@
+1. (working on) Sometimes when i scroll up from academics and up past the Filter by domain. section  into the side by side comparison, the scrolling up glitches and it ja bunch up and down.
+
+2. For the hand written i like it the best bur its not *actualy* being written out like it would be. Where could i go to generate the animations and then give them to you. Or is there a better way we can do this. 
+I'd like for each letter to be written out like someone is writing it not a reveal of the letters there. 
+Could you give me a slider for at which point the letters start and end writing.
+I would also like it to be so that once they scroll past the point when it starts it fully does the animation and does not stop when they stop scrolling.
+
+3.Polaroids
+
+4. Clicking creates waves away from the mouse
+
+5. Clicking expanding wave goes away when it
+
+6. Clicking fast enough on menu opens up cps counter. With graph of cps and top cps, and it prompts to contact me
+
+7. Background of research is the MSAR algorithm display
+
+8. More like style from MARSE template.
+
+9. Import webflow stuff.
+
+10.[done, not tested] Make all the settings in control panel copy able so i can give them back to you for it to be set as default on different aspect ratios and devices. So a new: second control panel. Each section has zoom in/zoom out and change text size and etc. and i can ajust sliders then copy to clipboard for what i'd like on each device. includeded in clipboard is device aspectration resolution, etc. and zoom and size levels for each section. Also give the first control panel a global copy paste for all the different opitons and settings and the aspect ratio stuff along with it.
+
+11. on hover of linkedin logo add banner thing from official linkedin.
+
+
+12.Continue, i believe you got cut off.
+
+I also would like it not to just be different zoom and text levels for each section. like "Robotics" but every section that is a sub section. Following the example of Robotics section. I would like indepedndant contolls for the intro IMpactful Competitive robotics robotics,  sideby side sub section, The lightbox that opeens up, and the filter by domain.
+
+I would also like controlls not just for the total size of text, but independant size of text for titles, headers, subtitles, text etc. Make a visual line in the slider for wherever the global default is. also yeah give me a slider for the global default for a whole page. For example: i want to globaly ajust the size of "§ 04 — School + research " for all the other section § 0X text. If the indeendant slider for specifically that section has not been changed from default, please make it so that it updates with the global change.
+
+Other ideas:
+FUll ardupilot hud auverhaul on sailfish section of website - see claude design mockup
+
+BUt also with new search and rescue algorithm on display

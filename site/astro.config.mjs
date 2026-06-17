@@ -7,6 +7,9 @@ import react from "@astrojs/react";
 export default defineConfig({
   // Used for canonical URLs and (eventually) the sitemap.
   site: "https://lucdesautels.com",
+  // Honor a PORT env var (the preview tool assigns one to avoid colliding with a
+  // dev server already on 4321); plain `npm run dev` still defaults to 4321.
+  server: { port: Number(process.env.PORT) || 4321 },
   integrations: [react()],
   vite: {
     build: {

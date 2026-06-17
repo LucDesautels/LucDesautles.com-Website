@@ -13,7 +13,7 @@ export const SITE = {
     { label: "Focus", value: "Robotics & Aerospace" },
   ] satisfies MetaTuple[],
   contact: {
-    email: "luc@desautels.net",
+    email: "L@desautels.net",
     github: "github.com/lucdesautels",
     linkedin: "linkedin.com/in/lucdesautels",
   },
@@ -23,7 +23,7 @@ export const SITE = {
 // a prefilled mailto request. Swap this to "/resume.pdf" the moment the file
 // is uploaded — every call site reads from this constant.
 export const RESUME_HREF =
-  "mailto:luc@desautels.net?subject=Resume%20request&body=Hi%20Luc%20%E2%80%94%20could%20you%20send%20me%20your%20latest%20resume%3F%20Thanks%21";
+  "mailto:L@desautels.net?subject=Resume%20request&body=Hi%20Luc%20%E2%80%94%20could%20you%20send%20me%20your%20latest%20resume%3F%20Thanks%21";
 
 export type RoboticsSlide = {
   eyebrow: string;

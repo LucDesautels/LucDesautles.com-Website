@@ -8,7 +8,15 @@ import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
       Luc Desautels
       <span class="topbar__dot" aria-hidden="true"></span>
     </a>
-    <nav class="topbar__nav" aria-label="Primary">
+    <button
+      class="topbar__menu-btn"
+      data-menu-btn
+      type="button"
+      aria-label="Toggle menu"
+      aria-expanded="false"
+      aria-controls="topbar-nav"
+    ></button>
+    <nav class="topbar__nav" id="topbar-nav" aria-label="Primary">
       {DEDICATED_PAGES.map((p) => (
         <a class="topbar__link" href={p.href}>{p.label}</a>
       ))}
@@ -33,7 +41,23 @@ import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
   // Hide the top bar when scrolling down past the hero; bring it back as soon
   // as the user nudges upward. Always show within the first ~120px of the page.
   const bar = document.querySelector<HTMLElement>(".topbar");
+  const menuBtn = document.querySelector<HTMLElement>("[data-menu-btn]");
   if (bar) {
+    // ── Mobile dropdown menu (hamburger shown ≤880px via CSS) ──
+    const closeMenu = () => {
+      bar.classList.remove("topbar--menu-open");
+      menuBtn?.setAttribute("aria-expanded", "false");
+    };
+    if (menuBtn) {
+      menuBtn.addEventListener("click", () => {
+        const open = bar.classList.toggle("topbar--menu-open");
+        menuBtn.setAttribute("aria-expanded", String(open));
+      });
+      // Navigating closes the menu so it doesn't linger over the next view.
+      bar.querySelectorAll<HTMLAnchorElement>(".topbar__nav a")
+        .forEach((a) => a.addEventListener("click", closeMenu));
+    }
+
     const SHOW_AT_TOP = 120;     // px from top — always visible inside this zone
     const UP_DELTA = 6;          // min upward movement to reveal
     const DOWN_DELTA = 4;        // min downward movement to hide
@@ -48,7 +72,8 @@ import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
       if (y < SHOW_AT_TOP) {
         if (hidden) { hidden = false; bar.classList.remove("topbar--hidden"); }
       } else if (dy > DOWN_DELTA) {
-        if (!hidden) { hidden = true; bar.classList.add("topbar--hidden"); }
+        // Hiding the bar also collapses an open menu so it can't float detached.
+        if (!hidden) { hidden = true; bar.classList.add("topbar--hidden"); closeMenu(); }
       } else if (dy < -UP_DELTA) {
         if (hidden) { hidden = false; bar.classList.remove("topbar--hidden"); }
       }
@@ -141,9 +166,46 @@ import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
     border-radius: 4px;
   }
 
+  /* Hamburger — hidden on desktop, shown ≤880px (see media query). */
+  .topbar__menu-btn {
+    display: none;
+    width: 44px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .topbar__menu-btn::before { content: "\2630"; }                    /* ☰ */
+  .topbar--menu-open .topbar__menu-btn::before { content: "\2715"; } /* ✕ */
+  .topbar__menu-btn:hover { color: var(--accent); border-color: var(--accent); }
+
   @media (max-width: 880px) {
-    .topbar__shell { flex-direction: column; align-items: flex-start; }
-    .topbar__nav { gap: 12px 16px; }
-    .topbar__link { font-size: 13px; }
+    /* Collapse the nav behind the hamburger so the fixed bar stays a single
+       row (~66px) and never overruns the 78px the body reserves for it —
+       which is what was hiding the hero headline behind the bar. */
+    .topbar__menu-btn { display: inline-flex; }
+    .topbar__nav {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 2px;
+      padding: 10px var(--page-pad) 18px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--rule-soft);
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.12);
+      display: none;
+    }
+    .topbar--menu-open .topbar__nav { display: flex; }
+    .topbar__link { font-size: 15px; padding: 10px 0; }
+    .topbar__btn { align-self: flex-start; margin-top: 6px; }
   }
 </style>

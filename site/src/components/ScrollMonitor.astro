@@ -1,0 +1,90 @@
+---
+// TEMP scroll diagnostics — pins down the side-by-side scroll "bump". Logs
+// hitches (dropped frames, momentum stalls, direction reversals) and document
+// height shifts to the console + window.__scrollLog. Reproduce the jitter, then
+// run __dumpScroll() in the console (or it's readable on window.__scrollLog).
+// Remove with the other temporary tuners.
+---
+<script>
+  type Ev = Record<string, any>;
+  const log: Ev[] = [];
+  (window as any).__scrollLog = log;
+  (window as any).__dumpScroll = () => { console.table(log.slice(-80)); return log.slice(-80); };
+
+  const rp = () => document.querySelector<HTMLElement>(".rp");
+  const sticky = () => document.querySelector<HTMLElement>(".rp__stickytop");
+
+  // Snapshot of the relevant geometry (getBoundingClientRect forces layout, so
+  // only called when we actually record an event — never per frame).
+  function ctx(): Ev {
+    const r = rp()?.getBoundingClientRect();
+    const s = sticky()?.getBoundingClientRect();
+    const lenis = (window as any).lenis;
+    return {
+      y: Math.round(window.scrollY),
+      vel: typeof lenis?.velocity === "number" ? Math.round(lenis.velocity) : null,
+      rpTop: r ? Math.round(r.top) : null,
+      rpBottom: r ? Math.round(r.bottom) : null,
+      stickyTop: s ? Math.round(s.top) : null,
+      // is the side-by-side roughly on screen? (so we can ignore noise elsewhere)
+      atBand: !!r && r.bottom > -400 && r.top < window.innerHeight + 400,
+    };
+  }
+  function push(ev: Ev, warn = true) {
+    ev.t = Math.round(performance.now());
+    log.push(ev);
+    if (log.length > 400) log.shift();
+    if (warn && ev.atBand) {
+      console.warn(`🪲 ${ev.type}`, ev);
+    }
+  }
+
+  // ── per-frame scroll sampling (reads only scrollY + clock — no layout) ──
+  let lastY = window.scrollY;
+  let lastT = performance.now();
+  let lastDir = 0;
+  const recent: number[] = []; // recent |dY| window for stall detection
+  const docMax = () => Math.max(0, (document.documentElement.scrollHeight || 0) - window.innerHeight);
+
+  function frame(now: number) {
+    const y = window.scrollY;
+    const dt = now - lastT;
+    const dY = y - lastY;
+    const adY = Math.abs(dY);
+
+    recent.push(adY);
+    if (recent.length > 6) recent.shift();
+    const recentMax = Math.max(...recent);
+
+    const longFrame = dt > 45;                                   // dropped frame(s) — main-thread spike
+    const reversal = lastDir !== 0 && Math.sign(dY) === -lastDir && adY > 2; // momentum bounced backwards
+    const atEnds = y <= 1 || y >= docMax() - 1;                  // ignore natural stop at page top/bottom
+    const stall = !atEnds && adY < 1.5 && recentMax > 9;         // momentum suddenly killed mid-flick
+
+    if (longFrame || reversal || stall) {
+      const c = ctx();
+      push({ type: longFrame ? "LONG_FRAME" : reversal ? "REVERSAL" : "STALL",
+             dt: Math.round(dt), dY: Math.round(dY), recentMax: Math.round(recentMax), ...c });
+    }
+
+    if (dY !== 0) lastDir = Math.sign(dY);
+    lastY = y; lastT = now;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ── document height shifts (scroll-anchoring source) via ResizeObserver ──
+  // ResizeObserver is async, so this never forces a per-frame layout.
+  let lastH = 0;
+  try {
+    const ro = new ResizeObserver(() => {
+      const h = document.documentElement.scrollHeight;
+      if (lastH && h !== lastH) push({ type: "HEIGHT_SHIFT", dH: h - lastH, ...ctx() });
+      lastH = h;
+    });
+    ro.observe(document.body);
+    lastH = document.documentElement.scrollHeight;
+  } catch {}
+
+  console.info("%cscroll monitor on — reproduce the bump, then run __dumpScroll()", "color:#d96a36;font-weight:600");
+</script>

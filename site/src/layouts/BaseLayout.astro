@@ -4,6 +4,7 @@ import WaveField from "@/components/WaveField.astro";
 import WaveTuner from "@/components/WaveTuner.astro";
 import LayoutTuner from "@/components/LayoutTuner.astro";
 import CpsCounter from "@/components/CpsCounter.astro";
+import ScrollMonitor from "@/components/ScrollMonitor.astro";
 import SmoothScroll from "@/components/SmoothScroll.astro";
 
 interface Props {
@@ -20,7 +21,9 @@ const {
   noIndex = false,
 } = Astro.props;
 
-const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://desautels.net").toString();
+const SITE_URL = Astro.site ?? new URL("https://lucdesautels.com");
+const canonical = new URL(Astro.url.pathname, SITE_URL).toString();
+const ogImageUrl = new URL(ogImage, SITE_URL).toString();
 ---
 
 <!doctype html>
@@ -45,21 +48,26 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://desautels.n
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={new URL(ogImage, Astro.site ?? "https://desautels.net").toString()} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Luc Desautels — robotics, drone photography, and side quests" />
+    <meta property="og:site_name" content="Luc Desautels" />
     <meta property="og:locale" content="en_CA" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={new URL(ogImage, Astro.site ?? "https://desautels.net").toString()} />
+    <meta name="twitter:image" content={ogImageUrl} />
 
     <!-- Person structured data -->
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Person",
       name: "Luc Desautels",
-      url: Astro.site?.toString() ?? "https://desautels.net",
+      url: SITE_URL.toString(),
+      email: "L@desautels.net",
       jobTitle: "Engineer · Robotics",
       address: { "@type": "PostalAddress", addressLocality: "Toronto", addressRegion: "ON", addressCountry: "CA" },
       sameAs: [
@@ -86,10 +94,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://desautels.n
     <WaveTuner />
     <LayoutTuner />
     <CpsCounter />
+    <ScrollMonitor />
     <WaveField />
     <slot />
 
     <style is:global>
+      /* Disable the browser's scroll-anchoring: if any element resizes near the
+         viewport, the browser would nudge scrollTop to compensate, which fights
+         Lenis's JS-driven scroll and reads as a momentum "bump". */
+      html { overflow-anchor: none; }
+
       /* LayoutTuner: per-text-type sizing. Each element's scale =
          --ts-all × --ts-<type>. Those vars are set on :root (the global page
          default) and optionally overridden on a [data-rsec] wrapper (inherited

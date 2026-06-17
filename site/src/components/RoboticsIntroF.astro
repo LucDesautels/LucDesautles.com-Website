@@ -179,6 +179,12 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
 
   if (section) {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Below 760px the CSS lays the section out as a static vertical column, so
+    // the scroll-driven swoop/cursive must NOT run (it would translate the
+    // now-static elements off-screen). Treat that width like reduced-motion:
+    // everything rests at its final position. Re-evaluated live on resize.
+    const mqStatic = window.matchMedia("(max-width: 760px)");
+    const isStatic = () => reduce || mqStatic.matches;
 
     const leftFrame  = Array.from(section.querySelectorAll<HTMLElement>(".ric__col--left, .ric__blurb--left"));
     const rightFrame = Array.from(section.querySelectorAll<HTMLElement>(".ric__col--right, .ric__blurb--right"));
@@ -267,7 +273,7 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
     }
 
     function buildVara() {
-      if (!leftVaraEl || !rightVaraEl || reduce) return;
+      if (!leftVaraEl || !rightVaraEl || isStatic()) return;
       builtFont = getFont();
       leftVaraEl.innerHTML = ""; rightVaraEl.innerHTML = "";
       resetUnderline(leftUl); resetUnderline(rightUl);
@@ -292,7 +298,7 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
     }
 
     function setCursiveActive(on: boolean) {
-      section!.classList.toggle("is-cursive", on && !reduce);
+      section!.classList.toggle("is-cursive", on && !isStatic());
     }
 
     function update() {
@@ -303,7 +309,7 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
       const restPct = getRestPct();
       const END = Math.min(0.95, Math.max(0, (100 - restPct) / 100));
       const rectTop = section!.getBoundingClientRect().top;
-      const p = reduce ? 1 : clamp01((SWOOP_START - rectTop / vh) / (SWOOP_START - END));
+      const p = isStatic() ? 1 : clamp01((SWOOP_START - rectTop / vh) / (SWOOP_START - END));
       const swL = offLeft * (1 - p);
       const swR = offRight * (1 - p);
       leftWrap?.style.setProperty("--swoop", swL.toFixed(1) + "px");
@@ -315,7 +321,7 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
       setX(rightFrame, fOn ? swR : 0);
 
       // how far the labels have risen into the viewport, 0 = bottom edge
-      const riseFrac = reduce ? 1 : clamp01((vh - (rectTop + labelOffset)) / vh);
+      const riseFrac = isStatic() ? 1 : clamp01((vh - (rectTop + labelOffset)) / vh);
       const ws = writeStart();
       const win = clamp01((riseFrac * 100 - ws) / 45); // highlight sweeps over a 45% rise span
 
@@ -392,8 +398,12 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
        user scrolls through the last vh of the htoc outer (the exit
        drift phase), this section rises up from the bottom of the
        viewport over the pinned gallery — gallery stays put, RIF
-       progressively covers it from the bottom. */
-    margin-top: -100vh;
+       progressively covers it from the bottom.
+       NOTE: the -100vh pull is gated to the pinned condition below. The
+       gallery only pins on desktop (≥900px) with motion allowed; when it
+       is NOT pinned, this margin would just yank the section up over the
+       (now normal-flow) gallery and hide it — so the base margin is 0. */
+    margin-top: 0;
     z-index: 5;
     background: var(--bg);
     border-top: 1px solid rgba(80, 72, 62, 0.18);
@@ -572,5 +582,31 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
     .ric__blurbs { grid-template-columns: 1fr; }
     .ric__blurb--left { text-align: left; padding: 0; }
     .ric__blurb--right { padding: 0; }
+  }
+
+  /* The -100vh rise-over-gallery trick only applies when the gallery above is
+     actually pinned: desktop width AND motion allowed (mirrors the pin gate in
+     HorizontalTOC). Otherwise the section sits in normal flow (base margin 0). */
+  @media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+    .ric { margin-top: -100vh; }
+  }
+
+  /* Mobile (≤760px): the absolute "swoop" layout is desktop-only and collapses
+     into an overlapping pile on phones. Lay the section out as a clean vertical
+     column — flanking images become inline + centered, the rotated handwritten
+     labels (decorative echoes of the wordmark + blurb CTAs) are dropped, and the
+     reveal JS detects this width and rests everything at its final position. */
+  @media (max-width: 760px) {
+    .ric { min-height: 0; padding-bottom: 28px; }
+    .ric__cad-wrap { position: static; transform: none; }
+    .ric__cad-wrap--left,
+    .ric__cad-wrap--right {
+      left: auto; right: auto; top: auto;
+      width: min(74%, 300px);
+      margin: 26px auto 0;
+    }
+    .ric__cad { transform: none !important; }
+    .ric__hand { display: none; }
+    .ric__wordmark { margin-top: 24px; }
   }
 </style>
