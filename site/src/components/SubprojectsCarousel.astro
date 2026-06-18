@@ -23,7 +23,7 @@ import Placeholder from "./Placeholder.astro";
     ))}
   </div>
 
-  <div class="sub__scroller" data-lenis-prevent>
+  <div class="sub__scroller">
     {SUBPROJECTS.map((p) => (
       <article class="card" data-tag={p.tag} data-domain={p.domain}>
         <div class="card__media">
@@ -75,6 +75,17 @@ import Placeholder from "./Placeholder.astro";
         apply(d);
       });
     });
+
+    // Axis-aware wheel: a clearly horizontal gesture scrolls the carousel itself
+    // (we hide it from Lenis so native overflow-x can do it); a vertical gesture
+    // bubbles to Lenis for a smooth PAGE scroll. This replaces `data-lenis-prevent`,
+    // which handed ALL scroll over the carousel to native — killing Lenis momentum
+    // (a scroll "bump") every time the carousel passed under the cursor.
+    if (scroller) {
+      scroller.addEventListener("wheel", (e) => {
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) e.stopPropagation();
+      }, { passive: true });
+    }
   }
 </script>
 

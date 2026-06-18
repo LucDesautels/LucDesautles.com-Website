@@ -556,10 +556,6 @@ const N = 5; // slides per column
     background: var(--dark);
     padding: calc(var(--topbar-h) + 14px) 0 18px;
     border-bottom: 1px solid var(--dark-line-soft);
-    /* Isolate this band's layout so its sticky release/re-engage at the section
-       bottom doesn't trigger a wider main-thread reflow — that reflow is what
-       hitches Lenis (JS / main-thread scroll) while native scroll stays smooth. */
-    contain: layout;
   }
 
   .rp__grid { display: grid; gap: 28px; }
