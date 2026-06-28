@@ -200,7 +200,7 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
     const getMode = () => (cfg()?.text?.mode as string) || "slide";
     const getRestPct = () => { const v = cfg()?.images?.restPct; return typeof v === "number" ? v : 75; };
     const getFont = () => (cfg()?.text?.font as string) || "satisfy";
-    const writeStart = () => { const v = cfg()?.text?.writeStart; return typeof v === "number" ? v : 15; };
+    const writeStart = () => { const v = cfg()?.text?.writeStart; return typeof v === "number" ? v : 40; };
     const writeMs = () => Math.max(300, Math.min(8000, (cfg()?.text?.writeSpeed ?? 2) * 1000));
 
     const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -240,14 +240,23 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
     function sizeVara(side: "left" | "right") {
       const svg = (side === "left" ? leftVaraEl : rightVaraEl)?.querySelector("svg");
       if (!svg) return;
-      let w = 0, h = 0;
-      try { const bb = (svg as any).getBBox(); w = bb.x + bb.width; h = bb.y + bb.height; } catch {}
-      if (!h) return;
+      let bb: any = null;
+      try { bb = (svg as any).getBBox(); } catch {}
+      if (!bb || !bb.height) return;
       const size = cfg()?.labels?.[side]?.size ?? 56;
-      const s = (size / 56) * (VARA_TARGET_H / h);
-      svg.setAttribute("viewBox", `0 0 ${Math.ceil(w)} ${Math.ceil(h)}`);
-      svg.setAttribute("width", String(Math.max(1, Math.round(w * s))));
-      svg.setAttribute("height", String(Math.max(1, Math.round(h * s))));
+      // Scale so the drawn line is VARA_TARGET_H px tall (× labels.size/56),
+      // measured off the REAL content height so both labels land the same on-
+      // screen height regardless of how Vara internally sized each string.
+      const s = (size / 56) * (VARA_TARGET_H / bb.height);
+      // viewBox = the true content bounds (Vara emits none). Width/height stay
+      // tight to the glyphs so the underline can match the text width, and
+      // overflow:visible (also set in CSS) lets tall ascenders, descenders and
+      // the stroke width at the very top/bottom paint in full instead of being
+      // shaved off — that was the "cut off above and below".
+      svg.setAttribute("viewBox", `${bb.x.toFixed(2)} ${bb.y.toFixed(2)} ${bb.width.toFixed(2)} ${bb.height.toFixed(2)}`);
+      svg.setAttribute("width", String(Math.max(1, Math.round(bb.width * s))));
+      svg.setAttribute("height", String(Math.max(1, Math.round(bb.height * s))));
+      (svg as SVGElement).style.overflow = "visible";
     }
     function resetUnderline(ul: SVGSVGElement | null) {
       const path = ul?.querySelector("path");
@@ -266,8 +275,12 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
       const len = (path as any).getTotalLength?.() || 200;
       path.style.strokeDasharray = String(len);
       path.style.strokeDashoffset = String(len);
+      // Sweep the underline at a pace tied to WRITE SPEED (and an ease that
+      // starts quick then settles, like a pen flicking the line) so it reads as
+      // the same hand finishing the word rather than a detached UI stroke.
+      const ulMs = Math.max(280, Math.min(900, writeMs() * 0.4));
       requestAnimationFrame(() => {
-        path.style.transition = "stroke-dashoffset 450ms ease-out";
+        path.style.transition = `stroke-dashoffset ${ulMs}ms cubic-bezier(.22,.61,.36,1)`;
         path.style.strokeDashoffset = "0";
       });
     }
@@ -320,8 +333,14 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
       setX(leftFrame,  fOn ? swL : 0);
       setX(rightFrame, fOn ? swR : 0);
 
-      // how far the labels have risen into the viewport, 0 = bottom edge
-      const riseFrac = isStatic() ? 1 : clamp01((vh - (rectTop + labelOffset)) / vh);
+      // How far the label has risen into the viewport: 0 = its top still at the
+      // bottom edge, 1 = at the very top. Measured off the label's OWN rect so
+      // the write trigger tracks where the text actually is on screen (during
+      // the section's rise-over-gallery reveal) rather than section-relative
+      // offset math — that decoupling is why the pen used to fire while the
+      // label was still pinned at the bottom edge and finish before you saw it.
+      const labelTopVp = (leftHand ?? rightHand)?.getBoundingClientRect().top ?? (rectTop + labelOffset);
+      const riseFrac = isStatic() ? 1 : clamp01((vh - labelTopVp) / vh);
       const ws = writeStart();
       const win = clamp01((riseFrac * 100 - ws) / 45); // highlight sweeps over a 45% rise span
 
@@ -464,7 +483,10 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
      size is baked into the SVG's viewBox + width/height (in JS) so layout flow
      stays correct and the underline sits right beneath the text. */
   .ric__hand-vara { display: none; }
-  .ric__hand-vara :global(svg) { display: block; }
+  /* overflow:visible so cursive ascenders/descenders + the stroke width at the
+     extreme top/bottom render fully (no "cut off above and below"). sizeVara
+     sets the same inline as a guard against UA-sheet svg{overflow:hidden}. */
+  .ric__hand-vara :global(svg) { display: block; overflow: visible; }
   /* Underline strokes itself in after each label finishes writing (JS sets the
      width to the rendered text width and animates stroke-dashoffset → 0). */
   .ric__vara-ul {

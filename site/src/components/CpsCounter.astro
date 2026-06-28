@@ -1,6 +1,7 @@
 ---
-// Easter egg: click fast enough anywhere and a tiny CPS (clicks-per-second)
-// meter pops up — rolling sparkline, current + best CPS, and a nudge to say hi.
+// Easter egg: click fast enough anywhere and a CPS (clicks-per-second) meter
+// pops up center-screen — rolling sparkline, current + best CPS, and a nudge
+// to hop on Hypixel Bedwars.
 const CONTACT = "mailto:L@desautels.net";
 ---
 <div class="cps" data-cps aria-hidden="true">
@@ -9,7 +10,7 @@ const CONTACT = "mailto:L@desautels.net";
     <div class="cps__now"><span data-cps-now>0</span><small>cps</small></div>
     <div class="cps__best">best <span data-cps-best>0</span></div>
   </div>
-  <a class="cps__hi" href={CONTACT}>fast hands — say hi?</a>
+  <a class="cps__hi" href={CONTACT}>fast hands — contact me to hop on Hypixel Bedwars</a>
 </div>
 
 <script>
@@ -98,8 +99,8 @@ const CONTACT = "mailto:L@desautels.net";
 <style>
   .cps {
     position: fixed;
-    left: 16px;
-    bottom: 16px;
+    left: 50%;
+    top: 50%;
     z-index: 240;
     display: flex;
     flex-direction: column;
@@ -113,11 +114,14 @@ const CONTACT = "mailto:L@desautels.net";
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     opacity: 0;
-    transform: translateY(8px) scale(0.96);
+    /* centered via translate(-50%, -50%); the extra +8px is the entrance rise */
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.96);
+    /* Panel stays click-through so rapid clicks in the middle of the screen keep
+       landing on the page and feeding the meter — only the link is interactive. */
     pointer-events: none;
     transition: opacity 180ms ease, transform 180ms ease;
   }
-  .cps.is-on { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+  .cps.is-on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
   .cps__graph { display: block; width: 120px; height: 34px; }
   .cps__nums { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
   .cps__now { font-size: 20px; font-weight: 700; line-height: 1; color: var(--accent); }
@@ -130,6 +134,7 @@ const CONTACT = "mailto:L@desautels.net";
     text-decoration: none;
     border-top: 1px solid rgba(255, 255, 255, 0.14);
     padding-top: 5px;
+    pointer-events: auto;
   }
   .cps__hi:hover { text-decoration: underline; }
 </style>

@@ -989,3 +989,18 @@ const N = 5; // slides per column
     .rplb__info { max-height: 36vh; }
   }
 </style>
+
+<style is:global>
+  /* LayoutTuner independent size controls for the robotics side-by-side section.
+     Higher specificity (3 attr/class selectors vs 2) overrides the generic
+     [data-ts-text] [data-rsec] :where(...) rules in BaseLayout. */
+  [data-ts-text] [data-rsec="robotics-panels"] .col__title {
+    zoom: calc(var(--ts-all, 1) * var(--ts-rp-title, 1));
+  }
+  [data-ts-text] [data-rsec="robotics-panels"] .col__subtitle {
+    zoom: calc(var(--ts-all, 1) * var(--ts-rp-sub, 1));
+  }
+  [data-ts-text] [data-rsec="robotics-panels"] .rp__cta {
+    zoom: calc(var(--ts-all, 1) * var(--ts-rp-btn, 1));
+  }
+</style>

@@ -14,6 +14,14 @@ const TYPES = [
   { key: "body",     label: "BODY" },
 ];
 
+// Custom per-element controls for the robotics side-by-side section.
+// Rendered instead of the generic TYPES map for that section only.
+const RP_CONTROLS = [
+  { key: "rp-title", label: "MAIN HEADERS" },
+  { key: "rp-sub",   label: "SUB HEADERS" },
+  { key: "rp-btn",   label: "BUTTONS" },
+];
+
 // Granular page sections (data-rsec="<key>" hooks live on the components).
 const SECTIONS = [
   { key: "hero",            label: "Hero" },
@@ -67,17 +75,31 @@ const SECTIONS = [
               <span class="lt__tick" data-lt-tick></span>
             </div>
           </div>
-          {TYPES.map((t) => (
-            <div class="lt__slider lt__slider--text" data-lt-slider data-rkey={`${s.key}.text.${t.key}`}>
-              <label class="lt__lab" data-lt-reset title="double-click to follow the global default">
-                {t.label} <span class="lt__ro" data-lt-ro>1.00</span>
-              </label>
-              <div class="lt__track">
-                <input type="range" min="0.6" max="1.6" step="0.01" value="1" />
-                <span class="lt__tick" data-lt-tick></span>
+          {s.key === "robotics-panels" ? (
+            RP_CONTROLS.map((c) => (
+              <div class="lt__slider lt__slider--text" data-lt-slider data-rkey={`robotics-panels.text.${c.key}`}>
+                <label class="lt__lab" data-lt-reset title="double-click to follow the global default">
+                  {c.label} <span class="lt__ro" data-lt-ro>1.00</span>
+                </label>
+                <div class="lt__track">
+                  <input type="range" min="0.6" max="1.6" step="0.01" value="1" />
+                  <span class="lt__tick" data-lt-tick></span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            TYPES.map((t) => (
+              <div class="lt__slider lt__slider--text" data-lt-slider data-rkey={`${s.key}.text.${t.key}`}>
+                <label class="lt__lab" data-lt-reset title="double-click to follow the global default">
+                  {t.label} <span class="lt__ro" data-lt-ro>1.00</span>
+                </label>
+                <div class="lt__track">
+                  <input type="range" min="0.6" max="1.6" step="0.01" value="1" />
+                  <span class="lt__tick" data-lt-tick></span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     ))}
@@ -95,7 +117,7 @@ const SECTIONS = [
 <button class="lt__fab" data-lt-fab type="button" aria-label="Open layout tuner">▦</button>
 
 <script>
-  const TYPE_KEYS = ["all", "eyebrow", "title", "header", "subtitle", "body"];
+  const TYPE_KEYS = ["all", "eyebrow", "title", "header", "subtitle", "body", "rp-title", "rp-sub", "rp-btn"];
   const SECTION_KEYS = [
     "hero", "filter", "gallery", "robotics-intro", "robotics-panels",
     "subprojects", "lightbox", "academics", "wellrounded", "experiences",

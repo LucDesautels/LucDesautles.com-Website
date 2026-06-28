@@ -266,8 +266,8 @@ function fmt(v: number, f: Slider["fmt"]) {
       </div>
       <div class="wf-subhead">CURSIVE WRITING</div>
       <div class="wf-slider" data-slider>
-        <label class="wf-label">TRIGGER AT (%) <span data-readout>15</span></label>
-        <input type="range" min="0" max="95" step="1" value="15" data-key="text.writeStart" data-fmt="int" />
+        <label class="wf-label">TRIGGER AT (%) <span data-readout>40</span></label>
+        <input type="range" min="0" max="95" step="1" value="40" data-key="text.writeStart" data-fmt="int" />
       </div>
       <div class="wf-slider" data-slider>
         <label class="wf-label">WRITE SPEED (s) <span data-readout>2.0</span></label>
@@ -366,8 +366,9 @@ function fmt(v: number, f: Slider["fmt"]) {
       // section scrolls in. See the TEXT TAB above.
       mode: "cursive" as "slide" | "highlight" | "cursive" | "none",
       // cursive (Vara handwriting): writing TRIGGERS once the label has risen
-      // writeStart% of the viewport, then plays for writeSpeed seconds per label.
-      writeStart: 15,
+      // writeStart% up the viewport (40% ≈ lower-middle, so the pen starts where
+      // the reader is looking), then plays for writeSpeed seconds per label.
+      writeStart: 40,
       writeSpeed: 2.0,
       font: "satisfy" as "satisfy" | "shadows" | "parisienne" | "pacifico",
     },
