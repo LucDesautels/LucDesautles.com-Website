@@ -2,6 +2,20 @@
 import { SITE } from "@/data/content";
 import Placeholder from "./Placeholder.astro";
 import FilterPills from "./islands/FilterPills.tsx";
+import { readdirSync } from "fs";
+import { join } from "path";
+
+function heroImgs(): string[] {
+  try {
+    return readdirSync(join(process.cwd(), "public/images/homepage/hero"))
+      .filter((f) => /\.(jpe?g|png|webp|gif|avif)$/i.test(f))
+      .sort()
+      .map((f) => `/images/homepage/hero/${encodeURIComponent(f)}`);
+  } catch {
+    return [];
+  }
+}
+const imgs = heroImgs();
 ---
 <section class="hero" id="main">
   <div class="hero__shell shell">
@@ -30,16 +44,35 @@ import FilterPills from "./islands/FilterPills.tsx";
 
       <div class="hero__polaroids" aria-hidden="true">
         <div class="polaroid polaroid--lg">
-          <Placeholder label="Hero portrait · 4:5" h={520} w={380} frame note="REPLACE" />
-          <div class="polaroid__caption">Luc · workshop, Toronto</div>
+          {imgs[0]
+            ? <img src={imgs[0]} alt="" class="polaroid__img" style="height:520px;width:380px" />
+            : <Placeholder label="Hero portrait · 4:5" h={520} w={380} frame note="REPLACE" />
+          }
         </div>
         <div class="polaroid polaroid--md">
-          <Placeholder label="In the field" h={220} w={260} frame />
-          <div class="polaroid__caption polaroid__caption--sm">Sailfish field test</div>
+          {imgs[1]
+            ? <img src={imgs[1]} alt="" class="polaroid__img" style="width:160px;height:auto" />
+            : <Placeholder label="In the field" h={220} w={160} frame />
+          }
+          <div class="caption-drop caption-drop--dark">
+            <div class="cd-border cd-border--t"></div>
+            <div class="cd-border cd-border--l"></div>
+            <div class="cd-border cd-border--b"></div>
+            <div class="cd-border cd-border--r"></div>
+            <span class="cd-text" style="white-space:pre;line-height:1.45"></span>
+          </div>
         </div>
         <div class="polaroid polaroid--sm">
-          <Placeholder label="Outdoors" h={170} w={200} frame />
-          <div class="polaroid__caption polaroid__caption--xs">On rope</div>
+          {imgs[2]
+            ? <img src={imgs[2]} alt="" class="polaroid__img" style="width:160px;height:auto" />
+            : <Placeholder label="Outdoors" h={170} w={160} frame />
+          }
+          <div class="caption-drop caption-drop--light">
+            <div class="cd-border cd-border--l"></div>
+            <div class="cd-border cd-border--b"></div>
+            <div class="cd-border cd-border--r"></div>
+            <span class="cd-text"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -111,27 +144,60 @@ import FilterPills from "./islands/FilterPills.tsx";
     margin-top: 6px;
   }
 
+  @font-face {
+    font-family: 'MatrixtypeDisplay';
+    src: url('/fonts/matrixtype-font/MatrixtypeDisplay-9MyE5.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  .polaroid__img {
+    display: block;
+    object-fit: cover;
+    object-position: center top;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+  }
+
   /* Polaroid cluster — absolutely positioned so they can overlap. */
   .hero__polaroids {
     position: relative;
     height: 640px;
   }
-  .polaroid { position: absolute; }
+  .polaroid {
+    position: absolute;
+  }
   .polaroid--lg { top: 0; right: 0; transform: rotate(3deg); }
   .polaroid--md { bottom: 60px; left: -24px; transform: rotate(-5deg); }
-  .polaroid--sm { top: 360px; left: 200px; transform: rotate(8deg); }
+  .polaroid--sm { bottom: 10px; right: -20px; transform: rotate(0deg); }
 
-  .polaroid__caption {
-    padding: 10px 12px 14px;
-    background: #fff;
-    font-family: var(--font-body);
-    font-size: 12px;
-    color: var(--ink-dim);
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.10);
-    margin-top: -2px;
+  /* ── Caption drops ─────────────────────────────────────────────────────── */
+  .caption-drop {
+    height: 28px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    position: relative;
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 210ms cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'MatrixtypeDisplay', 'Courier New', Courier, monospace;
+    font-size: 10px;
+    letter-spacing: 0.04em;
   }
-  .polaroid__caption--sm { padding: 8px 10px 12px; font-size: 11px; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.10); }
-  .polaroid__caption--xs { padding: 6px 8px 10px; font-size: 10px; box-shadow: 0 10px 22px rgba(0, 0, 0, 0.10); }
+  .caption-drop.is-open { clip-path: inset(0); }
+  .caption-drop--dark  { background: #1f1d1b; color: var(--accent); }
+  .caption-drop--light { background: #ffffff; color: #555; }
+  /* Two-line Sailfish caption */
+  .polaroid--md .caption-drop { height: 44px; }
+
+  .cd-border { position: absolute; background: currentColor; }
+  .cd-border--t { top:    0; left:   0; height: 2px; width:  0; }
+  .cd-border--l { left:   0; top:    0; width:  2px; height: 0; }
+  .cd-border--b { bottom: 0; left:   0; height: 2px; width:  0; }
+  .cd-border--r { right:  0; bottom: 0; width:  2px; height: 0; }
+  /* Skiing: borders use the same subtle grey as site rule lines */
+  .caption-drop--light .cd-border { background: var(--rule); }
+
+  .cd-text { white-space: nowrap; }
 
   @media (max-width: 960px) {
     .hero { min-height: auto; }
@@ -139,13 +205,109 @@ import FilterPills from "./islands/FilterPills.tsx";
     .hero__polaroids { height: 540px; margin-top: 24px; }
     .polaroid--lg { right: auto; left: 0; }
     .polaroid--md { left: 200px; bottom: 40px; }
-    .polaroid--sm { top: 380px; left: auto; right: 0; }
+    .polaroid--sm { bottom: 10px; right: -20px; }
   }
 
   @media (max-width: 640px) {
     .hero__polaroids { height: 480px; }
     .polaroid--lg { transform: rotate(2deg) scale(0.85); transform-origin: top left; }
     .polaroid--md { left: 160px; transform: rotate(-4deg) scale(0.85); transform-origin: bottom left; }
-    .polaroid--sm { top: 340px; transform: rotate(6deg) scale(0.85); transform-origin: top right; }
+    .polaroid--sm { bottom: 10px; right: -10px; transform: scale(0.85); transform-origin: bottom right; }
   }
 </style>
+
+<script is:inline>
+(function () {
+  var SLIDE_MS = 210;
+  var BORDER_T = 90;
+  var BORDER_L = 110;
+  var BORDER_B = 120;
+  var BORDER_R = 110;
+  var STEPS_T  = 9;
+  var STEPS_L  = 11;
+  var STEPS_B  = 12;
+  var STEPS_R  = 11;
+  var CHAR_MS  = 28;
+
+  function animateBorder(el, prop, endVal, duration, steps, finalCss) {
+    var start = null;
+    var stepSize = endVal / steps;
+    function tick(ts) {
+      if (!start) start = ts;
+      var pct = Math.min((ts - start) / duration, 1);
+      el.style[prop] = (Math.floor(pct * steps) * stepSize) + 'px';
+      if (pct < 1) requestAnimationFrame(tick);
+      else el.style[prop] = finalCss || (endVal + 'px');
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function typewrite(el, text, onDone) {
+    var i = 0;
+    el.textContent = '';
+    var iv = setInterval(function () {
+      el.textContent = text.slice(0, ++i);
+      if (i >= text.length) { clearInterval(iv); if (onDone) onDone(); }
+    }, CHAR_MS);
+  }
+
+  function setup(polaroidEl, text) {
+    var drop   = polaroidEl.querySelector('.caption-drop');
+    var bT     = polaroidEl.querySelector('.cd-border--t');
+    var bL     = polaroidEl.querySelector('.cd-border--l');
+    var bB     = polaroidEl.querySelector('.cd-border--b');
+    var bR     = polaroidEl.querySelector('.cd-border--r');
+    var textEl = polaroidEl.querySelector('.cd-text');
+    var animated = false;
+    var animating = false;
+
+    function runFirstAnim() {
+      if (animated || animating) return;
+      animating = true;
+
+      var boxH = drop.offsetHeight || 28;
+      var boxW = drop.offsetWidth  || 160;
+      var tOff = 0;
+
+      if (bT) {
+        setTimeout(function () {
+          animateBorder(bT, 'width', boxW, BORDER_T, STEPS_T, '100%');
+        }, SLIDE_MS - 60);
+        tOff = BORDER_T;
+      }
+      setTimeout(function () {
+        animateBorder(bL, 'height', boxH, BORDER_L, STEPS_L);
+      }, SLIDE_MS - 60 + tOff);
+      setTimeout(function () {
+        animateBorder(bB, 'width', boxW, BORDER_B, STEPS_B, '100%');
+      }, SLIDE_MS - 60 + tOff + BORDER_L);
+      setTimeout(function () {
+        animateBorder(bR, 'height', boxH, BORDER_R, STEPS_R);
+      }, SLIDE_MS - 60 + tOff + BORDER_L + BORDER_B);
+
+      var textDelay = SLIDE_MS + tOff + BORDER_L + BORDER_B + BORDER_R - 40;
+      setTimeout(function () {
+        typewrite(textEl, text, function () {
+          animated = true;
+          animating = false;
+        });
+      }, textDelay);
+    }
+
+    polaroidEl.addEventListener('mouseenter', function () {
+      drop.classList.add('is-open');
+      runFirstAnim();
+    });
+    polaroidEl.addEventListener('mouseleave', function () {
+      drop.classList.remove('is-open');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var md = document.querySelector('.polaroid--md');
+    var sm = document.querySelector('.polaroid--sm');
+    if (md) setup(md, '> Project Sailfish\nfield testing');
+    if (sm) setup(sm, '> Backcountry Skiing');
+  });
+})();
+</script>

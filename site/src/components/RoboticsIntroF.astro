@@ -292,6 +292,9 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
       resetUnderline(leftUl); resetUnderline(rightUl);
       readyL = readyR = false; triggered = cursiveDone = false;
       const font = "/fonts/vara/" + (FONT_FILE[builtFont] || FONT_FILE.satisfy);
+      // Snapshot the font at build time so callbacks from a previous (stale) build
+      // can detect they're outdated and bail — Vara has no destroy() method.
+      const localFont = builtFont;
       // Fresh options object per instance — Vara mutates them internally, and a
       // shared reference makes the second label inherit the first's scale.
       // width: large → Vara never wraps the label onto a second line.
@@ -302,12 +305,13 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
       // scatters / wraps). Build the right label only once the left is ready.
       varaL = new Vara("#ric-vara-left", font, mkText(leftVaraEl), mkOpts());
       varaL.ready(() => {
+        if (builtFont !== localFont) return;
         sizeVara("left"); readyL = true;
         varaR = new Vara("#ric-vara-right", font, mkText(rightVaraEl), mkOpts());
-        varaR.ready(() => { sizeVara("right"); readyR = true; });
-        varaR.animationEnd(() => { drawUnderline("right"); cursiveDone = true; });
+        varaR.ready(() => { if (builtFont !== localFont) return; sizeVara("right"); readyR = true; });
+        varaR.animationEnd(() => { if (builtFont !== localFont) return; drawUnderline("right"); cursiveDone = true; });
       });
-      varaL.animationEnd(() => { drawUnderline("left"); if (readyR && varaR) varaR.draw("t", writeMs()); });
+      varaL.animationEnd(() => { if (builtFont !== localFont) return; drawUnderline("left"); if (readyR && varaR) varaR.draw("t", writeMs()); });
     }
 
     function setCursiveActive(on: boolean) {

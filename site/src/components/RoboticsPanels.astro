@@ -364,6 +364,7 @@ const N = 5; // slides per column
       bar.addEventListener("click", (e) => {
         e.stopPropagation();
         if (lbOpen) return;
+        clearHoverIntent();
         paused = false;
         active = idx;
         restart();
@@ -478,7 +479,7 @@ const N = 5; // slides per column
     lbBars.forEach((b) =>
       b.addEventListener("click", (e) => {
         e.stopPropagation();
-        lbIdx = Number(b.getAttribute("data-rplb-bar"));
+        lbIdx = Number(b.dataset.rplbBar);
         lbRender();
       })
     );

@@ -1,0 +1,1033 @@
+---
+// The three big programs, between the engineering hero and the sub-project
+// grid. Each program is one wide bar (blurb left, image right) with its skill
+// rows permanently open underneath — no disclosure, everything is skimmable.
+// Clicking a row opens the lightbox; prev/next there steps to the next *entry*
+// of the same program, while the thumb rail steps images within one entry.
+import { ENG_PROGRAMS } from "@/data/content";
+
+const PROGRAMS = ENG_PROGRAMS;
+// One progress bar per entry, sized for the longest program; the surplus is
+// hidden per-program at open time.
+const MAX_ROWS = Math.max(...PROGRAMS.map((p) => p.skills.length));
+
+/** Row thumbs are the first two slots; the rest are lightbox-only. */
+const rowThumbs = (imgs: { src?: string; label?: string; caption?: string }[]) => imgs.slice(0, 2);
+const slotLabel = (
+  im: { src?: string; label?: string; caption?: string },
+  fallback: string
+) => im.label ?? im.caption ?? fallback;
+---
+<section class="egp" id="programs" data-egp data-rsec="eng-programs">
+  <div class="shell">
+    <div class="egp__head">
+      <div>
+        <div class="eyebrow eyebrow--accent">// Skills by program</div>
+        <h2 class="egp__title">Three programs, and what each one took</h2>
+      </div>
+      <p class="egp__lede">
+        The grid further down lists everything. This is the same work grouped by
+        the program it belongs to, with the technique behind each piece called
+        out. <strong>Click any row</strong> to read it in full.
+      </p>
+    </div>
+
+    {PROGRAMS.map((prog, pi) => (
+      <article class="egp-prog" data-prog={prog.id} style={`--rows:${prog.skills.length}`}>
+        <!-- Program bar: blurb left, image right ─────────────────────── -->
+        <div class="egp-prog__bar">
+          <div class="egp-prog__text">
+            <div class="egp-prog__topline">
+              <span class="eyebrow eyebrow--accent">// {prog.eyebrow} / {String(PROGRAMS.length).padStart(2, "0")}</span>
+              <span class="egp-prog__years">{prog.years}</span>
+            </div>
+            <h3 class="egp-prog__name">{prog.title}</h3>
+            <div class="egp-prog__role">{prog.role}</div>
+            <p class="egp-prog__blurb">{prog.blurb}</p>
+            <div class="egp-prog__foot">
+              <span class="egp-prog__count">
+                {String(prog.skills.length).padStart(2, "0")} techniques
+              </span>
+              {prog.href && (
+                <a class="egp-prog__link" href={prog.href}>Full write-up →</a>
+              )}
+            </div>
+          </div>
+
+          <figure
+            class={`egp-prog__figure${prog.image ? "" : " is-missing"}`}
+            data-fig
+            data-label={prog.imageLabel}
+          >
+            {prog.image && (
+              <img
+                src={prog.image}
+                alt={prog.imageLabel}
+                loading={pi === 0 ? "eager" : "lazy"}
+                decoding="async"
+              />
+            )}
+            {prog.caption && <figcaption class="egp-prog__cap">// {prog.caption}</figcaption>}
+          </figure>
+        </div>
+
+        <!-- Always-open technique rows ────────────────────────────────── -->
+        <div class="egp-prog__rows">
+          {prog.skills.map((s, si) => (
+            <button
+              class="egp-row"
+              data-egp-row
+              data-pid={prog.id}
+              data-idx={si}
+              style={`--i:${si}`}
+              type="button"
+              aria-label={`${s.title} — open detail`}
+            >
+              <span class="egp-row__num">{String(si + 1).padStart(2, "0")}</span>
+
+              <span class="egp-row__main">
+                <span class="egp-row__title">{s.title}</span>
+                <span class="egp-row__desc">{s.desc}</span>
+                <span class="egp-row__tags">
+                  {s.tags.map((t) => <span class="egp-row__tag">{t}</span>)}
+                </span>
+              </span>
+
+              <span class="egp-row__thumbs">
+                {rowThumbs(s.images).map((im) => (
+                  <span
+                    class={`egp-row__thumb${im.src ? "" : " is-missing"}`}
+                    data-fig
+                    data-label={slotLabel(im, s.title)}
+                  >
+                    {im.src && <img src={im.src} alt="" loading="lazy" decoding="async" />}
+                  </span>
+                ))}
+              </span>
+
+              <span class="egp-row__cue" aria-hidden="true">⤢</span>
+            </button>
+          ))}
+        </div>
+      </article>
+    ))}
+  </div>
+
+  <!-- Lightbox — one slide per entry; next/prev walks the program. ─────── -->
+  <div class="egplb" data-egplb hidden aria-hidden="true" data-rsec="lightbox">
+    <div class="egplb__backdrop" data-egplb-close></div>
+    <div class="egplb__panel" role="dialog" aria-modal="true" aria-label="Technique detail">
+      <div class="egplb__bars" data-egplb-bars>
+        {Array.from({ length: MAX_ROWS }).map((_, i) => (
+          <button class="egplb__bar" data-egplb-bar={i} type="button" aria-label={`Entry ${i + 1}`} hidden>
+            <span class="egplb__bar-fill"></span>
+          </button>
+        ))}
+      </div>
+
+      <div class="egplb__main">
+        <div class="egplb__media" data-egplb-media>
+          {PROGRAMS.map((prog) =>
+            prog.skills.map((s, si) => (
+              <div class="egplb__slide" data-egplb-slide data-pid={prog.id} data-idx={si} hidden>
+                <div class="egplb__stage">
+                  {s.images.map((im, ii) => (
+                    <figure
+                      class={`egplb__shot${ii === 0 ? " is-active" : ""}${im.src ? "" : " is-missing"}`}
+                      data-shot={ii}
+                      data-fig
+                      data-label={slotLabel(im, s.title)}
+                    >
+                      {im.src && <img src={im.src} alt={im.caption ?? s.title} loading="lazy" decoding="async" />}
+                      {im.caption && <figcaption class="egplb__cap">{im.caption}</figcaption>}
+                    </figure>
+                  ))}
+                </div>
+
+                {s.images.length > 1 && (
+                  <div class="egplb__rail" data-egplb-rail>
+                    {s.images.map((im, ii) => (
+                      <button
+                        class={`egplb__thumb${ii === 0 ? " is-active" : ""}${im.src ? "" : " is-missing"}`}
+                        data-egplb-thumb={ii}
+                        data-fig
+                        data-label={slotLabel(im, s.title)}
+                        type="button"
+                        aria-label={`Image ${ii + 1} of ${s.images.length}`}
+                      >
+                        {im.src && <img src={im.src} alt="" loading="lazy" decoding="async" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+
+          <button class="egplb__nav egplb__nav--prev" data-egplb-prev aria-label="Previous entry" type="button">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block">
+              <rect x="9" y="0" width="3" height="3"/>
+              <rect x="6" y="3" width="3" height="3"/>
+              <rect x="3" y="6" width="3" height="3"/>
+              <rect x="6" y="9" width="3" height="3"/>
+              <rect x="9" y="12" width="3" height="3"/>
+            </svg>
+          </button>
+          <button class="egplb__nav egplb__nav--next" data-egplb-next aria-label="Next entry" type="button">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block">
+              <rect x="3" y="0" width="3" height="3"/>
+              <rect x="6" y="3" width="3" height="3"/>
+              <rect x="9" y="6" width="3" height="3"/>
+              <rect x="6" y="9" width="3" height="3"/>
+              <rect x="3" y="12" width="3" height="3"/>
+            </svg>
+          </button>
+
+          <!-- First-open tutorial: the click halves step *entries*, which is
+               the thing people don't expect. Fades on first interaction. -->
+          <div class="egplb__hint" data-egplb-hint aria-hidden="true">
+            <div class="egplb__hint-half"><span class="egplb__hint-pill">‹ Click — previous technique</span></div>
+            <div class="egplb__hint-line"></div>
+            <div class="egplb__hint-half"><span class="egplb__hint-pill">Click — next technique ›</span></div>
+          </div>
+        </div>
+
+        <aside class="egplb__info">
+          {PROGRAMS.map((prog) =>
+            prog.skills.map((s, si) => (
+              <div class="egplb__info-block" data-egplb-info data-pid={prog.id} data-idx={si} hidden>
+                <div class="eyebrow eyebrow--accent">// {prog.title}</div>
+                <h4 class="egplb__title">{s.title}</h4>
+                <div class="egplb__tags">
+                  {s.tags.map((t) => <span class="egplb__tag">{t}</span>)}
+                </div>
+                <p class="egplb__lede">{s.desc}</p>
+                <p class="egplb__body">{s.long}</p>
+                <div class="egplb__meta">
+                  <span>{prog.role}</span>
+                  <span class="egplb__sep">·</span>
+                  <span>{String(si + 1).padStart(2, "0")} / {String(prog.skills.length).padStart(2, "0")}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </aside>
+      </div>
+
+      <button class="egplb__close" data-egplb-close type="button" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block">
+          <rect x="0" y="0" width="3" height="3"/>
+          <rect x="12" y="0" width="3" height="3"/>
+          <rect x="3" y="3" width="3" height="3"/>
+          <rect x="9" y="3" width="3" height="3"/>
+          <rect x="6" y="6" width="3" height="3"/>
+          <rect x="3" y="9" width="3" height="3"/>
+          <rect x="9" y="9" width="3" height="3"/>
+          <rect x="0" y="12" width="3" height="3"/>
+          <rect x="12" y="12" width="3" height="3"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const root = document.querySelector("[data-egp]") as HTMLElement | null;
+    if (!root) return;
+
+    // ── Missing-photo fallback ──────────────────────────────────────────
+    // Slots with no `src` are already marked server-side. This catches the
+    // other case: a path in CONTENT.json whose file isn't in public/ yet, so
+    // it degrades to the striped placeholder instead of a broken-image icon.
+    // `error` doesn't bubble — listen in the capture phase.
+    root.addEventListener(
+      "error",
+      (e) => {
+        const img = e.target as HTMLElement;
+        if (!(img instanceof HTMLImageElement)) return;
+        img.closest("[data-fig]")?.classList.add("is-missing");
+      },
+      true
+    );
+
+    // ── Scroll reveal ───────────────────────────────────────────────────
+    // Reveal is opt-in from JS and fail-safe by construction: the hidden state
+    // is armed here rather than in the stylesheet (so no-JS shows everything),
+    // and one predicate is driven by three independent triggers. An invisible
+    // section is a far worse outcome than a skipped animation, so if the
+    // observer never delivers — a throttled or non-compositing tab does that —
+    // scroll and a timer still bring it in.
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const pending = new Set(root.querySelectorAll<HTMLElement>(".egp-prog"));
+
+    if (!reduced) {
+      root.classList.add("is-armed");
+
+      const reveal = (el: HTMLElement) => {
+        el.classList.add("is-in");
+        pending.delete(el);
+        if (pending.size === 0) window.removeEventListener("scroll", check);
+      };
+      const check = () => {
+        pending.forEach((el) => {
+          if (el.getBoundingClientRect().top < window.innerHeight * 0.92) reveal(el);
+        });
+      };
+
+      if ("IntersectionObserver" in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              io.unobserve(entry.target);
+              reveal(entry.target as HTMLElement);
+            });
+          },
+          { rootMargin: "0px 0px -8% 0px", threshold: 0.08 }
+        );
+        pending.forEach((el) => io.observe(el));
+      }
+      window.addEventListener("scroll", check, { passive: true });
+      // Backstop: timers fire even when frames don't.
+      window.setTimeout(check, 1200);
+    }
+
+    // ── Lightbox ────────────────────────────────────────────────────────
+    const lb = root.querySelector("[data-egplb]") as HTMLElement | null;
+    if (!lb) return;
+
+    const slides = Array.from(lb.querySelectorAll<HTMLElement>("[data-egplb-slide]"));
+    const infos = Array.from(lb.querySelectorAll<HTMLElement>("[data-egplb-info]"));
+    const bars = Array.from(lb.querySelectorAll<HTMLElement>("[data-egplb-bar]"));
+    const media = lb.querySelector("[data-egplb-media]") as HTMLElement | null;
+    const hint = lb.querySelector("[data-egplb-hint]") as HTMLElement | null;
+
+    let open = false;
+    let pid = "";
+    let idx = 0;      // entry within the program
+    let count = 0;    // entries in the program
+    let lastRow: HTMLElement | null = null;
+    let hintTimer: number | null = null;
+
+    /** Show entry `idx` of program `pid`, resetting to its first image. */
+    function render() {
+      slides.forEach((el) => {
+        const on = el.dataset.pid === pid && Number(el.dataset.idx) === idx;
+        el.hidden = !on;
+        if (!on) return;
+        // Entering an entry always starts on its first image.
+        el.querySelectorAll<HTMLElement>(".egplb__shot").forEach((s, i) =>
+          s.classList.toggle("is-active", i === 0)
+        );
+        el.querySelectorAll<HTMLElement>("[data-egplb-thumb]").forEach((t, i) =>
+          t.classList.toggle("is-active", i === 0)
+        );
+      });
+      infos.forEach((el) => {
+        el.hidden = !(el.dataset.pid === pid && Number(el.dataset.idx) === idx);
+      });
+      bars.forEach((b, i) => {
+        b.hidden = i >= count;
+        b.classList.toggle("is-active", i === idx);
+        const fill = b.querySelector(".egplb__bar-fill") as HTMLElement | null;
+        if (fill) fill.style.width = i <= idx ? "100%" : "0%";
+      });
+    }
+
+    /** Swap the visible image inside the current entry. */
+    function showShot(n: number) {
+      const slide = slides.find((s) => !s.hidden);
+      if (!slide) return;
+      slide.querySelectorAll<HTMLElement>(".egplb__shot").forEach((s, i) =>
+        s.classList.toggle("is-active", i === n)
+      );
+      slide.querySelectorAll<HTMLElement>("[data-egplb-thumb]").forEach((t, i) =>
+        t.classList.toggle("is-active", i === n)
+      );
+    }
+
+    function showHint() {
+      if (!hint) return;
+      hint.classList.add("is-on");
+      if (hintTimer != null) window.clearTimeout(hintTimer);
+      hintTimer = window.setTimeout(dismissHint, 3200);
+    }
+    function dismissHint() {
+      if (!hint) return;
+      hint.classList.remove("is-on");
+      if (hintTimer != null) {
+        window.clearTimeout(hintTimer);
+        hintTimer = null;
+      }
+    }
+
+    function openLb(nextPid: string, nextIdx: number, source: HTMLElement) {
+      count = slides.filter((s) => s.dataset.pid === nextPid).length;
+      if (count === 0) return;
+      pid = nextPid;
+      idx = Math.min(Math.max(nextIdx, 0), count - 1);
+      lastRow = source;
+      open = true;
+      lb!.hidden = false;
+      lb!.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      (window as any).lenis?.stop();
+      render();
+      requestAnimationFrame(() => lb!.classList.add("is-open"));
+      showHint();
+    }
+
+    function closeLb() {
+      if (!open) return;
+      open = false;
+      dismissHint();
+      lb!.classList.remove("is-open");
+      lb!.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      (window as any).lenis?.start();
+      window.setTimeout(() => {
+        lb!.hidden = true;
+      }, 220);
+      // Return focus to the row that opened it — the page hasn't moved, so
+      // this lands the user exactly where they left off.
+      lastRow?.focus({ preventScroll: true });
+    }
+
+    /** Step by entry, wrapping within the program. */
+    function step(d: number) {
+      if (count <= 0) return;
+      idx = ((idx + d) % count + count) % count;
+      render();
+      dismissHint();
+    }
+
+    root.querySelectorAll<HTMLElement>("[data-egp-row]").forEach((row) => {
+      row.addEventListener("click", () => {
+        const p = row.dataset.pid;
+        if (p) openLb(p, Number(row.dataset.idx), row);
+      });
+    });
+
+    lb.querySelectorAll<HTMLElement>("[data-egplb-close]").forEach((el) =>
+      el.addEventListener("click", closeLb)
+    );
+    lb.querySelector("[data-egplb-prev]")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      step(-1);
+    });
+    lb.querySelector("[data-egplb-next]")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      step(1);
+    });
+    bars.forEach((b, i) =>
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (i < count) {
+          idx = i;
+          render();
+          dismissHint();
+        }
+      })
+    );
+
+    // Click halves of the image step entries; the thumb rail below it swaps
+    // the image within the current entry.
+    media?.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest(".egplb__nav")) return;
+      const thumb = target.closest<HTMLElement>("[data-egplb-thumb]");
+      if (thumb) {
+        showShot(Number(thumb.dataset.egplbThumb));
+        dismissHint();
+        return;
+      }
+      const rect = media.getBoundingClientRect();
+      step((e as MouseEvent).clientX - rect.left < rect.width / 2 ? -1 : 1);
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (!open) return;
+      if (e.key === "Escape") closeLb();
+      else if (e.key === "ArrowLeft") step(-1);
+      else if (e.key === "ArrowRight") step(1);
+    });
+  })();
+</script>
+
+<style>
+  .egp {
+    position: relative;
+    z-index: 2; /* cover the fixed wave canvas, like the rest of this page */
+    background: var(--dark);
+    color: var(--dark-ink);
+    padding: 72px var(--page-pad) 40px;
+    border-top: 1px solid var(--dark-line);
+  }
+
+  /* ── Section head ──────────────────────────────────────────────────── */
+  .egp__head {
+    display: grid;
+    grid-template-columns: 1fr minmax(280px, 420px);
+    gap: 32px;
+    align-items: end;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--dark-line);
+  }
+  .egp__title {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 3.5vw, 48px);
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--dark-ink);
+    margin: 6px 0 0;
+  }
+  .egp__lede {
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--dark-dim);
+    margin: 0;
+  }
+  .egp__lede strong { color: var(--dark-ink); font-weight: 600; }
+
+  /* ── Program block ─────────────────────────────────────────────────── */
+  .egp-prog { margin-top: 56px; }
+  /* `is-armed` is set by the script — see the reveal block there. */
+  .egp.is-armed .egp-prog {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 620ms ease, transform 620ms ease;
+  }
+  .egp.is-armed .egp-prog.is-in { opacity: 1; transform: none; }
+
+  .egp-prog__bar {
+    display: grid;
+    grid-template-columns: 1fr clamp(260px, 30vw, 400px);
+    gap: 32px;
+    align-items: stretch;
+    padding: 26px 28px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--dark-line);
+    border-left: 3px solid var(--accent);
+  }
+  .egp-prog__text { display: flex; flex-direction: column; min-width: 0; }
+  .egp-prog__topline {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .egp-prog__years {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--dark-mute);
+  }
+  .egp-prog__name {
+    font-family: var(--font-tech);
+    font-size: clamp(30px, 4vw, 52px);
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    color: var(--dark-ink);
+    margin: 10px 0 0;
+  }
+  .egp-prog__role {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(15px, 1.5vw, 19px);
+    color: var(--accent);
+    margin-top: 6px;
+  }
+  .egp-prog__blurb {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: var(--dark-dim);
+    margin: 16px 0 0;
+    max-width: 68ch;
+  }
+  .egp-prog__foot {
+    margin-top: auto;
+    padding-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .egp-prog__count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dark-ink);
+    padding: 5px 10px;
+    border: 1px solid var(--dark-line);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .egp-prog__link {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid transparent;
+    transition: border-color 160ms;
+  }
+  .egp-prog__link:hover { border-bottom-color: var(--accent); }
+
+  .egp-prog__figure {
+    position: relative;
+    margin: 0;
+    min-height: 190px;
+    border: 1px solid var(--dark-line);
+    overflow: hidden;
+    background: #0c0a08;
+  }
+  .egp-prog__figure img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .egp-prog__cap {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dark-ink);
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid var(--dark-line);
+    padding: 6px 9px;
+  }
+
+  /* ── Technique rows — always open ──────────────────────────────────── */
+  .egp-prog__rows {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--dark-line);
+    border-top: none;
+  }
+  .egp-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) auto 28px;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+    padding: 16px 18px;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--dark-line-soft);
+    color: inherit;
+    cursor: pointer;
+    transition: background 180ms ease;
+  }
+  .egp-row:last-child { border-bottom: none; }
+  /* Left accent wipe on hover — cheap to animate, reads as "this is live". */
+  .egp-row::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: 50% 50%;
+    transition: transform 220ms ease;
+  }
+  .egp-row:hover,
+  .egp-row:focus-visible { background: rgba(255, 255, 255, 0.045); outline: none; }
+  .egp-row:hover::before,
+  .egp-row:focus-visible::before { transform: scaleY(1); }
+
+  .egp-row__num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--dark-mute);
+    transition: color 180ms;
+  }
+  .egp-row:hover .egp-row__num,
+  .egp-row:focus-visible .egp-row__num { color: var(--accent); }
+
+  .egp-row__main { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .egp-row__title {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--dark-ink);
+  }
+  .egp-row__desc {
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--dark-dim);
+  }
+  .egp-row__tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+  .egp-row__tag {
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 6px;
+    color: var(--dark-mute);
+    border: 1px solid var(--dark-line-soft);
+  }
+
+  .egp-row__thumbs { display: flex; gap: 8px; }
+  .egp-row__thumb {
+    position: relative;
+    display: block;
+    width: 92px;
+    aspect-ratio: 4 / 3;
+    border: 1px solid var(--dark-line);
+    overflow: hidden;
+    background: #0c0a08;
+    flex: none;
+    transition: border-color 180ms;
+  }
+  .egp-row:hover .egp-row__thumb { border-color: rgba(217, 106, 54, 0.5); }
+  .egp-row__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .egp-row__cue {
+    font-size: 14px;
+    color: var(--dark-mute);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity 180ms, transform 180ms, color 180ms;
+  }
+  .egp-row:hover .egp-row__cue,
+  .egp-row:focus-visible .egp-row__cue {
+    opacity: 1;
+    transform: none;
+    color: var(--accent);
+  }
+
+  /* ── Striped fallback for any slot without a usable photo ───────────── */
+  [data-fig].is-missing::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(135deg, #1c1916 0 14px, #211e1a 14px 28px);
+  }
+  [data-fig].is-missing::after {
+    content: "[ " attr(data-label) " ]";
+    position: absolute;
+    left: 10px;
+    bottom: 8px;
+    right: 10px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Row thumbs are too small for a legible label — stripes only. */
+  .egp-row__thumb.is-missing::after { content: none; }
+
+  /* ── Lightbox ──────────────────────────────────────────────────────── */
+  .egplb {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
+  .egplb[hidden] { display: none !important; }
+  .egplb.is-open { opacity: 1; }
+  .egplb__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 6, 4, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .egplb__panel {
+    position: relative;
+    /* Fixed across every entry so the panel never reflows while stepping —
+       images letterbox inside via object-fit: contain instead. */
+    width: min(1560px, 96vw);
+    height: 88vh;
+    background: var(--dark);
+    border: 1px solid var(--dark-line);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(8px);
+    transition: transform 220ms ease;
+  }
+  .egplb.is-open .egplb__panel { transform: translateY(0); }
+
+  .egplb__bars { display: flex; gap: 6px; padding: 14px 18px 0; }
+  .egplb__bar {
+    flex: 1;
+    height: 3px;
+    background: var(--dark-line);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: background 160ms;
+  }
+  .egplb__bar[hidden] { display: none; }
+  .egplb__bar:hover { background: var(--dark-line-soft); }
+  .egplb__bar-fill { display: block; height: 100%; width: 0%; background: var(--dark-ink); }
+  .egplb__bar.is-active .egplb__bar-fill { background: var(--accent); }
+
+  .egplb__main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+    padding: 14px 18px 18px;
+    min-height: 0;
+  }
+  .egplb__media {
+    position: relative;
+    min-height: 0;
+    cursor: pointer;
+  }
+  .egplb__slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .egplb__slide[hidden] { display: none; }
+
+  .egplb__stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    border: 1px solid var(--dark-line);
+    background: #0c0a08;
+    overflow: hidden;
+  }
+  .egplb__shot {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 320ms ease;
+  }
+  .egplb__shot.is-active { opacity: 1; }
+  .egplb__shot img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .egplb__cap {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    max-width: 62%;
+    z-index: 1;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dark-ink);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    padding: 10px 14px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .egplb__rail { display: flex; gap: 8px; flex: none; }
+  .egplb__thumb {
+    position: relative;
+    width: 96px;
+    aspect-ratio: 4 / 3;
+    padding: 0;
+    border: 1px solid var(--dark-line);
+    background: #0c0a08;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 160ms, border-color 160ms;
+  }
+  .egplb__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .egplb__thumb:hover { opacity: 0.85; }
+  .egplb__thumb.is-active { opacity: 1; border-color: var(--accent); }
+  .egplb__thumb.is-missing::after { content: none; }
+
+  .egplb__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--accent);
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--accent);
+    cursor: pointer;
+    opacity: 0.7;
+    display: grid;
+    place-items: center;
+    z-index: 3;
+    transition: opacity 180ms, background 180ms;
+  }
+  .egplb__nav:hover { opacity: 1; background: rgba(0, 0, 0, 0.75); }
+  .egplb__nav--prev { left: 14px; }
+  .egplb__nav--next { right: 14px; }
+
+  .egplb__hint {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  .egplb__hint.is-on { opacity: 1; }
+  .egplb__hint-half { flex: 1; display: flex; align-items: center; justify-content: center; }
+  .egplb__hint-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    transform: translateX(-50%);
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.7) 0 8px,
+      transparent 8px 16px
+    );
+  }
+  .egplb__hint-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dark-ink);
+    background: rgba(0, 0, 0, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    padding: 9px 16px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .egplb__info {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--dark-line);
+    border-radius: 12px;
+    padding: 22px 22px 24px;
+    overflow: auto;
+  }
+  .egplb__info-block[hidden] { display: none !important; }
+  .egplb__title {
+    font-family: var(--font-tech);
+    font-size: clamp(24px, 2.6vw, 32px);
+    line-height: 1.05;
+    color: var(--dark-ink);
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    margin: 12px 0 0;
+  }
+  .egplb__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .egplb__tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    background: rgba(217, 106, 54, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(217, 106, 54, 0.4);
+  }
+  .egplb__lede {
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.55;
+    color: var(--dark-ink);
+    margin: 18px 0 0;
+  }
+  .egplb__body {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--dark-dim);
+    margin: 14px 0 0;
+  }
+  .egplb__meta {
+    margin-top: auto;
+    padding-top: 18px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--dark-mute);
+  }
+  .egplb__sep { padding: 0 6px; }
+
+  .egplb__close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--dark-ink);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    z-index: 5;
+  }
+  .egplb__close:hover { background: rgba(255, 255, 255, 0.14); }
+
+  /* ── Responsive ────────────────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .egp__head { grid-template-columns: 1fr; align-items: start; }
+    .egp-prog__bar { grid-template-columns: 1fr; }
+    .egp-prog__figure { aspect-ratio: 16 / 9; min-height: 0; }
+    /* Stacked: the media row takes the free space and the write-up sizes to
+       its content. Without the explicit rows both are auto — and the media,
+       whose slides are absolutely positioned, measures as zero and collapses. */
+    .egplb__main {
+      grid-template-columns: 1fr;
+      grid-template-rows: minmax(240px, 1fr) auto;
+    }
+    .egplb__info { max-height: 34vh; flex: none; }
+  }
+  @media (max-width: 760px) {
+    .egp { padding-top: 48px; }
+    .egp-prog { margin-top: 40px; }
+    .egp-prog__bar { padding: 20px; }
+    .egp-row {
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 12px;
+      padding: 14px;
+    }
+    /* Thumbs drop under the copy, aligned with it; the cue is redundant on
+       touch where there's no hover to reveal it. */
+    .egp-row__thumbs { grid-column: 2; }
+    .egp-row__thumb { width: 76px; }
+    .egp-row__cue { display: none; }
+    .egplb__panel { width: 100vw; height: 100vh; border: none; }
+    .egplb__thumb { width: 72px; }
+    .egplb__nav { width: 38px; height: 38px; }
+  }
+</style>

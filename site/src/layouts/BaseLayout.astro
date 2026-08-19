@@ -1,5 +1,6 @@
 ---
 import "@/styles/tokens.css";
+import LoadingScreen from "@/components/LoadingScreen.astro";
 import WaveField from "@/components/WaveField.astro";
 import WaveTuner from "@/components/WaveTuner.astro";
 import LayoutTuner from "@/components/LayoutTuner.astro";
@@ -88,6 +89,7 @@ const ogImageUrl = new URL(ogImage, SITE_URL).toString();
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body>
+    <LoadingScreen />
     {/* Keyboard-first navigation aid — visually hidden until focused. */}
     <a class="skip-link" href="#main">Skip to content</a>
     <SmoothScroll />

@@ -1,0 +1,299 @@
+---
+// Page-level outline rail for the lower half — every section AND every group
+// listed at once, so the whole run is visible as a table of contents while you
+// scroll. Sections are top level, groups are the sub-bullets. The active group
+// is highlighted and its parent section stays lit.
+//
+// This component also owns the page's single rAF-throttled scroll pass: it
+// drives both the rail highlight and the card reveal (MetaRail/PrinciplesRail
+// carry the reveal *styles*, gated on html.js-reveal, which this sets).
+export type RailSection = {
+  id: string;
+  num: number;
+  title: string;
+  groups: { id: string; title: string }[];
+};
+
+interface Props {
+  sections: RailSection[];
+}
+const { sections } = Astro.props;
+---
+<nav class="sr" aria-label="Section outline">
+  <div class="sr__stick">
+    <div class="eyebrow sr__cap">Contents</div>
+    <ul class="sr__list">
+      {sections.map((s) => (
+        <li class="sr__sec" data-rail-sec={s.id}>
+          {/* Each row reveals when its own target is first reached — the
+              section header rides in with its first group. */}
+          <div class="sr__row" data-row={s.groups.length ? s.groups[0].id : s.id}>
+            <div class="sr__row-in">
+              <a
+                class="sr__sec-link"
+                href={`#${s.id}`}
+                {...(s.groups.length ? {} : { "data-spy-link": s.id })}
+              >
+                <span class="sr__num">{String(s.num).padStart(2, "0")}</span>
+                <span class="sr__sec-t">{s.title}</span>
+              </a>
+            </div>
+          </div>
+          {s.groups.length > 0 && (
+            <ul class="sr__subs">
+              {s.groups.map((g) => (
+                <li class="sr__row" data-row={g.id}>
+                  <div class="sr__row-in">
+                    <a class="sr__sub" href={`#g-${g.id}`} data-spy-link={g.id}>
+                      <span class="sr__dot" aria-hidden="true"></span>
+                      <span class="sr__sub-t">{g.title}</span>
+                    </a>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+</nav>
+
+<style>
+  .sr {
+    height: 100%;
+    pointer-events: none;
+  }
+  .sr__stick {
+    position: sticky;
+    top: calc(var(--topbar-h) + 30px);
+    pointer-events: auto;
+  }
+  .sr__cap {
+    color: var(--ink-mute);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .sr__list,
+  .sr__subs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .sr__list { margin-top: 12px; }
+
+  /* ── Progressive build ────────────────────────────────────────────────
+     Rows are collapsed until scrolled past, then stay for good (the script
+     only ever adds .is-seen). 0fr → 1fr animates the row's own height, so
+     the list grows instead of filling in reserved gaps. */
+  .sr__row {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 420ms cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 300ms ease;
+  }
+  .sr__row-in { overflow: hidden; min-height: 0; }
+  .sr__row.is-seen { grid-template-rows: 1fr; opacity: 1; }
+
+  .sr__sec-link {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    /* Section spacing lives inside the collapsing row, so an unseen section
+       leaves no gap behind. */
+    padding: 3px 0;
+    margin-top: 12px;
+    color: var(--ink-mute);
+    transition: color 200ms ease;
+  }
+  .sr__num {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--ink-mute);
+    transition: color 200ms ease;
+  }
+  .sr__sec-t {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .sr__sec:first-child .sr__sec-link { margin-top: 0; }
+  .sr__sec-link:hover { color: var(--ink); }
+
+  /* Sub-bullets hang off a hairline that runs the height of the group list. */
+  .sr__subs {
+    margin: 2px 0 0 4px;
+    border-left: 1px solid var(--rule);
+  }
+  /* The 1px pull that lets the active bar sit ON the hairline lives on the
+     row, not the link — the row's reveal wrapper clips overflow, so anything
+     hanging past its left edge would lose a pixel. */
+  .sr__subs > .sr__row { margin-left: -1px; }
+  .sr__sub {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0 4px 11px;
+    border-left: 2px solid transparent;
+    color: var(--ink-mute);
+    opacity: 0.72;
+    transition: color 200ms ease, opacity 200ms ease,
+                border-color 200ms ease, padding-left 200ms ease;
+  }
+  .sr__dot {
+    width: 4px;
+    height: 4px;
+    flex: none;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.5;
+    transition: opacity 200ms ease, transform 200ms ease;
+  }
+  .sr__sub-t {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+  .sr__sub:hover { color: var(--ink); opacity: 1; }
+
+  /* ── State ────────────────────────────────────────────────────────────
+     is-current = the section you're in; is-active = the exact group. */
+  .sr__sec.is-current .sr__sec-link,
+  .sr__sec.is-current .sr__num { color: var(--ink); }
+  .sr__sec.is-current .sr__sub { opacity: 1; }
+
+  .sr__sub.is-active,
+  .sr__sec-link.is-active {
+    color: var(--ink);
+    opacity: 1;
+  }
+  .sr__sub.is-active {
+    border-left-color: var(--accent);
+    padding-left: 14px;
+  }
+  .sr__sub.is-active .sr__dot {
+    background: var(--accent);
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  .sr__sec-link.is-active .sr__num { color: var(--accent); }
+
+  /* The rail is the desktop affordance; below the breakpoint each section
+     prints its own header instead (see MetaRail's .mr__mark). */
+  @media (max-width: 1080px) {
+    .sr { display: none; }
+  }
+</style>
+
+<script>
+  // Single page-level scroll pass: rail highlight + card reveal.
+  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Arm the reveal styles only once JS is alive, so a failed script leaves the
+  // cards visible instead of stuck at opacity 0.
+  document.documentElement.classList.add("js-reveal");
+
+  const targets = [...document.querySelectorAll<HTMLElement>("[data-spy]")];
+  const links = new Map<string, HTMLElement>();
+  document.querySelectorAll<HTMLElement>("[data-spy-link]").forEach((el) => {
+    links.set(el.dataset.spyLink!, el);
+  });
+  // Rail rows keyed by the target that brings them in.
+  const rows = new Map<string, HTMLElement[]>();
+  document.querySelectorAll<HTMLElement>("[data-row]").forEach((el) => {
+    const key = el.dataset.row!;
+    rows.set(key, [...(rows.get(key) ?? []), el]);
+  });
+
+  let pending = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
+  if (REDUCED) {
+    pending.forEach((el) => el.classList.add("is-in"));
+    pending = [];
+  }
+
+  let active = "";
+  // Index of the deepest target reached so far; its row (and every row before
+  // it) is shown. Seeded with the first so the rail is never empty.
+  let built = 0;
+  rows.get(targets[0]?.dataset.spy ?? "")?.forEach((r) => r.classList.add("is-seen"));
+
+  function pass() {
+    const h = window.innerHeight;
+
+    // Reveal anything whose top has entered the lower ~8% of the viewport.
+    if (pending.length) {
+      const line = h * 0.92;
+      pending = pending.filter((el) => {
+        if (el.getBoundingClientRect().top > line) return true;
+        el.classList.add("is-in");
+        return false;
+      });
+    }
+
+    // Active target = the last one whose top has passed the upper-third line.
+    if (targets.length) {
+      const spyLine = h * 0.34;
+      let current = targets[0];
+      let idx = 0;
+      targets.forEach((t, i) => {
+        if (t.getBoundingClientRect().top <= spyLine) {
+          current = t;
+          idx = i;
+        }
+      });
+
+      // Build the outline as we go, up to the deepest point reached. This is a
+      // high-water mark on purpose: scrolling back up leaves the list built,
+      // so it never unbuilds and rebuilds.
+      while (built < idx) {
+        built++;
+        rows.get(targets[built].dataset.spy!)?.forEach((r) => r.classList.add("is-seen"));
+      }
+
+      const id = current.dataset.spy!;
+      if (id !== active) {
+        active = id;
+        links.forEach((el, key) => el.classList.toggle("is-active", key === id));
+        const parent = links.get(id)?.closest(".sr__sec");
+        document.querySelectorAll(".sr__sec").forEach((sec) => {
+          sec.classList.toggle("is-current", sec === parent);
+        });
+      }
+    }
+  }
+
+  let queued = false;
+  function onScroll() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      pass();
+    });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
+  pass();
+  // The loading overlay holds the page still for a beat; re-run once it lifts
+  // so above-the-fold cards aren't stuck mid-transition.
+  window.addEventListener("load", pass);
+  setTimeout(pass, 400);
+
+  // Rail links route through Lenis when it's driving, so the jump matches the
+  // rest of the page's scroll feel and clears the fixed top bar.
+  document.querySelectorAll<HTMLAnchorElement>(".sr a[href^='#']").forEach((a) => {
+    a.addEventListener("click", (e) => {
+      const target = document.querySelector<HTMLElement>(a.getAttribute("href")!);
+      const lenis = (window as any).lenis;
+      if (!target || !lenis) return; // native jump + scroll-margin-top handles it
+      e.preventDefault();
+      lenis.scrollTo(target, { offset: -110 });
+    });
+  });
+</script>

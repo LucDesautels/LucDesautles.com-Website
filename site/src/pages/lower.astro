@@ -1,0 +1,128 @@
+---
+// Redesign of the home page's lower half (everything after the robotics
+// block): Academics → Well rounded → Experiences → Principles → Footer.
+// Same content, same order — repacked into sticky rail + dense grid so the
+// whole thing reads at a glance instead of one big heading per screen.
+// Lives on its own route while it's being reviewed; the section markup is
+// drop-in for index.astro once it's approved.
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopBar from "@/components/TopBar.astro";
+import MetaRail from "@/components/MetaRail.astro";
+import PrinciplesRail from "@/components/PrinciplesRail.astro";
+import SectionRail from "@/components/SectionRail.astro";
+import type { RailSection } from "@/components/SectionRail.astro";
+import Footer from "@/components/Footer.astro";
+import { META_GROUPS } from "@/data/content";
+
+// The outline the rail renders: sections top level, their groups as
+// sub-bullets. Numbers continue the home page's §-sequence.
+const railSections: RailSection[] = [
+  ...META_GROUPS.map((m, i) => ({
+    id: m.id,
+    num: i + 4,
+    title: m.title,
+    groups: m.groups.map((g) => ({ id: g.id, title: g.title })),
+  })),
+  { id: "principles", num: 7, title: "Principles", groups: [] },
+];
+---
+<BaseLayout
+  title="Lower half — redesign preview · Luc Desautels"
+  description="Preview of the repacked lower half of the home page."
+  noIndex
+>
+  <TopBar />
+
+  <main id="main">
+    <!-- Preview banner — delete when this is merged into index.astro. -->
+    <div class="prev">
+      <div class="prev__inner shell">
+        <span class="eyebrow prev__tag">Preview</span>
+        <span class="prev__txt">Repacked lower half — sections ride the left rail, cards pack tight.</span>
+        <a class="prev__link" href="/">← current home page</a>
+      </div>
+    </div>
+
+    <!-- The rail floats in the gutter every band leaves open on its left, for
+         the full run of the lower half. It's absolutely positioned rather
+         than a grid column so the section tints stay full-bleed behind it. -->
+    <div class="lh">
+      <div class="lh__railwrap">
+        <SectionRail sections={railSections} />
+      </div>
+
+      <div data-rsec="academics">
+        <MetaRail meta={META_GROUPS[0]} num={4} tone="cream" />
+      </div>
+
+      <div data-rsec="wellrounded">
+        <MetaRail meta={META_GROUPS[1]} num={5} tone="warm" />
+      </div>
+
+      <div data-rsec="experiences">
+        <MetaRail meta={META_GROUPS[2]} num={6} tone="cream" quirky />
+      </div>
+
+      <div data-rsec="principles"><PrinciplesRail /></div>
+    </div>
+
+    <div data-rsec="footer"><Footer /></div>
+  </main>
+</BaseLayout>
+
+<style>
+  /* Lower-half wrapper. `.lh__railwrap` spans the full run of bands and pins
+     itself to the same left edge the .shell content starts at: the section's
+     --page-pad, or the centering margin once the viewport is wider than
+     --content-max. Percentages resolve against .lh (a block box, so the
+     scrollbar is already excluded) — no 100vw off-by-scrollbar. */
+  .lh { position: relative; }
+  .lh__railwrap {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: max(var(--page-pad), calc((100% - var(--content-max)) / 2));
+    width: var(--rail-w, 214px);
+    pointer-events: none;
+    /* Above the bands: each section is position:relative; z-index:1 to sit
+       over the wave canvas, so the rail has to clear that or it paints
+       behind their solid backgrounds. */
+    z-index: 2;
+  }
+  @media (max-width: 1080px) {
+    .lh__railwrap { display: none; }
+  }
+
+  .prev {
+    position: relative;
+    z-index: 1;
+    background: var(--ink);
+    color: var(--dark-ink);
+    padding: 9px var(--page-pad);
+  }
+  .prev__inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .prev__tag {
+    color: var(--dark);
+    background: var(--accent);
+    padding: 3px 8px;
+  }
+  .prev__txt {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--dark-dim);
+  }
+  .prev__link {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .prev__link:hover { text-decoration: underline; }
+</style>

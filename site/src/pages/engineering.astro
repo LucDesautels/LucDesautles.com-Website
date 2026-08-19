@@ -2,6 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import TopBar from "@/components/TopBar.astro";
 import Placeholder from "@/components/Placeholder.astro";
+import EngPrograms from "@/components/EngPrograms.astro";
 import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
 ---
 <BaseLayout title="Engineering portfolio · Luc Desautels" description="The full engineering portfolio: ~20 sub-projects across Sailfish, FTC, and standalone work.">
@@ -19,8 +20,9 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
           </h1>
           <div class="ep__byline">The engineering work of <strong>Luc Desautels</strong>.</div>
           <p class="ep__tagline">
-            Twenty sub-projects across three programs. Hover to preview, click to lock
-            a project, open any image for the full write-up. Filter by <strong>discipline</strong>.
+            Twenty sub-projects across three programs. Start with the
+            <strong>programs</strong> below — each one breaks down into the techniques
+            behind it — or skip to the full grid and filter by <strong>discipline</strong>.
           </p>
           <div class="ep__meta">
             {SITE.meta.map((m) => (
@@ -35,8 +37,8 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
             </div>
           </div>
 
-          <a class="ep__scroll" href="#all" aria-label="Scroll to project grid">
-            <span>// SCROLL — PROJECT GRID</span>
+          <a class="ep__scroll" href="#programs" aria-label="Scroll to the programs">
+            <span>// SCROLL — SKILLS BY PROGRAM</span>
             <span class="ep__scroll-arrow">↓</span>
           </a>
         </div>
@@ -58,13 +60,17 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
       </div>
     </section>
 
+    <!-- Skills by program — the three big programs, each with its own
+         always-open technique rows. Sits between the hero and the grid. ── -->
+    <EngPrograms />
+
     <!-- Grid + filters + detail ─────────────────────────────────────── -->
     <section class="ep__projects" id="all" data-projects>
       <div class="shell">
         <div class="ep__sec-head">
           <div>
-            <div class="eyebrow eyebrow--accent">// 01 — PROJECT GRID</div>
-            <h2 class="ep__sec-title">All twenty.</h2>
+            <div class="eyebrow eyebrow--accent">// Engineering Project Portfolio</div>
+            <h2 class="ep__sec-title ep__sec-title--display">Here's what I've been working on</h2>
           </div>
           <div class="ep__hint">
             Hover to preview · click a tile to lock it as selected.
@@ -492,6 +498,9 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
         lb!.hidden = false;
         lb!.setAttribute("aria-hidden", "false");
         document.body.style.overflow = "hidden";
+        // Lenis drives its own scroll loop and ignores body overflow — it has
+        // to be stopped explicitly or the page slides behind the backdrop.
+        (window as any).lenis?.stop();
         lbRender();
         requestAnimationFrame(() => lb!.classList.add("is-open"));
         showHint();
@@ -503,6 +512,7 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
         lb!.classList.remove("is-open");
         lb!.setAttribute("aria-hidden", "true");
         document.body.style.overflow = "";
+        (window as any).lenis?.start();
         window.setTimeout(() => { lb!.hidden = true; }, 220);
         czStart();
       }
@@ -691,6 +701,14 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
       text-transform: uppercase;
       letter-spacing: -0.01em;
       font-weight: 600;
+    }
+    .ep__sec-title--display {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3.5vw, 48px);
+      font-style: italic;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: -0.02em;
     }
     .ep__hint {
       font-family: var(--font-mono);
