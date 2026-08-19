@@ -4,7 +4,9 @@
 // rows permanently open underneath — no disclosure, everything is skimmable.
 // Clicking a row opens the lightbox; prev/next there steps to the next *entry*
 // of the same program, while the thumb rail steps images within one entry.
-import { ENG_PROGRAMS } from "@/data/content";
+import { Image } from "astro:assets";
+import { ENG_PROGRAMS, ENG_PROGRAMS_SECTION, type EngSlotImage } from "@/data/content";
+import { mdInline } from "@/lib/finalImages";
 
 const PROGRAMS = ENG_PROGRAMS;
 // One progress bar per entry, sized for the longest program; the surplus is
@@ -12,24 +14,16 @@ const PROGRAMS = ENG_PROGRAMS;
 const MAX_ROWS = Math.max(...PROGRAMS.map((p) => p.skills.length));
 
 /** Row thumbs are the first two slots; the rest are lightbox-only. */
-const rowThumbs = (imgs: { src?: string; label?: string; caption?: string }[]) => imgs.slice(0, 2);
-const slotLabel = (
-  im: { src?: string; label?: string; caption?: string },
-  fallback: string
-) => im.label ?? im.caption ?? fallback;
+const rowThumbs = (imgs: EngSlotImage[]) => imgs.slice(0, 2);
 ---
 <section class="egp" id="programs" data-egp data-rsec="eng-programs">
   <div class="shell">
     <div class="egp__head">
       <div>
-        <div class="eyebrow eyebrow--accent">// Skills by program</div>
-        <h2 class="egp__title">Three programs, and what each one took</h2>
+        <div class="eyebrow eyebrow--accent">{ENG_PROGRAMS_SECTION.eyebrow}</div>
+        <h2 class="egp__title">{ENG_PROGRAMS_SECTION.title}</h2>
       </div>
-      <p class="egp__lede">
-        The grid further down lists everything. This is the same work grouped by
-        the program it belongs to, with the technique behind each piece called
-        out. <strong>Click any row</strong> to read it in full.
-      </p>
+      <p class="egp__lede" set:html={mdInline(ENG_PROGRAMS_SECTION.lede)} />
     </div>
 
     {PROGRAMS.map((prog, pi) => (
@@ -54,19 +48,16 @@ const slotLabel = (
             </div>
           </div>
 
-          <figure
-            class={`egp-prog__figure${prog.image ? "" : " is-missing"}`}
-            data-fig
-            data-label={prog.imageLabel}
-          >
-            {prog.image && (
-              <img
-                src={prog.image}
-                alt={prog.imageLabel}
-                loading={pi === 0 ? "eager" : "lazy"}
-                decoding="async"
-              />
-            )}
+          <figure class="egp-prog__figure">
+            <Image
+              src={prog.image}
+              alt={prog.imageLabel}
+              loading={pi === 0 ? "eager" : "lazy"}
+              decoding="async"
+              width={900}
+              format="webp"
+              quality={80}
+            />
             {prog.caption && <figcaption class="egp-prog__cap">// {prog.caption}</figcaption>}
           </figure>
         </div>
@@ -95,12 +86,8 @@ const slotLabel = (
 
               <span class="egp-row__thumbs">
                 {rowThumbs(s.images).map((im) => (
-                  <span
-                    class={`egp-row__thumb${im.src ? "" : " is-missing"}`}
-                    data-fig
-                    data-label={slotLabel(im, s.title)}
-                  >
-                    {im.src && <img src={im.src} alt="" loading="lazy" decoding="async" />}
+                  <span class="egp-row__thumb">
+                    <Image src={im.src} alt="" loading="lazy" decoding="async" width={200} format="webp" quality={76} />
                   </span>
                 ))}
               </span>
@@ -132,13 +119,8 @@ const slotLabel = (
               <div class="egplb__slide" data-egplb-slide data-pid={prog.id} data-idx={si} hidden>
                 <div class="egplb__stage">
                   {s.images.map((im, ii) => (
-                    <figure
-                      class={`egplb__shot${ii === 0 ? " is-active" : ""}${im.src ? "" : " is-missing"}`}
-                      data-shot={ii}
-                      data-fig
-                      data-label={slotLabel(im, s.title)}
-                    >
-                      {im.src && <img src={im.src} alt={im.caption ?? s.title} loading="lazy" decoding="async" />}
+                    <figure class={`egplb__shot${ii === 0 ? " is-active" : ""}`} data-shot={ii}>
+                      <Image src={im.src} alt={im.caption ?? s.title} loading="lazy" decoding="async" width={1400} format="webp" quality={80} />
                       {im.caption && <figcaption class="egplb__cap">{im.caption}</figcaption>}
                     </figure>
                   ))}
@@ -148,14 +130,12 @@ const slotLabel = (
                   <div class="egplb__rail" data-egplb-rail>
                     {s.images.map((im, ii) => (
                       <button
-                        class={`egplb__thumb${ii === 0 ? " is-active" : ""}${im.src ? "" : " is-missing"}`}
+                        class={`egplb__thumb${ii === 0 ? " is-active" : ""}`}
                         data-egplb-thumb={ii}
-                        data-fig
-                        data-label={slotLabel(im, s.title)}
                         type="button"
                         aria-label={`Image ${ii + 1} of ${s.images.length}`}
                       >
-                        {im.src && <img src={im.src} alt="" loading="lazy" decoding="async" />}
+                        <Image src={im.src} alt="" loading="lazy" decoding="async" width={200} format="webp" quality={76} />
                       </button>
                     ))}
                   </div>
@@ -235,21 +215,6 @@ const slotLabel = (
   (function () {
     const root = document.querySelector("[data-egp]") as HTMLElement | null;
     if (!root) return;
-
-    // ── Missing-photo fallback ──────────────────────────────────────────
-    // Slots with no `src` are already marked server-side. This catches the
-    // other case: a path in CONTENT.json whose file isn't in public/ yet, so
-    // it degrades to the striped placeholder instead of a broken-image icon.
-    // `error` doesn't bubble — listen in the capture phase.
-    root.addEventListener(
-      "error",
-      (e) => {
-        const img = e.target as HTMLElement;
-        if (!(img instanceof HTMLImageElement)) return;
-        img.closest("[data-fig]")?.classList.add("is-missing");
-      },
-      true
-    );
 
     // ── Scroll reveal ───────────────────────────────────────────────────
     // Reveal is opt-in from JS and fail-safe by construction: the hidden state
@@ -715,31 +680,6 @@ const slotLabel = (
     color: var(--accent);
   }
 
-  /* ── Striped fallback for any slot without a usable photo ───────────── */
-  [data-fig].is-missing::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(135deg, #1c1916 0 14px, #211e1a 14px 28px);
-  }
-  [data-fig].is-missing::after {
-    content: "[ " attr(data-label) " ]";
-    position: absolute;
-    left: 10px;
-    bottom: 8px;
-    right: 10px;
-    font-family: var(--font-mono);
-    font-size: 9px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.55);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  /* Row thumbs are too small for a legible label — stripes only. */
-  .egp-row__thumb.is-missing::after { content: none; }
-
   /* ── Lightbox ──────────────────────────────────────────────────────── */
   .egplb {
     position: fixed;
@@ -866,7 +806,6 @@ const slotLabel = (
   .egplb__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .egplb__thumb:hover { opacity: 0.85; }
   .egplb__thumb.is-active { opacity: 1; border-color: var(--accent); }
-  .egplb__thumb.is-missing::after { content: none; }
 
   .egplb__nav {
     position: absolute;

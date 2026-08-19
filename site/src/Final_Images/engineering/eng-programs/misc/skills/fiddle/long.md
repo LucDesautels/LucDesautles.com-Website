@@ -1,0 +1,1 @@
+Cheap contact pickups sound brittle and quacky because the piezo is loaded wrong. A JFET buffer preamp on a 9V fixes the impedance mismatch and lets the instrument's actual voice through. It has been gigged at three folk jams and nobody has complained, which is the only test that matters.

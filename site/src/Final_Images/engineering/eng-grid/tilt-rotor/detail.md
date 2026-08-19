@@ -1,0 +1,1 @@
+Built on top of a Teensy reading the Pixhawk's PWM bus, the mixer applies a sigmoid blend between hover and forward modes so the pilot never sees a hard mode-switch. Tuned over twelve bench tests before it ever flew.

@@ -1,0 +1,1 @@
+Published prop data is optimistic and rarely measured at the RPM you actually fly. The stand measures thrust, current and RPM together so efficiency comes out in grams per watt across the real operating range. Two of the combinations we were about to buy turned out to be meaningfully worse than the cheaper option.

@@ -1,0 +1,1 @@
+Inspire is FTC's top award — judges across engineering, outreach, and team culture pick one team out of the province. We won it in 2024 and represented Ontario at the world championship in Houston, Texas. That trip was a benchmark: we saw what world-class teams look like and came home with a sharper picture of what's possible.

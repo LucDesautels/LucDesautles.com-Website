@@ -6,9 +6,14 @@ import {
   applyFilter,
   type FilterId,
 } from "@/data/filters";
-import { RESUME_HREF } from "@/data/content";
 
-export default function FilterPills() {
+interface Props {
+  /** Passed as a prop rather than imported from @/data/content — that module
+   *  reads files with node:fs, which can't be bundled for the browser. */
+  resumeHref: string;
+}
+
+export default function FilterPills({ resumeHref }: Props) {
   const [active, setActive] = useState<FilterId>("full");
 
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function FilterPills() {
       <a href={ENG_PORTFOLIO_HREF} className="pill pill--ghost">
         Engineering portfolio →
       </a>
-      <a href={RESUME_HREF} className="pill pill--ghost">
+      <a href={resumeHref} className="pill pill--ghost">
         ↓ Résumé
       </a>
 

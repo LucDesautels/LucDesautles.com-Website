@@ -1,177 +1,101 @@
 # Image & Content Guide
 
-**Edit content/descriptions:** [`site/CONTENT.json`](site/CONTENT.json)  
+**Everything you can edit lives under [`site/src/Final_Images/`](site/src/Final_Images/).**
 **Push to `main`** → GitHub Actions rebuilds and deploys automatically.
 
 ---
 
-## How images work
+## How it works
 
-Every image slot has a pre-made folder with a placeholder already in it. To swap in a real photo:
+The folder tree mirrors the site: one folder per page, one folder per section
+on that page, one folder per item inside a section. Every folder holds the
+images and text for exactly one thing on the site — nothing is referenced by
+a path typed into a JSON file anymore.
 
-1. Drop your image into the correct folder (any format: `.jpg` `.jpeg` `.png` `.webp` `.gif` `.avif`)
-2. Name it to match the placeholder (e.g. `1.jpg`) **or** use any name and update the path in `CONTENT.json`
-3. Push → done
+- **Images**: drop a file into the right folder, keeping the same base name
+  (e.g. `hero.jpg`, `1.jpg`, `left-image.png`) — any format works: `.jpg`
+  `.jpeg` `.png` `.webp` `.gif` `.avif`. It's automatically resized,
+  converted to WebP, and lazy-loaded at build time — you don't need to
+  compress anything yourself.
+- **Text**: every editable sentence/paragraph is its own plain-text file,
+  e.g. `body.md`, `caption.md`, `blurb.md`. Open it, change the words, save —
+  no quotes, no commas, no syntax to get wrong. (`.md` supports `**bold**`
+  and `*italic*` where the site renders it; otherwise it's just read as
+  plain text.)
+- **Tags** (engineering projects only): `tags.md` is one tag per line — add
+  or remove a line to add/remove that tag from the project. The filter pills
+  on `/engineering` and the home page's "Filter by domain" strip are both
+  generated live from whatever tags actually exist across the projects, so
+  a new tag you type shows up as a new filter pill automatically.
 
-Multiple images in one folder sort **alphabetically** — `1.jpg` before `abc.jpg` before `xyz.jpg`.
-
-> **Robotics intro flanking images** (left/right of the wordmark) are special — drop them in  
-> `site/src/Uploaded Media/` as `1.jpg` (left) and `2.jpg` (right). They get auto-optimized to WebP.
+**Every slot always has a file.** If you haven't replaced something yet,
+you'll see a placeholder image — a solid color with the folder path written
+on it — so you always know exactly where to go to add the real photo. There
+is no broken-image state and nothing to "turn on": just overwrite the file.
 
 ---
 
 ## Folder map
 
 ```
-site/public/images/
+site/src/Final_Images/
+├── home/
+│   ├── hero/                    portrait.*, in-the-field.*, outdoors.* + tagline.md
+│   ├── toc-gallery/              academics/ · robotics/ · well-rounded/ · experiences/  (one image per tile)
+│   ├── robotics-intro/          left-image.*, right-image.* + sailfish-blurb.md, ftc-blurb.md
+│   ├── robotics-compare/
+│   │   ├── sailfish/1-quick-info/ 2-proof-point/ 3-technical/ 4-leadership/ 5-open-sourced/
+│   │   └── ftc/                  (same 5 slides — hero.*, extra-1.*, extra-2.* + title/body/long-body/caption.md)
+│   ├── academics/{education,research}/<item>/            hero.* + title.md, body.md
+│   ├── well-rounded/{sports,creatives,scouts}/<item>/     hero.* + title.md, body.md (+ long.md for the essay card)
+│   ├── experiences/{summer-programs,side-quests}/<item>/  hero.* + title.md, body.md
+│   └── principles/{engineering,creative}/<point>/          title.md, desc.md
 │
-├── homepage/
-│   ├── hero/
-│   │   ├── 1.jpg   ← portrait polaroid
-│   │   ├── 2.jpg   ← "in the field" polaroid
-│   │   └── 3.jpg   ← outdoors polaroid
-│   │
-│   ├── toc-gallery/          ← horizontal scroll gallery tiles
-│   │   ├── academics/        ← 5 tiles (TFS, IB, 5.8GHz, SAR spiral, thrust stand)
-│   │   ├── robotics/         ← 6 tiles (Sailfish gen3, VTX stack, field test, Ontario champs, CNC, arm)
-│   │   ├── well-rounded/     ← 5 tiles (climbing, skiing, drone, fiddle, canoe)
-│   │   └── experiences/      ← 4 tiles (SHAD, Waterloo, EL ski suit, dance MC)
-│   │
-│   └── subprojects/          ← 8 sub-project cards in the robotics strip
-│       └── 1.jpg … 8.jpg     ← order matches CONTENT.json subprojects array
+├── engineering/
+│   ├── eng-lander/                3 decorative hero chips (reuse real project photos automatically)
+│   ├── eng-programs/{ftc,sailfish,misc}/     hero.* + role/years/blurb/caption.md, skills/<skill>/
+│   └── eng-grid/<project-slug>/   1.*, 2.*, … + matching 1.md/2.md captions, blurb/detail/requirements/contribution/result.md, tags.md
 │
-├── robotics/
-│   ├── sailfish/
-│   │   ├── 1-quick-info/
-│   │   │   ├── 1.jpg             ← main carousel image (Sailfish Gen.3 hero)
-│   │   │   └── extras/
-│   │   │       ├── 1.jpg         ← lightbox extra: TAIL VIEW
-│   │   │       └── 2.jpg         ← lightbox extra: AVIONICS BAY
-│   │   ├── 2-proof-point/
-│   │   │   └── 1.jpg             ← Airforce Foundation letter scan
-│   │   ├── 3-technical/
-│   │   │   ├── 1.jpg             ← exploded CAD Gen.3
-│   │   │   └── extras/
-│   │   │       ├── 1.jpg         ← VTX STACK
-│   │   │       ├── 2.jpg         ← WING CARRY-THROUGH
-│   │   │       └── 3.jpg         ← FOAM-CORE FLOAT
-│   │   ├── 4-leadership/
-│   │   │   └── 1.jpg             ← team standup photo
-│   │   └── 5-open-sourced/
-│   │       └── 1.jpg             ← GitHub repo / README screenshot
-│   │
-│   └── ftc/
-│       ├── 1-quick-info/
-│       │   ├── 1.jpg             ← competition robot hero
-│       │   └── extras/
-│       │       ├── 1.jpg         ← DRIVETRAIN
-│       │       └── 2.jpg         ← ARM SYSTEM
-│       ├── 2-inspire-award/
-│       │   └── 1.jpg             ← Inspire Award on stage
-│       ├── 3-technical/
-│       │   ├── 1.jpg             ← CNC chassis plate
-│       │   └── extras/
-│       │       ├── 1.jpg         ← FIXTURING
-│       │       └── 2.jpg         ← ARM TRANSFER
-│       ├── 4-mentoring/
-│       │   └── 1.jpg             ← mentor/design review session
-│       └── 5-outreach/
-│           └── 1.jpg             ← grade 5 design club / workshop
-│
-└── engineering/                  ← one folder per project (also feeds the
-    │                               "Skills by program" section — see below)
-    ├── vtx-stack/          1.jpg 2.jpg 3.jpg
-    ├── tilt-rotor/         1.jpg 2.jpg
-    ├── wing-carry-through/ 1.jpg 2.jpg
-    ├── cnc-chassis/        1.jpg 2.jpg 3.jpg
-    ├── arm-transfer/       1.jpg 2.jpg
-    ├── auto-pathing/       1.jpg 2.jpg
-    ├── foam-flotation/     1.jpg 2.jpg 3.jpg
-    ├── groundstation/      1.jpg 2.jpg
-    ├── 58ghz-water/        1.jpg 2.jpg
-    ├── sar-spiral/         1.jpg 2.jpg
-    ├── thrust-stand/       1.jpg 2.jpg 3.jpg
-    ├── battery-pack/       1.jpg 2.jpg
-    ├── wing-cfd/           1.jpg 2.jpg 3.jpg
-    ├── oss-release/        1.jpg
-    ├── el-suit/            1.jpg 2.jpg
-    ├── library-box/        1.jpg 2.jpg 3.jpg
-    ├── rookie-docs/        1.jpg
-    ├── stem-bilingual/     1.jpg
-    ├── drone-photography/  1.jpg 2.jpg 3.jpg 4.jpg 5.jpg
-    └── fiddle-pickup/      1.jpg 2.jpg
+├── impactful-robotics/    (empty — reserved for a future dedicated Sailfish page)
+├── competitive-robotics/  (empty — reserved for a future dedicated FTC page)
+└── drone-videography/     (empty — reserved for the future gallery)
 ```
+
+**Shared photos.** A handful of images intentionally appear in two places at
+once — e.g. `engineering/eng-grid/cnc-chassis/1.jpg` is both the FTC project
+grid photo *and* the matching "Skills by program" row photo, because they're
+the literal same file. Some `eng-programs/<program>/skills/<skill>/` folders
+you'd expect don't exist for this reason — the skill's images live under
+`eng-grid/<matching-project>/` instead. Overwriting that one file updates
+both places at once.
+
+**The home page's "Filter by domain" strip** isn't its own content — it's a
+curated view onto 8 of the `engineering/eng-grid/` projects. Edit those
+projects' photos/text/tags and both the strip and the full `/engineering`
+grid update together.
 
 ---
 
-## "Skills by program" — the section between the hero and the grid
+## What's *not* here
 
-Three programs (`engPrograms` in CONTENT.json), each a wide bar with its
-technique rows underneath. Every row opens a lightbox; **next/prev there moves
-to the next technique**, and the thumbnail strip moves between that technique's
-images.
-
-| Slot | Where it shows | How many |
-|---|---|---|
-| `engPrograms[N].image` | the big image on the program bar | 1 per program |
-| `engPrograms[N].skills[M].images` | first **2** show as row thumbnails, **all** show in the lightbox | 2+ per technique |
-
-Most of these reuse the `engineering/<project>/` folders above, so a photo
-dropped in for the grid shows up in both places automatically.
-
-**A slot with no `src` renders the striped placeholder with its `label`.** So do
-either of these and it looks intentional until the photo lands:
-
-```json
-{ "label": "HARDWARE TOKENS" }                                   ← placeholder
-{ "src": "/images/engineering/x/1.jpg", "caption": "On the bench" } ← real photo
-```
-
-A `src` pointing at a file that isn't there falls back to the same placeholder
-rather than a broken-image icon — so a typo degrades quietly, it doesn't break
-the page.
-
-### Slots still waiting on a photo
-
-| Where | Suggested folder |
-|---|---|
-| Uncategorized — program bar image | `engineering/standalone/1.jpg` |
-| Self-hosting & home infrastructure (2) | `engineering/self-hosting/1.jpg` `2.jpg` |
-| Physical security & hardware auth (2) | `engineering/security-keys/1.jpg` `2.jpg` |
-
-Create the folder, drop the photo in, then set `src` (and a `caption`) on that
-slot in `CONTENT.json`.
-
-> **Folders currently prefixed with `_`** — `_cnc-chassis`, `_58ghz-water`,
-> `_battery-pack`, `_sar-spiral`, `_groundstation`, `_library-box`,
-> `_thrust-stand`. CONTENT.json points at the un-prefixed names, so those photos
-> aren't showing anywhere yet. Drop the leading underscore and they all light up
-> at once. (`_thrust-stand` also needs actual photos — it currently holds two
-> PNG pages of the physics write-up, not `1.jpg`…`3.jpg`.)
+Giant, effectively-permanent text — the site name, the "IMPACTFUL ROBOTICS /
+COMPETITIVE ROBOTICS" wordmark, section headings like "Academics." — is left
+in the component code, since it's not something you'd realistically edit.
+Structural things (which programs/projects exist, their order, hrefs,
+whether a card is "standout") still live in `site/CONTENT.json`, but no
+actual words or image paths do anymore — every field there is now a pointer
+into `Final_Images/`.
 
 ---
 
-## Editing text in CONTENT.json
+## Adding a brand-new image slot later
 
-Open [`site/CONTENT.json`](site/CONTENT.json) in GitHub's editor (pencil icon).
+If a future change adds a new image field to the site, generate its
+placeholder with:
 
-| What you want to change | Key path |
-|---|---|
-| Site name / tagline / meta chips | `site.name`, `site.tagline`, `site.meta` |
-| Contact links | `site.contact` |
-| Robotics slide titles, descriptions, captions | `robotics[0].slides[N]` (Sailfish) / `robotics[1].slides[N]` (FTC) |
-| Program name / role / years / intro | `engPrograms[N].title`, `.role`, `.years`, `.blurb` |
-| Technique row title + one-line description | `engPrograms[N].skills[M].title`, `.desc` |
-| Technique lightbox write-up | `engPrograms[N].skills[M].long` |
-| Engineering project title, blurb, detail | `engineering[N].title`, `.blurb`, `.detail` |
-| Engineering image captions | `engineering[N].images[N].caption` |
-| Engineering requirements / contribution / result | `engineering[N].requirements`, `.contribution`, `.result` |
-| Academics / Well-rounded / Experiences cards | `metaGroups[N].groups[N].items[N]` |
-| Values section | `values.engineering.points`, `values.creative.points` |
-| Image paths (after uploading a real photo) | `robotics[...].slides[N].image`, `engineering[N].images[N].src` |
+```bash
+cd site
+node scripts/generate-placeholders.mjs --slot=path/relative/to/Final_Images/without/extension
+```
 
-**Tips:**
-- JSON is strict about commas — every item in a list has a comma except the last one.
-- String values must be in double quotes: `"like this"`.
-- GitHub's editor will highlight syntax errors before you save.
-- After committing, the build takes ~1–2 minutes.
+It never overwrites a slot that already has a real file.

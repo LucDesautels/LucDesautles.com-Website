@@ -1,0 +1,1 @@
+Most of what a rookie needs isn't in the FTC manual — it's the local knowledge about which tool lives where and why we do a thing a certain way. I wrote it down: a handbook covering the shop, the CAD conventions, and the first build task a new member should own. It's the reason the team survives graduating classes.

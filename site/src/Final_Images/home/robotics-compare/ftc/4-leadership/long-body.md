@@ -1,0 +1,1 @@
+After my competing years I stayed on as a mentor for two seasons. My focus has been writing design and leadership documentation that survives team turnover — onboarding decks, manufacturing checklists, and lessons-learned from past seasons. I want the rookies who join next year to start two months ahead of where I started.

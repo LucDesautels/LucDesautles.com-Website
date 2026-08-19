@@ -1,0 +1,1 @@
+The transfer is the part of an FTC robot that eats match time. We built a two-stage arm with a passive hand-off: the geometry forces the element into the same seat every cycle, so the driver only has to be roughly right. Getting there took three revisions of the claw geometry and a hard look at where the compliance should live.

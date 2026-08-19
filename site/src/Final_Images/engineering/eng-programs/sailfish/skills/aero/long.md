@@ -1,0 +1,1 @@
+CFD gets you a plausible pressure distribution and a false sense of certainty. Tufts on the actual wing, filmed through a speed sweep, showed separation starting earlier and further inboard than the model predicted — traceable to a surface finish the simulation had no way to know about. The washout got adjusted off the tuft data, not the CFD.

@@ -1,0 +1,1 @@
+Outreach is one of the reasons our team wins Inspire. I've run Girl Guide STEM seminars, hands-on 3D printer workshops at the local makerspace, design club sessions for grade 5 students, and I curate a bilingual self-study STEM resource collection that gets shared with families looking for after-school enrichment.

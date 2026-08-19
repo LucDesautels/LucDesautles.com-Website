@@ -1,0 +1,1 @@
+The first chassis took a full weekend and came out 0.4 mm out of square. The fix was less about the toolpath than the workholding: a set of soft jaws cut in place, plus a tab-and-drop scheme so the plate stayed rigid until the final pass. After that, a replacement plate was a two-hour job — which mattered the one time we snapped one at a qualifier.

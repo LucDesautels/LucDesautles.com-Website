@@ -1,7 +1,13 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { TocSection } from "@/data/content";
 
-interface Props { sections: TocSection[]; }
+// Client islands can't use Astro's server-only <Image> component, so the
+// parent .astro pre-resolves each item's image to a plain optimized URL
+// (via astro:assets getImage()) before passing it down — see index.astro.
+type TocItemForIsland = Omit<TocSection["items"][number], "image"> & { image: string };
+type TocSectionForIsland = Omit<TocSection, "items"> & { items: TocItemForIsland[] };
+
+interface Props { sections: TocSectionForIsland[]; }
 
 // Cross-component channel — the global WaveField reads from this every frame
 // to slide its wave pattern with the horizontal scroll and to colour-shift
@@ -523,9 +529,13 @@ export default function HorizontalTOC({ sections }: Props) {
                         transform: `translateY(${off}px) rotate(${rotate.toFixed(2)}deg)`,
                       }}
                     >
-                      <div className="placeholder placeholder--frame" style={{ width: "100%", height: "100%" }}>
-                        <div className="placeholder__label">[ {it.tag} · {it.label.toUpperCase()} ]</div>
-                      </div>
+                      <img
+                        src={it.image}
+                        alt={it.label}
+                        loading="lazy"
+                        decoding="async"
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
                       <div className="htoc__tile-cap">/ {it.tag}</div>
                     </div>
                   );

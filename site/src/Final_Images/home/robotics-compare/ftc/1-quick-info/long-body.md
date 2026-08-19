@@ -1,0 +1,1 @@
+Five years in FIRST Tech Challenge — two years learning the basics on a rookie team, one year owning the mechanical-electrical chassis as a builder, and two years as a mentor on Team 16366. FTC is where I learned to ship under deadline pressure with a rotating cast of teammates, and it's where I figured out I like teaching the craft as much as doing it.

@@ -1,0 +1,1 @@
+I owned the CNC chassis plate from concept through fixturing and ops — my first time taking a part all the way from CAD into manufacturing. I also designed the two-stage arm transfer system that gave us a passive deadband and made our autonomous routines a lot more reliable. Both subsystems are documented as build references for the rookie team.

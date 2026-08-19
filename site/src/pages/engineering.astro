@@ -1,9 +1,10 @@
 ---
+import { Image } from "astro:assets";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import TopBar from "@/components/TopBar.astro";
-import Placeholder from "@/components/Placeholder.astro";
 import EngPrograms from "@/components/EngPrograms.astro";
-import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
+import { SITE, ENG_PROJECTS, ENG_TAGS, ENG_LANDER } from "@/data/content";
+import { mdInline } from "@/lib/finalImages";
 ---
 <BaseLayout title="Engineering portfolio · Luc Desautels" description="The full engineering portfolio: ~20 sub-projects across Sailfish, FTC, and standalone work.">
   <TopBar />
@@ -18,12 +19,8 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
             Engineering<br />
             <span class="ep__title-italic">portfolio</span><span class="ep__period">.</span>
           </h1>
-          <div class="ep__byline">The engineering work of <strong>Luc Desautels</strong>.</div>
-          <p class="ep__tagline">
-            Twenty sub-projects across three programs. Start with the
-            <strong>programs</strong> below — each one breaks down into the techniques
-            behind it — or skip to the full grid and filter by <strong>discipline</strong>.
-          </p>
+          <div class="ep__byline" set:html={mdInline(ENG_LANDER.byline)} />
+          <p class="ep__tagline" set:html={mdInline(ENG_LANDER.tagline)} />
           <div class="ep__meta">
             {SITE.meta.map((m) => (
               <div class="ep__meta-item">
@@ -37,23 +34,26 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
             </div>
           </div>
 
-          <a class="ep__scroll" href="#programs" aria-label="Scroll to the programs">
-            <span>// SCROLL — SKILLS BY PROGRAM</span>
-            <span class="ep__scroll-arrow">↓</span>
-          </a>
+          <div class="ep__scroll-row">
+            <a class="ep__scroll" href="#programs" aria-label="Scroll to the programs">
+              <span>{ENG_LANDER.scrollProgramsLabel}</span>
+              <span class="ep__scroll-arrow">↓</span>
+            </a>
+            <a class="ep__scroll" href="#all" aria-label="Jump to the project grid">
+              <span>{ENG_LANDER.scrollGridLabel}</span>
+              <span class="ep__scroll-arrow">↓↓</span>
+            </a>
+          </div>
         </div>
 
         <div class="ep__lander-figure" aria-hidden="true">
-          <div class="ep__chip ep__chip--1"><Placeholder label="SAILFISH GEN.3" aspect="16/10" dark note="HERO" /></div>
-          <div class="ep__chip ep__chip--2"><Placeholder label="FTC ARM TRANSFER" aspect="4/3" dark note="CAD" /></div>
-          <div class="ep__chip ep__chip--3"><Placeholder label="THRUST STAND" aspect="4/3" dark note="RIG" /></div>
+          <div class="ep__chip ep__chip--1"><Image src={ENG_LANDER.sailfishImage} alt="Sailfish Gen.3" width={700} format="webp" quality={78} loading="eager" decoding="async" /></div>
+          <div class="ep__chip ep__chip--2"><Image src={ENG_LANDER.ftcArmImage} alt="FTC arm transfer" width={500} format="webp" quality={78} loading="lazy" decoding="async" /></div>
+          <div class="ep__chip ep__chip--3"><Image src={ENG_LANDER.thrustStandImage} alt="Thrust stand" width={500} format="webp" quality={78} loading="lazy" decoding="async" /></div>
           <div class="ep__chip-text">
             <div class="eyebrow eyebrow--accent">// TELEMETRY</div>
             <div class="ep__chip-rows">
-              <div>SAILFISH · 09 SUB</div>
-              <div>FTC · 04 SUB</div>
-              <div>STANDALONE · 06 SUB</div>
-              <div>RESEARCH ENTRIES · 04</div>
+              {ENG_LANDER.telemetry.map((row) => <div>{row}</div>)}
             </div>
           </div>
         </div>
@@ -142,7 +142,7 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
                     >
                       {p.images.map((img, ii) => (
                         <div class={`ep-cz__slide${ii === 0 ? " is-active" : ""}`} data-cz-slide={ii}>
-                          <img src={img.src} alt={img.caption} loading="lazy" decoding="async" />
+                          <Image src={img.src} alt={img.caption} loading="lazy" decoding="async" width={900} format="webp" quality={80} />
                           <div class="ep-cz__cap">{img.caption}</div>
                         </div>
                       ))}
@@ -202,7 +202,7 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
               p.images.map((img, i) => (
                 <div class="eplb__slide" data-eplb-slide data-pid={p.id} data-idx={i} hidden>
                   <div class="eplb__img">
-                    <img src={img.src} alt={img.caption} loading="lazy" decoding="async" />
+                    <Image src={img.src} alt={img.caption} loading="lazy" decoding="async" width={1400} format="webp" quality={80} />
                     <div class="eplb__cap">{img.caption}</div>
                   </div>
                 </div>
@@ -622,8 +622,13 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
       font-weight: 700;
       margin-top: 6px;
     }
-    .ep__scroll {
+    .ep__scroll-row {
       margin-top: 48px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .ep__scroll {
       display: inline-flex;
       align-items: center;
       gap: 14px;
@@ -655,7 +660,7 @@ import { SITE, ENG_PROJECTS, ENG_TAGS } from "@/data/content";
       background: var(--dark);
       box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
     }
-    .ep__chip > .placeholder { width: 100%; height: 100%; }
+    .ep__chip > img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .ep__chip--1 { top: 0; right: 0; width: 100%; aspect-ratio: 16/10; transform: rotate(2deg); }
     .ep__chip--2 { top: 290px; left: -10px; width: 220px; aspect-ratio: 4/3; transform: rotate(-4deg); }
     .ep__chip--3 { top: 370px; right: 20px; width: 200px; aspect-ratio: 4/3; transform: rotate(3deg); }

@@ -1,0 +1,1 @@
+The carry-through is the highest-stress joint on the aircraft and it also has to come apart for transport — those two requirements fight. The answer was a carbon spar through a machined saddle, with the fasteners loaded in shear rather than pulling on the composite. Modelled as a full assembly so the tolerance stack was visible before anything was cut.

@@ -1,0 +1,1 @@
+Four competition seasons with the TFS Robotic Unicorns, most of it on the mechanical side — drivetrain, manipulators, and the fixturing needed to make each part twice. FTC deadlines are unforgiving, so the work is biased toward parts a student can machine on a school 3-axis and repair between matches.

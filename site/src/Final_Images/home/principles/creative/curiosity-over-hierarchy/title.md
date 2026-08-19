@@ -1,0 +1,1 @@
+Curiosity over hierarchy

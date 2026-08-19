@@ -1,21 +1,11 @@
 ---
-import { SITE } from "@/data/content";
-import Placeholder from "./Placeholder.astro";
+import { Image } from "astro:assets";
+import { SITE, RESUME_HREF, HERO_IMAGES } from "@/data/content";
+import { mdInline } from "@/lib/finalImages";
 import FilterPills from "./islands/FilterPills.tsx";
-import { readdirSync } from "fs";
-import { join } from "path";
 
-function heroImgs(): string[] {
-  try {
-    return readdirSync(join(process.cwd(), "public/images/homepage/hero"))
-      .filter((f) => /\.(jpe?g|png|webp|gif|avif)$/i.test(f))
-      .sort()
-      .map((f) => `/images/homepage/hero/${encodeURIComponent(f)}`);
-  } catch {
-    return [];
-  }
-}
-const imgs = heroImgs();
+const [firstName, ...restName] = SITE.name.split(" ");
+const lastName = restName.join(" ");
 ---
 <section class="hero" id="main">
   <div class="hero__shell shell">
@@ -23,14 +13,10 @@ const imgs = heroImgs();
       <div class="hero__col">
         <div class="eyebrow">Preview - Personal Portfolio 2026</div>
         <h1 class="hero__name">
-          Luc<br />
-          <span class="hero__name-italic">Desautels</span><span class="hero__period">.</span>
+          {firstName}<br />
+          <span class="hero__name-italic">{lastName}</span><span class="hero__period">.</span>
         </h1>
-        <p class="hero__tagline">
-          My main focus right now is in <strong>robotics</strong>,
-          however I also rock climb, play fiddle, and have a passion for
-          <strong>drone photography</strong>.
-        </p>
+        <p class="hero__tagline" set:html={mdInline(SITE.tagline)} />
 
         <div class="hero__meta">
           {SITE.meta.map((m) => (
@@ -44,16 +30,10 @@ const imgs = heroImgs();
 
       <div class="hero__polaroids" aria-hidden="true">
         <div class="polaroid polaroid--lg">
-          {imgs[0]
-            ? <img src={imgs[0]} alt="" class="polaroid__img" style="height:520px;width:380px" />
-            : <Placeholder label="Hero portrait · 4:5" h={520} w={380} frame note="REPLACE" />
-          }
+          <Image src={HERO_IMAGES.portrait} alt="" class="polaroid__img" style="height:520px;width:380px" width={760} format="webp" quality={82} loading="eager" decoding="async" />
         </div>
         <div class="polaroid polaroid--md">
-          {imgs[1]
-            ? <img src={imgs[1]} alt="" class="polaroid__img" style="width:160px;height:auto" />
-            : <Placeholder label="In the field" h={220} w={160} frame />
-          }
+          <Image src={HERO_IMAGES.inTheField} alt="" class="polaroid__img" style="width:160px;height:auto" width={320} format="webp" quality={82} loading="eager" decoding="async" />
           <div class="caption-drop caption-drop--dark">
             <div class="cd-border cd-border--t"></div>
             <div class="cd-border cd-border--l"></div>
@@ -63,10 +43,7 @@ const imgs = heroImgs();
           </div>
         </div>
         <div class="polaroid polaroid--sm">
-          {imgs[2]
-            ? <img src={imgs[2]} alt="" class="polaroid__img" style="width:160px;height:auto" />
-            : <Placeholder label="Outdoors" h={170} w={160} frame />
-          }
+          <Image src={HERO_IMAGES.outdoors} alt="" class="polaroid__img" style="width:160px;height:auto" width={320} format="webp" quality={82} loading="eager" decoding="async" />
           <div class="caption-drop caption-drop--light">
             <div class="cd-border cd-border--l"></div>
             <div class="cd-border cd-border--b"></div>
@@ -77,7 +54,7 @@ const imgs = heroImgs();
       </div>
     </div>
 
-    <FilterPills client:visible />
+    <FilterPills client:visible resumeHref={RESUME_HREF} />
   </div>
 </section>
 

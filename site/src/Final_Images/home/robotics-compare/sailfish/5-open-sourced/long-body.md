@@ -1,0 +1,1 @@
+The full design — CAD, firmware, build notes, and the lessons from each generation — is published openly. The goal is for any volunteer SAR unit, university lab, or hobbyist team to be able to pick up where we left off without re-deriving the basics. The repo has been mirrored on a few Coast Guard auxiliary servers.

@@ -1,0 +1,1 @@
+Autonomous is worth a lot of points and is where most rookie teams lose them. Rather than chase a perfect single path, we built the routine around checkpoints the robot could recover from — so a slightly-off approach still finished the cycle instead of stalling. Repeatability over peak score.

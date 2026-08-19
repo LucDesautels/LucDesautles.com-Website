@@ -1,6 +1,6 @@
 ---
+import { Image } from "astro:assets";
 import type { MetaGroup } from "@/data/content";
-import Placeholder from "./Placeholder.astro";
 
 interface Props {
   meta: MetaGroup;
@@ -57,7 +57,7 @@ const { meta, num, quirky, firstSection } = Astro.props;
                 <div class={`standout__tab${isFirstChip ? "" : " standout__tab--star"}`}>
                   {isFirstChip ? "★ Standout" : "★"}
                 </div>
-                <Placeholder label={standoutItem.title} aspect="4/3" />
+                <Image class="standout__img" src={standoutItem.image} alt="" width={700} format="webp" quality={80} loading="lazy" decoding="async" />
                 <div class="standout__body">
                   <h4 class="standout__title">{standoutItem.title}</h4>
                   <p class="standout__text">{standoutItem.body}</p>
@@ -78,7 +78,7 @@ const { meta, num, quirky, firstSection } = Astro.props;
                 class={`item${it.outlined ? " item--outlined" : ""}`}
                 style={quirky && !it.outlined ? `transform:rotate(${i === 0 ? 1.5 : -1.2}deg);` : undefined}
               >
-                <Placeholder label={it.title} aspect="4/3" />
+                <Image class="item__img" src={it.image} alt="" width={500} format="webp" quality={78} loading="lazy" decoding="async" />
                 <h4 class="item__title">{it.title}</h4>
                 <p class="item__text">{it.body}</p>
                 {it.href && (
@@ -180,6 +180,12 @@ const { meta, num, quirky, firstSection } = Astro.props;
     border: 2px solid #d66e3a;
   }
   .standout--tilt { transform: rotate(-1deg); }
+  .standout__img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
 
   /* Full chip: "★ Standout" */
   .standout__tab {
@@ -238,6 +244,12 @@ const { meta, num, quirky, firstSection } = Astro.props;
   /* Outlined item (orange border, like standout outline but item-sized) */
   .item--outlined {
     border: 2px solid #d66e3a;
+  }
+  .item__img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
   }
 
   .item__title {

@@ -1,0 +1,1 @@
+Across three generations I owned: fuselage CAD and CFRP layup planning; the 5.8 GHz video stack tuned for over-water multipath; a thrust-stand campaign that fed motor/prop selection; and the autonomy loop running spiral-search paths on a Pixhawk + companion compute. Each generation traded weight, range, and complexity differently and the lessons stacked.

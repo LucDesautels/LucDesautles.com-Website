@@ -1,0 +1,1 @@
+A marine drone has to land on water and be flyable afterwards. The floats are foam-core with a glass skin — light enough not to wreck the weight budget, stiff enough to take the slam load. Getting the layup schedule right took several test articles and a lot of deliberately abusive landings.

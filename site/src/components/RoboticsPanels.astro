@@ -1,6 +1,6 @@
 ---
+import { Image } from "astro:assets";
 import { ROBOTICS } from "@/data/content";
-import Placeholder from "./Placeholder.astro";
 
 const cols = ROBOTICS; // [Sailfish, FTC]
 const N = 5; // slides per column
@@ -25,11 +25,7 @@ const N = 5; // slides per column
               <div class="col__img" data-col={ci} role="button" tabindex="0" aria-label={`Open ${p.title} lightbox`}>
                 {p.slides.map((s, si) => (
                   <div class={`col__slide${si === 0 ? " is-active" : ""}`} data-slide={si}>
-                    {s.image ? (
-                      <img class="col__photo" src={s.image} alt={s.imageLabel} loading={si === 0 ? "eager" : "lazy"} decoding="async" />
-                    ) : (
-                      <Placeholder label={s.imageLabel} aspect="16/10" dark note="REPLACE" />
-                    )}
+                    <Image class="col__photo" src={s.image} alt={s.imageLabel} loading={si === 0 ? "eager" : "lazy"} decoding="async" width={900} format="webp" quality={80} />
                     {s.caption && <div class="col__caption">// {s.caption}</div>}
                   </div>
                 ))}
@@ -102,22 +98,14 @@ const N = 5; // slides per column
             p.slides.map((s, si) => (
               <div class="rplb__slide" data-rplb-slide data-col={ci} data-idx={si} hidden>
                 <div class="rplb__img">
-                  {s.image ? (
-                    <img class="rplb__photo" src={s.image} alt={s.imageLabel} loading="lazy" decoding="async" />
-                  ) : (
-                    <Placeholder label={s.imageLabel} aspect="16/10" dark note="REPLACE" />
-                  )}
+                  <Image class="rplb__photo" src={s.image} alt={s.imageLabel} loading="lazy" decoding="async" width={1400} format="webp" quality={80} />
                   {s.caption && <div class="rplb__caption">{s.caption}</div>}
                 </div>
                 {s.extras && s.extras.length > 0 && (
                   <div class="rplb__thumbs">
                     {s.extras.map((e) => (
                       <div class="rplb__thumb">
-                        {e.image ? (
-                          <img class="rplb__thumb-photo" src={e.image} alt={e.label} loading="lazy" decoding="async" />
-                        ) : (
-                          <Placeholder label={e.label} aspect="4/3" dark />
-                        )}
+                        <Image class="rplb__thumb-photo" src={e.image} alt={e.label} loading="lazy" decoding="async" width={500} format="webp" quality={78} />
                       </div>
                     ))}
                   </div>

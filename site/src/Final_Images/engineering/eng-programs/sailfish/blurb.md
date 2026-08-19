@@ -1,0 +1,1 @@
+A low-cost autonomous marine search-and-rescue drone, built to cut the time and cost for rescue crews to make first visual contact with a person in the water. Three generations of airframe, and with them most of the disciplines below — composites, RF, propulsion, CAD, and the software that ties them together.

@@ -1,0 +1,1 @@
+Endorsement letter · scanned original

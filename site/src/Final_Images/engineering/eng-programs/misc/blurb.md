@@ -1,0 +1,1 @@
+The work that doesn't belong to a program. Some of it is infrastructure I run because I wanted to understand it, some of it is hardware built for a specific evening. It's here because the skills are real even when the project isn't part of anything larger.

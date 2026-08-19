@@ -2,7 +2,8 @@
 // Easter egg: click fast enough anywhere and a CPS (clicks-per-second) meter
 // pops up center-screen — rolling sparkline, current + best CPS, and a nudge
 // to hop on Hypixel Bedwars.
-const CONTACT = "mailto:L@desautels.net";
+import { SITE } from "@/data/content";
+const CONTACT = `mailto:${SITE.contact.email}`;
 ---
 <div class="cps" data-cps aria-hidden="true">
   <canvas class="cps__graph" data-cps-graph width="120" height="34"></canvas>

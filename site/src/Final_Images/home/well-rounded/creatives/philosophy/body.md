@@ -1,0 +1,1 @@
+Exploring moral ethics through our school's philosophy club, TOK class, and English coursework — the one place where the assignment is to take a question apart in public and let someone talk you out of the position you walked in with.

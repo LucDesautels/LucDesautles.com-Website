@@ -4,21 +4,10 @@ import type { ImageMetadata } from "astro";
 import RoboticsTransition from "./RoboticsTransition.astro";
 import Heart from "./Heart.astro";
 import HandLabel from "./HandLabel.astro";
+import { ROBOTICS_INTRO } from "@/data/content";
 
-// The two flanking robotics images are pulled straight from src/Uploaded Media/.
-// Files are sorted by name (numeric-aware), so the FIRST becomes the LEFT image
-// and the SECOND the RIGHT — drop new files in and rename to reorder (e.g.
-// "1.png" left, "3.jpg" right). Astro's image pipeline re-encodes whatever lands
-// here into size-capped WebP, so even a multi-megabyte source ships small.
-const mediaGlob = import.meta.glob<{ default: ImageMetadata }>(
-  "../Uploaded Media/*.{png,jpg,jpeg,webp,avif,gif,PNG,JPG,JPEG,WEBP,AVIF,GIF}",
-  { eager: true },
-);
-const mediaImages = Object.entries(mediaGlob)
-  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
-  .map(([, mod]) => mod.default);
-const leftImg: ImageMetadata | undefined = mediaImages[0];
-const rightImg: ImageMetadata | undefined = mediaImages[1];
+const leftImg = ROBOTICS_INTRO.leftImage;
+const rightImg = ROBOTICS_INTRO.rightImage;
 
 // Cap the long edge so a huge source (e.g. a 2500×3300 px PNG) doesn't ship at
 // full resolution; Astro derives the matching short edge and emits WebP. Sized
@@ -30,8 +19,18 @@ function cap(img: ImageMetadata) {
   const k = Math.min(1, LONG_EDGE / long);
   return { width: Math.round(img.width * k), height: Math.round(img.height * k) };
 }
-const leftDims = leftImg ? cap(leftImg) : { width: 0, height: 0 };
-const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
+const leftDims = cap(leftImg);
+const rightDims = cap(rightImg);
+
+// The second sentence (if any) renders as the italic accent line — matches
+// the site's existing two-line blurb treatment either side of the wordmark.
+function splitBlurb(text: string): [string, string?] {
+  const idx = text.indexOf(". ");
+  if (idx === -1) return [text];
+  return [text.slice(0, idx + 1), text.slice(idx + 2)];
+}
+const [sfLine1, sfLine2] = splitBlurb(ROBOTICS_INTRO.sailfishBlurb);
+const [ftcLine1, ftcLine2] = splitBlurb(ROBOTICS_INTRO.ftcBlurb);
 ---
 <section class="ric" aria-labelledby="robotics-wordmark" data-rsec="robotics-intro">
   <RoboticsTransition />
@@ -44,20 +43,18 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
   <!-- Left robotics image — swoops in from off-screen left as the section
        scrolls in; the resting transform is owned by the wf-tuner "images" tab. -->
   <div class="ric__cad-wrap ric__cad-wrap--left" data-cad-wrap="left" aria-hidden="true">
-    {leftImg && (
-      <Image
-        class="ric__cad ric__cad--left"
-        src={leftImg}
-        alt=""
-        width={leftDims.width}
-        height={leftDims.height}
-        format="webp"
-        quality={78}
-        loading="lazy"
-        decoding="async"
-        draggable={false}
-      />
-    )}
+    <Image
+      class="ric__cad ric__cad--left"
+      src={leftImg}
+      alt=""
+      width={leftDims.width}
+      height={leftDims.height}
+      format="webp"
+      quality={78}
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+    />
   </div>
   <!-- Outer element carries the scroll reveal (slide / cursive slide-out);
        inner [data-hand-label] keeps the wf-tuner translate+rotate. The Caveat
@@ -76,20 +73,18 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
   <!-- Right robotics image — swoops in from off-screen right; resting
        transform is owned by the wf-tuner "images" tab. -->
   <div class="ric__cad-wrap ric__cad-wrap--right" data-cad-wrap="right" aria-hidden="true">
-    {rightImg && (
-      <Image
-        class="ric__cad ric__cad--right"
-        src={rightImg}
-        alt=""
-        width={rightDims.width}
-        height={rightDims.height}
-        format="webp"
-        quality={78}
-        loading="lazy"
-        decoding="async"
-        draggable={false}
-      />
-    )}
+    <Image
+      class="ric__cad ric__cad--right"
+      src={rightImg}
+      alt=""
+      width={rightDims.width}
+      height={rightDims.height}
+      format="webp"
+      quality={78}
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+    />
   </div>
   <div class="ric__hand ric__hand--right" data-hand-anim="right">
     <div class="ric__hand-tf" data-hand-label="right">
@@ -121,15 +116,13 @@ const rightDims = rightImg ? cap(rightImg) : { width: 0, height: 0 };
   <div class="ric__blurbs">
     <div class="ric__blurb ric__blurb--left">
       <p>
-        Three generations of an open-sourced autonomous SAR drone.<br />
-        <em>Built to reach lost crews faster.</em>
+        {sfLine1}{sfLine2 && <><br /><em>{sfLine2}</em></>}
       </p>
       <a class="ric__cta" href="#sailfish">↳ Project Sailfish</a>
     </div>
     <div class="ric__blurb ric__blurb--right">
       <p>
-        Five years FTC — competitor, mechanical lead, mentor.<br />
-        <em>Ontario Inspire 2024 + Worlds, Houston.</em>
+        {ftcLine1}{ftcLine2 && <><br /><em>{ftcLine2}</em></>}
       </p>
       <a class="ric__cta" href="#ftc">↳ FTC Team 16366</a>
     </div>

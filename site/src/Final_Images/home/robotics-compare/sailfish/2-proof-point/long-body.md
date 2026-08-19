@@ -1,0 +1,1 @@
+The Air Force Foundation's CEO wrote a personal endorsement of Sailfish, co-signed by a retired Navy Captain who has advised the Canadian Chief of Defense Staff. They specifically called out the cost ceiling, the open-source release, and the relevance to volunteer SAR units operating without dedicated air assets.

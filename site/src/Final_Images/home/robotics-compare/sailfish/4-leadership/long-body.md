@@ -1,0 +1,1 @@
+I founded the project and led a team of 6 high schoolers across two design cycles. I built the relationships that turned this from a school project into something credible: interviews with Coast Guard auxiliary crews, professors at Waterloo and UofT, and industry mentors. The team has shipped peer-reviewed write-ups and won two local engineering awards.

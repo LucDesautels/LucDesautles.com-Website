@@ -1,6 +1,15 @@
 ---
-import { SUBPROJECTS, DOMAINS } from "@/data/content";
-import Placeholder from "./Placeholder.astro";
+import { Image } from "astro:assets";
+import { HOME_FEATURED_PROJECTS } from "@/data/content";
+
+// This strip is a curated view onto the Engineering-portfolio projects
+// (ENG_PROJECTS.filter(homeFeatured)), not a separate content type — one
+// photo/blurb/tags edit under engineering/eng-grid/<slug>/ updates both the
+// full grid on /engineering and this strip. The domain chips are derived
+// live from whatever tags those featured projects actually carry, so
+// adding/removing a line in a project's tags.md updates the filter too.
+const PROJECTS = HOME_FEATURED_PROJECTS;
+const DOMAINS = ["ALL", ...Array.from(new Set(PROJECTS.flatMap((p) => p.tags))).sort()];
 ---
 <section class="sub" id="subprojects" data-rsec="subprojects">
   <div class="sub__head shell">
@@ -24,15 +33,15 @@ import Placeholder from "./Placeholder.astro";
   </div>
 
   <div class="sub__scroller">
-    {SUBPROJECTS.map((p) => (
-      <article class="card" data-tag={p.tag} data-domain={p.domain}>
+    {PROJECTS.map((p) => (
+      <article class="card" data-tags={p.tags.join("|")}>
         <div class="card__media">
-          <Placeholder label={p.label} aspect="4/5" dark />
-          <span class="card__tag">{p.tag}</span>
-          <span class="card__domain">{p.domain}</span>
+          <Image src={p.images[0].src} alt="" width={480} format="webp" quality={78} loading="lazy" decoding="async" />
+          <span class="card__tag">{p.parent}</span>
+          {p.tags[0] && <span class="card__domain">{p.tags[0]}</span>}
         </div>
-        <div class="card__title">{p.label}</div>
-        <div class="card__desc">{p.desc}</div>
+        <div class="card__title">{p.title}</div>
+        <div class="card__desc">{p.blurb}</div>
       </article>
     ))}
   </div>
@@ -55,7 +64,8 @@ import Placeholder from "./Placeholder.astro";
     const apply = (domain: string) => {
       let shown = 0;
       cards.forEach((card) => {
-        const match = domain === "ALL" || card.dataset.domain === domain;
+        const tags = (card.dataset.tags ?? "").split("|");
+        const match = domain === "ALL" || tags.includes(domain);
         card.classList.toggle("card--hidden", !match);
         if (match) shown++;
       });
@@ -177,6 +187,12 @@ import Placeholder from "./Placeholder.astro";
     color: var(--dark-mute);
   }
   .card__media { position: relative; }
+  .card__media img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
   .card__tag {
     position: absolute;
     top: 8px;

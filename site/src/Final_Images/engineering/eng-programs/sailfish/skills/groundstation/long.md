@@ -1,0 +1,1 @@
+The whole point of Sailfish is that a rescue organisation can fly it themselves, which makes the ground station a hard requirement rather than a nicety. It shows the search pattern, the live video and the aircraft state on one screen, and it is deliberately boring: no mode the operator can get lost in, and the abort is always in the same place.

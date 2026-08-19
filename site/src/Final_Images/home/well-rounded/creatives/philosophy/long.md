@@ -1,0 +1,1 @@
+DRAFT COPY — rewrite this in your own words. It carries into the engineering more than I expected. A search-and-rescue drone is a moral object as much as a technical one: who it is for, what it costs, and what happens when it gets the answer wrong. I would rather have that question in the room while the thing is being designed than answer it afterwards.

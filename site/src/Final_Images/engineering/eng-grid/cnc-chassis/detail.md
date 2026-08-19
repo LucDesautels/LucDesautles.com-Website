@@ -1,0 +1,1 @@
+6061 plate, 4mm thick, with weight-relief pockets and dowel holes for stack-up alignment. I learned more from the two scrapped first attempts than the successful third — and wrote the team's first "how we manufacture a chassis plate" doc.

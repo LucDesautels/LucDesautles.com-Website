@@ -1,0 +1,1 @@
+The search pattern is a coverage problem constrained by the camera's real detection range on a person in water — which is much shorter than the sensor's nominal range once you account for chop and glare. Tightening the spiral to that number, rather than the datasheet number, changes total search time considerably. The output is the flight plan the ground station loads.

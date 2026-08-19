@@ -1,4 +1,5 @@
 ---
+import { getImage } from "astro:assets";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import TopBar from "@/components/TopBar.astro";
 import Hero from "@/components/Hero.astro";
@@ -6,12 +7,42 @@ import RoboticsIntroF from "@/components/RoboticsIntroF.astro";
 import RoboticsPanels from "@/components/RoboticsPanels.astro";
 import SubprojectsCarousel from "@/components/SubprojectsCarousel.astro";
 import TransitionToCream from "@/components/TransitionToCream.astro";
-import MetaSection from "@/components/MetaSection.astro";
-import Principles from "@/components/Principles.astro";
+import MetaRail from "@/components/MetaRail.astro";
+import PrinciplesRail from "@/components/PrinciplesRail.astro";
+import SectionRail from "@/components/SectionRail.astro";
+import type { RailSection } from "@/components/SectionRail.astro";
 import Footer from "@/components/Footer.astro";
 import HorizontalTOC from "@/components/islands/HorizontalTOC.tsx";
 import FilterIndicator from "@/components/islands/FilterIndicator.tsx";
 import { META_GROUPS, TOC } from "@/data/content";
+
+// The rail's outline: sections top level, their groups as sub-bullets.
+// Numbers continue the page's §-sequence (Hero/Gallery/Robotics are 1–3).
+const railSections: RailSection[] = [
+  ...META_GROUPS.map((m, i) => ({
+    id: m.id,
+    num: i + 4,
+    title: m.title,
+    groups: m.groups.map((g) => ({ id: g.id, title: g.title })),
+  })),
+  { id: "principles", num: 7, title: "Principles", groups: [] },
+];
+
+// HorizontalTOC is a client island — it can't use Astro's server-only
+// <Image> component, so images are optimized here and handed down as plain
+// URLs (astro:assets getImage() does the same resize/webp work <Image> does,
+// just callable outside JSX).
+const tocForIsland = await Promise.all(
+  TOC.map(async (sec) => ({
+    ...sec,
+    items: await Promise.all(
+      sec.items.map(async (it) => {
+        const optimized = await getImage({ src: it.image, format: "webp", width: 500, quality: 78 });
+        return { ...it, image: optimized.src };
+      }),
+    ),
+  })),
+);
 ---
 <BaseLayout>
   <TopBar />
@@ -19,7 +50,7 @@ import { META_GROUPS, TOC } from "@/data/content";
 
   <!-- Gallery — only visible in "full picture" filter. -->
   <div data-filters="full" data-rsec="gallery">
-    <HorizontalTOC sections={TOC} client:visible />
+    <HorizontalTOC sections={tocForIsland} client:visible />
   </div>
 
   <!-- Robotics block — visible in full, eng-acad, engineering. -->
@@ -30,26 +61,59 @@ import { META_GROUPS, TOC } from "@/data/content";
     <TransitionToCream />
   </div>
 
-  <!-- Academics — always rendered. The Engineering filter hides its header
-       + Education group via CSS so only the Research group shows. -->
-  <div data-rsec="academics">
-    <MetaSection meta={META_GROUPS[0]} num={4} firstSection />
+  <!-- Lower half: sticky section rail (table of contents for §04–07) floats
+       in the left gutter for the full run of bands below. -->
+  <div class="lh">
+    <div class="lh__railwrap">
+      <SectionRail sections={railSections} />
+    </div>
+
+    <!-- Academics — always rendered. The Engineering filter hides its header
+         + Education group via CSS so only the Research group shows. -->
+    <div data-rsec="academics">
+      <MetaRail meta={META_GROUPS[0]} num={4} tone="cream" />
+    </div>
+
+    <!-- Well-rounded — full + non-engineering. -->
+    <div data-filters="full non-eng" data-rsec="wellrounded">
+      <MetaRail meta={META_GROUPS[1]} num={5} tone="warm" />
+    </div>
+
+    <!-- Experiences (quirky) — full + non-engineering. -->
+    <div data-filters="full non-eng" data-rsec="experiences">
+      <MetaRail meta={META_GROUPS[2]} num={6} tone="cream" quirky />
+    </div>
+
+    <div data-rsec="principles"><PrinciplesRail /></div>
   </div>
 
-  <!-- Well-rounded — full + non-engineering. -->
-  <div data-filters="full non-eng" data-rsec="wellrounded">
-    <MetaSection meta={META_GROUPS[1]} num={5} />
-  </div>
-
-  <!-- Experiences (quirky) — full + non-engineering. -->
-  <div data-filters="full non-eng" data-rsec="experiences">
-    <MetaSection meta={META_GROUPS[2]} num={6} quirky />
-  </div>
-
-  <!-- Principles + Footer — always visible. -->
-  <div data-rsec="principles"><Principles /></div>
+  <!-- Footer — always visible. -->
   <div data-rsec="footer"><Footer /></div>
 
   <!-- Floating filter indicator (sticky bottom-right when a filter is on). -->
   <FilterIndicator client:load />
 </BaseLayout>
+
+<style>
+  /* Lower-half wrapper. `.lh__railwrap` spans the full run of bands and pins
+     itself to the same left edge the .shell content starts at: the section's
+     --page-pad, or the centering margin once the viewport is wider than
+     --content-max. Percentages resolve against .lh (a block box, so the
+     scrollbar is already excluded) — no 100vw off-by-scrollbar. */
+  .lh { position: relative; }
+  .lh__railwrap {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: max(var(--page-pad), calc((100% - var(--content-max)) / 2));
+    width: var(--rail-w, 214px);
+    pointer-events: none;
+    /* Above the bands: each section is position:relative; z-index:1 to sit
+       over the wave canvas, so the rail has to clear that or it paints
+       behind their solid backgrounds. */
+    z-index: 2;
+  }
+  @media (max-width: 1080px) {
+    .lh__railwrap { display: none; }
+  }
+</style>

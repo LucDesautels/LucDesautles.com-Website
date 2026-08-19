@@ -1,0 +1,1 @@
+An iteration of three nose layouts. The final design buries the VTX heat-sink in the airflow channel, keeps the antenna two wavelengths from the carbon spar, and lets the camera tilt 22° forward without recutting the fuselage.

@@ -1,0 +1,453 @@
+{
+  "copied": [
+    {
+      "slot": "home/robotics-compare/ftc/3-technical/hero",
+      "from": "/images/robotics/ftc/3-technical/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/ftc/3-technical/extra-1",
+      "from": "/images/robotics/ftc/3-technical/extras/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/ftc/3-technical/extra-2",
+      "from": "/images/robotics/ftc/3-technical/extras/2.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/ftc/4-leadership/hero",
+      "from": "/images/robotics/ftc/4-mentoring/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/ftc/5-open-sourced/hero",
+      "from": "/images/robotics/ftc/5-outreach/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/vtx-stack/1",
+      "from": "/images/engineering/vtx-stack/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/vtx-stack/2",
+      "from": "/images/engineering/vtx-stack/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/vtx-stack/3",
+      "from": "/images/engineering/vtx-stack/3.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/tilt-rotor/1",
+      "from": "/images/engineering/tilt-rotor/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/tilt-rotor/2",
+      "from": "/images/engineering/tilt-rotor/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/carry-through/1",
+      "from": "/images/engineering/wing-carry-through/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/carry-through/2",
+      "from": "/images/engineering/wing-carry-through/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/arm-transfer/1",
+      "from": "/images/engineering/arm-transfer/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/arm-transfer/2",
+      "from": "/images/engineering/arm-transfer/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/auto-pathing/1",
+      "from": "/images/engineering/auto-pathing/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/auto-pathing/2",
+      "from": "/images/engineering/auto-pathing/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/foam-flotation/1",
+      "from": "/images/engineering/foam-flotation/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/foam-flotation/2",
+      "from": "/images/engineering/foam-flotation/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/foam-flotation/3",
+      "from": "/images/engineering/foam-flotation/3.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/wing-cfd/1",
+      "from": "/images/engineering/wing-cfd/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/wing-cfd/2",
+      "from": "/images/engineering/wing-cfd/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/wing-cfd/3",
+      "from": "/images/engineering/wing-cfd/3.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/oss-release/1",
+      "from": "/images/engineering/oss-release/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/el-suit/1",
+      "from": "/images/engineering/el-suit/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/el-suit/2",
+      "from": "/images/engineering/el-suit/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/rookie-docs/1",
+      "from": "/images/engineering/rookie-docs/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/stem-bilingual/1",
+      "from": "/images/engineering/stem-bilingual/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/drone-photo/1",
+      "from": "/images/engineering/drone-photography/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/drone-photo/2",
+      "from": "/images/engineering/drone-photography/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/drone-photo/3",
+      "from": "/images/engineering/drone-photography/3.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/drone-photo/4",
+      "from": "/images/engineering/drone-photography/4.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/drone-photo/5",
+      "from": "/images/engineering/drone-photography/5.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/fiddle-pickup/1",
+      "from": "/images/engineering/fiddle-pickup/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/fiddle-pickup/2",
+      "from": "/images/engineering/fiddle-pickup/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-programs/ftc/hero",
+      "from": "/images/robotics/ftc/3-technical/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-programs/sailfish/hero",
+      "from": "/images/robotics/sailfish/3-technical/signal-2026-08-02-09-25-33-445-6.jpg"
+    },
+    {
+      "slot": "home/robotics-intro/left-image",
+      "from": "src/Uploaded Media/Drone_top.webp"
+    },
+    {
+      "slot": "home/robotics-intro/right-image",
+      "from": "src/Uploaded Media/FTC_Robot.png"
+    },
+    {
+      "slot": "home/hero/portrait",
+      "from": "public/images/homepage/hero/B1.jpg"
+    },
+    {
+      "slot": "home/hero/in-the-field",
+      "from": "public/images/homepage/hero/C1.jpg"
+    },
+    {
+      "slot": "home/hero/outdoors",
+      "from": "public/images/homepage/hero/PXL_20260315_201339286 1.jpg"
+    }
+  ],
+  "placeholdersNeeded": [
+    "home/robotics-compare/sailfish/1-quick-info/hero",
+    "home/robotics-compare/sailfish/1-quick-info/extra-1",
+    "home/robotics-compare/sailfish/1-quick-info/extra-2",
+    "home/robotics-compare/sailfish/2-proof-point/hero",
+    "home/robotics-compare/sailfish/3-technical/hero",
+    "home/robotics-compare/sailfish/3-technical/extra-1",
+    "home/robotics-compare/sailfish/3-technical/extra-2",
+    "home/robotics-compare/sailfish/3-technical/extra-3",
+    "home/robotics-compare/sailfish/4-leadership/hero",
+    "home/robotics-compare/sailfish/5-open-sourced/hero",
+    "home/robotics-compare/ftc/1-quick-info/hero",
+    "home/robotics-compare/ftc/1-quick-info/extra-1",
+    "home/robotics-compare/ftc/1-quick-info/extra-2",
+    "home/robotics-compare/ftc/2-proof-point/hero",
+    "home/academics/education/tfs-and-scholars-guild/hero",
+    "home/academics/education/ib-diploma-program/hero",
+    "home/academics/education/bilingual-french/hero",
+    "home/academics/research/5-8-ghz-video-over-open-water/hero",
+    "home/academics/research/optimized-sar-spiral/hero",
+    "home/academics/research/motor-and-prop-efficiency/hero",
+    "home/well-rounded/sports/rock-climbing/hero",
+    "home/well-rounded/sports/skiing/hero",
+    "home/well-rounded/sports/sailing/hero",
+    "home/well-rounded/creatives/nature-drone-videography/hero",
+    "home/well-rounded/creatives/violin/hero",
+    "home/well-rounded/creatives/philosophy/hero",
+    "home/well-rounded/creatives/web-design/hero",
+    "home/well-rounded/scouts/12-years-in-scouts/hero",
+    "home/well-rounded/scouts/chief-scouts-award/hero",
+    "home/well-rounded/scouts/duke-of-edinburgh/hero",
+    "home/experiences/summer-programs/shad/hero",
+    "home/experiences/summer-programs/waterloo-catalyst/hero",
+    "home/experiences/summer-programs/scouts-jamboree/hero",
+    "home/experiences/side-quests/light-suit-night-skiing/hero",
+    "home/experiences/side-quests/dance-show-mc/hero",
+    "home/experiences/side-quests/prank-day/hero",
+    "home/toc-gallery/academics/tfs-and-scholars-guild",
+    "home/toc-gallery/academics/ib-diploma-program",
+    "home/toc-gallery/academics/5-8-ghz-over-water",
+    "home/toc-gallery/academics/sar-spiral-optimization",
+    "home/toc-gallery/academics/motor-and-prop-efficiency",
+    "home/toc-gallery/robotics/sailfish-gen-3",
+    "home/toc-gallery/robotics/fuselage-vtx-stack",
+    "home/toc-gallery/robotics/field-test-lake-ontario",
+    "home/toc-gallery/robotics/ontario-champions-2024",
+    "home/toc-gallery/robotics/cnc-chassis-plate",
+    "home/toc-gallery/robotics/arm-transfer-system",
+    "home/toc-gallery/well-rounded/lead-climb-5-10c",
+    "home/toc-gallery/well-rounded/whistler-double-black",
+    "home/toc-gallery/well-rounded/algonquin-fog",
+    "home/toc-gallery/well-rounded/folk-fiddle-jam",
+    "home/toc-gallery/well-rounded/la-verendrye-canoe",
+    "home/toc-gallery/experiences/shad-program",
+    "home/toc-gallery/experiences/waterloo-catalyst",
+    "home/toc-gallery/experiences/light-suit-ski-night",
+    "home/toc-gallery/experiences/dance-show-mc",
+    "engineering/eng-grid/cnc-chassis/1",
+    "engineering/eng-grid/cnc-chassis/2",
+    "engineering/eng-grid/cnc-chassis/3",
+    "engineering/eng-grid/groundstation/1",
+    "engineering/eng-grid/groundstation/2",
+    "engineering/eng-grid/vid-58ghz/1",
+    "engineering/eng-grid/vid-58ghz/2",
+    "engineering/eng-grid/sar-spiral/1",
+    "engineering/eng-grid/sar-spiral/2",
+    "engineering/eng-grid/thrust-stand/1",
+    "engineering/eng-grid/thrust-stand/2",
+    "engineering/eng-grid/thrust-stand/3",
+    "engineering/eng-grid/battery-pack/1",
+    "engineering/eng-grid/battery-pack/2",
+    "engineering/eng-grid/library-box/1",
+    "engineering/eng-grid/library-box/2",
+    "engineering/eng-grid/library-box/3",
+    "engineering/eng-programs/misc/hero",
+    "engineering/eng-programs/misc/skills/selfhost/1",
+    "engineering/eng-programs/misc/skills/selfhost/2",
+    "engineering/eng-programs/misc/skills/security/1",
+    "engineering/eng-programs/misc/skills/security/2",
+    "engineering/eng-lander/sailfish-gen3",
+    "engineering/eng-lander/ftc-arm-transfer",
+    "engineering/eng-lander/thrust-stand"
+  ],
+  "declaredButMissing": [
+    {
+      "slot": "home/robotics-compare/sailfish/1-quick-info/hero",
+      "expected": "/images/robotics/sailfish/1-quick-info/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/sailfish/1-quick-info/extra-1",
+      "expected": "/images/robotics/sailfish/1-quick-info/extras/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/sailfish/1-quick-info/extra-2",
+      "expected": "/images/robotics/sailfish/1-quick-info/extras/2.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/sailfish/2-proof-point/hero",
+      "expected": "/images/robotics/sailfish/2-proof-point/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/sailfish/3-technical/hero",
+      "expected": "/images/robotics/sailfish/3-technical/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/sailfish/3-technical/extra-1",
+      "expected": "/images/robotics/sailfish/3-technical/extras/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/sailfish/3-technical/extra-2",
+      "expected": "/images/robotics/sailfish/3-technical/extras/2.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/sailfish/3-technical/extra-3",
+      "expected": "/images/robotics/sailfish/3-technical/extras/3.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/sailfish/4-leadership/hero",
+      "expected": "/images/robotics/sailfish/4-leadership/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/sailfish/5-open-sourced/hero",
+      "expected": "/images/robotics/sailfish/5-open-sourced/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/ftc/1-quick-info/hero",
+      "expected": "/images/robotics/ftc/1-quick-info/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/ftc/1-quick-info/extra-1",
+      "expected": "/images/robotics/ftc/1-quick-info/extras/1.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/ftc/1-quick-info/extra-2",
+      "expected": "/images/robotics/ftc/1-quick-info/extras/2.jpg"
+    },
+    {
+      "slot": "home/robotics-compare/ftc/2-proof-point/hero",
+      "expected": "/images/robotics/ftc/2-inspire-award/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/cnc-chassis/1",
+      "expected": "/images/engineering/cnc-chassis/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/cnc-chassis/2",
+      "expected": "/images/engineering/cnc-chassis/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/cnc-chassis/3",
+      "expected": "/images/engineering/cnc-chassis/3.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/groundstation/1",
+      "expected": "/images/engineering/groundstation/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/groundstation/2",
+      "expected": "/images/engineering/groundstation/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/vid-58ghz/1",
+      "expected": "/images/engineering/58ghz-water/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/vid-58ghz/2",
+      "expected": "/images/engineering/58ghz-water/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/sar-spiral/1",
+      "expected": "/images/engineering/sar-spiral/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/sar-spiral/2",
+      "expected": "/images/engineering/sar-spiral/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/thrust-stand/1",
+      "expected": "/images/engineering/thrust-stand/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/thrust-stand/2",
+      "expected": "/images/engineering/thrust-stand/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/thrust-stand/3",
+      "expected": "/images/engineering/thrust-stand/3.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/battery-pack/1",
+      "expected": "/images/engineering/battery-pack/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/battery-pack/2",
+      "expected": "/images/engineering/battery-pack/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/library-box/1",
+      "expected": "/images/engineering/library-box/1.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/library-box/2",
+      "expected": "/images/engineering/library-box/2.jpg"
+    },
+    {
+      "slot": "engineering/eng-grid/library-box/3",
+      "expected": "/images/engineering/library-box/3.jpg"
+    }
+  ],
+  "orphansOnDisk": [
+    "public/images/engineering/_58ghz-water/1.jpg",
+    "public/images/engineering/_58ghz-water/2.jpg",
+    "public/images/engineering/_58ghz-water/C13.png",
+    "public/images/engineering/_58ghz-water/D1 possible.jpg",
+    "public/images/engineering/_58ghz-water/E3.jpg",
+    "public/images/engineering/_58ghz-water/E4.jpg",
+    "public/images/engineering/_58ghz-water/H3 Possible.png",
+    "public/images/engineering/_58ghz-water/H3 Possible_2.jpg",
+    "public/images/engineering/_58ghz-water/I3.jpg",
+    "public/images/engineering/_58ghz-water/PXL_20250106_214231915.jpg",
+    "public/images/engineering/_58ghz-water/PXL_20250109_231727914.jpg",
+    "public/images/engineering/_58ghz-water/PXL_20250214_021845099.jpg",
+    "public/images/engineering/_58ghz-water/PXL_20250313_215431524.jpg",
+    "public/images/engineering/_58ghz-water/PXL_20250313_223307872.jpg",
+    "public/images/engineering/_58ghz-water/PXL_20250316_182608455 (1).jpg",
+    "public/images/engineering/_58ghz-water/PXL_20250316_182608455.jpg",
+    "public/images/engineering/_battery-pack/1.jpg",
+    "public/images/engineering/_battery-pack/2.jpg",
+    "public/images/engineering/_cnc-chassis/1.jpg",
+    "public/images/engineering/_cnc-chassis/2.jpg",
+    "public/images/engineering/_cnc-chassis/3.jpg",
+    "public/images/engineering/_groundstation/1.jpg",
+    "public/images/engineering/_groundstation/2.jpg",
+    "public/images/engineering/_library-box/1.jpg",
+    "public/images/engineering/_library-box/2.jpg",
+    "public/images/engineering/_library-box/3.jpg",
+    "public/images/engineering/_sar-spiral/1.jpg",
+    "public/images/engineering/_sar-spiral/2.jpg",
+    "public/images/engineering/_thrust-stand/Copy of Luc Desautels Physics IA Final (1).png",
+    "public/images/engineering/_thrust-stand/Copy of Luc Desautels Physics IA Final.png",
+    "public/images/homepage/hero/B1.jpg",
+    "public/images/homepage/hero/C1.jpg",
+    "public/images/homepage/hero/PXL_20260315_201339286 1.jpg",
+    "public/images/homepage/Salt Spring 7.jpg",
+    "public/images/homepage/Scholar's guild.jpg",
+    "public/images/homepage/Scouts_ dee1 possible.jpg",
+    "public/images/homepage/SHAD MUN.jpg",
+    "public/images/homepage/toc-gallery/robotics/C3 - frame at 0m1s.jpg",
+    "public/images/robotics/ftc/1-quick-info/IMG_0659-scaled.jpg",
+    "public/images/robotics/ftc/2-inspire-award/extras/53549991979_2c046c8a95_o.jpg",
+    "public/images/robotics/ftc/2-inspire-award/extras/53550097510_132ca9dd7f_o (1).jpg",
+    "public/images/robotics/ftc/2-inspire-award/IMG_0502.jpg",
+    "public/images/robotics/sailfish/1-quick-info/extras/C3 - frame at 0m1s.jpg",
+    "public/images/robotics/sailfish/1-quick-info/extras/earlier prototype.jpg",
+    "public/images/robotics/sailfish/1-quick-info/extras/Salt Spring 7.jpg",
+    "public/images/robotics/sailfish/1-quick-info/Forbidden plateau.png",
+    "public/images/robotics/sailfish/2-proof-point/Extras/C13.png",
+    "public/images/robotics/sailfish/2-proof-point/Extras/_DSC3154-1 (1).jpg",
+    "public/images/robotics/sailfish/2-proof-point/I3.jpg",
+    "public/images/robotics/sailfish/3-technical/extras/CAD render of fuselage internal electronics.png",
+    "public/images/robotics/sailfish/3-technical/extras/PXL_20250419_200335012.jpg",
+    "public/images/robotics/sailfish/3-technical/extras/signal-2026-08-02-09-25-33-445-10.jpg",
+    "public/images/robotics/sailfish/4-leadership/cropped1_IMG_5857.png",
+    "public/images/robotics/sailfish/4-leadership/Extras/Clarence and Luc Fiberglassing early days picture 2.png",
+    "public/images/robotics/sailfish/4-leadership/Extras/PXL_20250222_192205456.jpg",
+    "public/images/robotics/sailfish/4-leadership/Extras/z_E4.jpg",
+    "public/images/robotics/sailfish/5-open-sourced/H3 Possible_2.jpg",
+    "public/images/robotics/sailfish/cropped1_IMG_5857.png",
+    "public/images/robotics/sailfish/E4.jpg",
+    "public/images/robotics/sailfish/H3 Possible.png",
+    "public/images/robotics/sailfish/H3 Possible_2.jpg",
+    "public/images/robotics/sailfish/Salt Spring 7.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445-1.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445-10.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445-2.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445-3.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445-4.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445-5.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445-7.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445-8.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445-9.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-25-33-445.jpg",
+    "public/images/robotics/sailfish/signal-2026-08-02-09-32-39-051.jpg",
+    "public/images/robotics/sailfish/_DSC3154-1 (1).jpg"
+  ]
+}
