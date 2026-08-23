@@ -1,0 +1,385 @@
+---
+// Sandbox page — not linked from the site nav. Testing scroll/drag-driven
+// rotation of the 36-frame Fusion 360 turntable render before this becomes a
+// real "explore the drone" page.
+import "@/styles/tokens.css";
+
+const FRAME_COUNT = 36;
+const frames = Array.from({ length: FRAME_COUNT }, (_, i) =>
+  `/sailfish-turntable/frame-${String(i + 1).padStart(2, "0")}.jpg`
+);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Sailfish Turntable — Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Khand:wght@500;600;700&display=swap"
+    />
+  </head>
+  <body>
+    <div class="loader" id="loader">
+      <span id="loader-text">Loading frames… 0 / {FRAME_COUNT}</span>
+    </div>
+
+    <header class="intro">
+      <p class="eyebrow">Prototype · not linked from the site</p>
+      <h1>Sailfish Turntable</h1>
+      <p class="sub">
+        36-frame render, two interaction tests. Scroll down to try them.
+      </p>
+      <p class="scroll-hint">↓ scroll</p>
+    </header>
+
+    <section class="stage drag-stage">
+      <div class="stage-inner">
+        <p class="label">01 — Drag to rotate</p>
+        <div class="viewer-wrap" id="drag-wrap">
+          <img id="drag-img-a" class="viewer-img" src={frames[0]} alt="Sailfish UAV, draggable turntable" draggable="false" />
+          <img id="drag-img-b" class="viewer-img viewer-img--blend" src={frames[1]} alt="" draggable="false" />
+        </div>
+        <p class="hint" id="drag-hint">click + drag left/right</p>
+        <p class="frame-readout" id="drag-readout">FRAME 01 / {FRAME_COUNT}</p>
+      </div>
+    </section>
+
+    <section class="scroll-track" id="scroll-track">
+      <div class="stage scroll-stage">
+        <div class="stage-inner">
+          <p class="label">02 — Scroll to rotate</p>
+          <div class="viewer-wrap">
+            <img id="scroll-img-a" class="viewer-img" src={frames[0]} alt="Sailfish UAV, scroll-driven turntable" draggable="false" />
+            <img id="scroll-img-b" class="viewer-img viewer-img--blend" src={frames[1]} alt="" draggable="false" />
+          </div>
+          <p class="frame-readout" id="scroll-readout">FRAME 01 / {FRAME_COUNT}</p>
+          <div class="progress-track">
+            <div class="progress-fill" id="scroll-progress"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="outro">
+      <p>end of test page</p>
+    </footer>
+
+    <script define:vars={{ frames, FRAME_COUNT }}>
+      const preloaded = [];
+      const loader = document.getElementById("loader");
+      const loaderText = document.getElementById("loader-text");
+
+      let loadedCount = 0;
+      function onFrameLoaded() {
+        loadedCount++;
+        loaderText.textContent = `Loading frames… ${loadedCount} / ${FRAME_COUNT}`;
+        if (loadedCount === FRAME_COUNT) {
+          loader.classList.add("loader--done");
+          init();
+        }
+      }
+
+      frames.forEach((src, i) => {
+        const img = new Image();
+        img.onload = onFrameLoaded;
+        img.onerror = onFrameLoaded;
+        img.src = src;
+        preloaded[i] = img;
+      });
+
+      function frameSrc(i) {
+        // i is 0-indexed internally, frames are 1-indexed on disk
+        return preloaded[((i % FRAME_COUNT) + FRAME_COUNT) % FRAME_COUNT].src;
+      }
+
+      // Renders a fractional frame index (e.g. 12.4) by crossfading the two
+      // nearest real frames instead of hard-cutting between them — that's
+      // what turns 36 discrete 10°-apart shots into something that reads as
+      // continuous rotation instead of a slideshow.
+      function makeRenderer(imgA, imgB, readout, wrap) {
+        return function render(index, wrapAround) {
+          const idx = wrapAround
+            ? ((index % FRAME_COUNT) + FRAME_COUNT) % FRAME_COUNT
+            : Math.min(FRAME_COUNT - 1, Math.max(0, index));
+          const lo = Math.floor(idx);
+          const hi = wrapAround ? (lo + 1) % FRAME_COUNT : Math.min(FRAME_COUNT - 1, lo + 1);
+          const frac = idx - lo;
+
+          imgA.src = frameSrc(lo);
+          imgB.src = frameSrc(hi);
+          imgB.style.opacity = frac;
+
+          if (readout) {
+            const shown = Math.round(idx) % FRAME_COUNT;
+            readout.textContent = `FRAME ${String(shown + 1).padStart(2, "0")} / ${FRAME_COUNT}`;
+          }
+          return idx;
+        };
+      }
+
+      function init() {
+        initDrag();
+        initScroll();
+      }
+
+      // ---------- Section 1: drag to rotate ----------
+      function initDrag() {
+        const wrap = document.getElementById("drag-wrap");
+        const imgA = document.getElementById("drag-img-a");
+        const imgB = document.getElementById("drag-img-b");
+        const readout = document.getElementById("drag-readout");
+        const hint = document.getElementById("drag-hint");
+        const render = makeRenderer(imgA, imgB, readout, wrap);
+
+        let dragging = false;
+        let startX = 0;
+        let startIndex = 0;
+        let currentIndex = 0;
+        const PX_PER_FRAME = 8; // lower = more sensitive drag
+
+        wrap.addEventListener("pointerdown", (e) => {
+          dragging = true;
+          startX = e.clientX;
+          startIndex = currentIndex;
+          wrap.setPointerCapture(e.pointerId);
+          wrap.classList.add("grabbing");
+          hint.classList.add("hint--hidden");
+        });
+
+        wrap.addEventListener("pointermove", (e) => {
+          if (!dragging) return;
+          const dx = e.clientX - startX;
+          currentIndex = render(startIndex - dx / PX_PER_FRAME, true);
+        });
+
+        function endDrag() {
+          dragging = false;
+          wrap.classList.remove("grabbing");
+        }
+        wrap.addEventListener("pointerup", endDrag);
+        wrap.addEventListener("pointercancel", endDrag);
+      }
+
+      // ---------- Section 2: scroll to rotate ----------
+      function initScroll() {
+        const track = document.getElementById("scroll-track");
+        const imgA = document.getElementById("scroll-img-a");
+        const imgB = document.getElementById("scroll-img-b");
+        const readout = document.getElementById("scroll-readout");
+        const progressFill = document.getElementById("scroll-progress");
+        const render = makeRenderer(imgA, imgB, readout, null);
+
+        // Eased toward the scroll-derived target every frame (instead of
+        // snapping straight to it) so the rotation glides instead of
+        // ticking in lockstep with scroll deltas.
+        const LERP = 0.14;
+        let displayIndex = 0;
+
+        function targetIndex() {
+          const rect = track.getBoundingClientRect();
+          const scrollableHeight = rect.height - window.innerHeight;
+          const progress = Math.min(1, Math.max(0, -rect.top / scrollableHeight));
+          return progress * (FRAME_COUNT - 1);
+        }
+
+        function loop() {
+          const target = targetIndex();
+          displayIndex += (target - displayIndex) * LERP;
+          if (Math.abs(target - displayIndex) < 0.005) displayIndex = target;
+          render(displayIndex, false);
+          progressFill.style.width = `${(displayIndex / (FRAME_COUNT - 1)) * 100}%`;
+          requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+      }
+    </script>
+
+    <style is:global>
+      html {
+        background: var(--dark);
+        scroll-behavior: auto;
+      }
+      body {
+        margin: 0;
+        background: var(--dark);
+        color: var(--dark-ink);
+        font-family: var(--font-body);
+      }
+
+      .loader {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--dark);
+        font-family: var(--font-mono);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        color: var(--dark-dim);
+        transition: opacity 300ms ease;
+      }
+      .loader--done {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .intro {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+      }
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 18px;
+      }
+      .intro h1 {
+        font-family: var(--font-tech);
+        font-size: clamp(48px, 9vw, 110px);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        margin: 0 0 16px;
+        color: var(--dark-ink);
+      }
+      .intro .sub {
+        font-family: var(--font-body);
+        font-size: 16px;
+        color: var(--dark-dim);
+        max-width: 40ch;
+        margin: 0;
+      }
+      .scroll-hint {
+        margin-top: 48px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--dark-mute);
+        letter-spacing: 0.12em;
+        animation: bob 1.8s ease-in-out infinite;
+      }
+      @keyframes bob {
+        0%, 100% { transform: translateY(0); opacity: 0.5; }
+        50% { transform: translateY(6px); opacity: 1; }
+      }
+
+      .stage {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .stage-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 1100px;
+      }
+      .label {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 20px;
+      }
+
+      .viewer-wrap {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1547 / 1160;
+        user-select: none;
+        touch-action: none;
+      }
+      .drag-stage .viewer-wrap {
+        cursor: grab;
+      }
+      .drag-stage .viewer-wrap.grabbing {
+        cursor: grabbing;
+      }
+      .viewer-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        pointer-events: none;
+        -webkit-user-drag: none;
+      }
+      .viewer-img--blend {
+        opacity: 0;
+      }
+
+      .hint {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--dark-mute);
+        letter-spacing: 0.06em;
+        margin: 18px 0 0;
+        transition: opacity 400ms ease;
+      }
+      .hint--hidden {
+        opacity: 0;
+      }
+
+      .frame-readout {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        color: var(--dark-dim);
+        letter-spacing: 0.1em;
+        margin: 12px 0 0;
+      }
+
+      .scroll-track {
+        height: 400vh;
+        position: relative;
+      }
+      .scroll-stage {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+
+      .progress-track {
+        width: 220px;
+        height: 3px;
+        background: var(--dark-line);
+        margin-top: 20px;
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: var(--accent);
+      }
+
+      .outro {
+        min-height: 40vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--dark-mute);
+        letter-spacing: 0.12em;
+      }
+    </style>
+  </body>
+</html>

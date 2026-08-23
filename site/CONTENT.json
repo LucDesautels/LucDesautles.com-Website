@@ -23,7 +23,7 @@
       "linkedin": "linkedin.com/in/luc-desautels"
     }
   },
-  "resumeHref": "mailto:L@desautels.net?subject=Resume%20request&body=Hi%20Luc%20%E2%80%94%20could%20you%20send%20me%20your%20latest%20resume%3F%20Thanks%21",
+  "resumeHref": "/resume",
   "robotics": [
     {
       "eyebrow": "Impactful Robotics",

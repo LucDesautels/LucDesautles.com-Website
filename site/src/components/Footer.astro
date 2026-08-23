@@ -1,6 +1,22 @@
 ---
-import { SITE, RESUME_HREF } from "@/data/content";
+import { SITE } from "@/data/content";
 import Noise from "./Noise.astro";
+import { execSync } from "child_process";
+
+// Get the last commit SHA and date
+let commitSha = "unknown";
+let commitDate = new Date();
+try {
+  commitSha = execSync("git rev-parse HEAD", { encoding: "utf-8" }).trim().slice(0, 7);
+  const unixTimestamp = parseInt(execSync("git log -1 --format=%ct", { encoding: "utf-8" }).trim(), 10) * 1000;
+  commitDate = new Date(unixTimestamp);
+} catch (e) {
+  // Fall back to current date if git commands fail
+  console.warn("Could not get git info:", e);
+}
+
+const options = { month: "long", day: "numeric" } as const;
+const dateStr = commitDate.toLocaleDateString("en-US", options);
 ---
 <footer class="ft">
   <Noise />
@@ -10,20 +26,57 @@ import Noise from "./Noise.astro";
     </h2>
     <div class="ft__row">
       <div class="ft__left">
-        <a class="ft__email" href={`mailto:${SITE.contact.email}`}>{SITE.contact.email}</a>
+        <div class="ft__email-container">
+          <button class="ft__email" id="email-copy" data-email={SITE.contact.email}>
+            {SITE.contact.email}
+          </button>
+          <button class="ft__copy-icon" id="copy-icon" data-email={SITE.contact.email} type="button" aria-label="Copy email">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 6v8a1 1 0 001 1h7a1 1 0 001-1V6M4 4V3a1 1 0 011-1h6a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="ft__toast" id="copy-toast">Copied to clipboard.</div>
+        </div>
         <div class="ft__links">
-          <a href={`https://${SITE.contact.github}`}>GITHUB ↗</a>
-          <a href={`https://${SITE.contact.linkedin}`}>LINKEDIN ↗</a>
-          <a href={RESUME_HREF}>RESUME ↗</a>
+          <a href="/engineering">ENGINEERING ↗</a>
+          <a href={`https://${SITE.contact.linkedin}`} target="_blank" rel="noopener noreferrer">LINKEDIN ↗</a>
+          <a href="/resume">RÉSUMÉ ↗</a>
         </div>
       </div>
       <div class="ft__right">
-        <div>Built in Toronto</div>
-        <div style="margin-top:6px;">v2026.05</div>
+        <div>Last update: {dateStr}</div>
+        <div style="margin-top:6px;">Commit {commitSha.toUpperCase()}</div>
       </div>
     </div>
   </div>
 </footer>
+
+<script>
+  const emailButton = document.getElementById("email-copy");
+  const copyIcon = document.getElementById("copy-icon");
+  const toast = document.getElementById("copy-toast");
+
+  const copyToClipboard = () => {
+    const email = emailButton.getAttribute("data-email");
+    if (email) {
+      navigator.clipboard.writeText(email).then(() => {
+        // Show toast
+        toast.classList.add("ft__toast--visible");
+        setTimeout(() => {
+          toast.classList.remove("ft__toast--visible");
+        }, 2000);
+      });
+    }
+  };
+
+  if (emailButton) {
+    emailButton.addEventListener("click", copyToClipboard);
+  }
+
+  if (copyIcon) {
+    copyIcon.addEventListener("click", copyToClipboard);
+  }
+</script>
 
 <style>
   .ft {
@@ -53,6 +106,13 @@ import Noise from "./Noise.astro";
     flex-wrap: wrap;
   }
   .ft__left { display: flex; flex-direction: column; gap: 14px; }
+  .ft__email-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    position: relative;
+  }
   .ft__email {
     font-family: var(--font-body);
     font-size: 22px;
@@ -60,6 +120,52 @@ import Noise from "./Noise.astro";
     text-decoration: underline;
     text-decoration-color: var(--accent);
     text-underline-offset: 6px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  .ft__email:hover {
+    color: var(--accent);
+  }
+  .ft__copy-icon {
+    color: var(--dark-dim);
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ft__copy-icon:hover {
+    color: var(--accent);
+  }
+  .ft__email-container:hover .ft__copy-icon {
+    color: var(--accent);
+  }
+  .ft__toast {
+    position: absolute;
+    background: var(--dark-ink);
+    color: var(--dark);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    top: 0;
+    left: 100%;
+    margin-left: 12px;
+  }
+  .ft__toast--visible {
+    opacity: 1;
   }
   .ft__links {
     display: flex;
