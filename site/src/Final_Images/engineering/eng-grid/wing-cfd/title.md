@@ -1,1 +1,0 @@
-Wing CFD + tuft test

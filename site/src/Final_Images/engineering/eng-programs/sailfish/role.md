@@ -1,1 +1,1 @@
-Altum Robotics · Design lead
+The Toronto French School · Project Team Lead

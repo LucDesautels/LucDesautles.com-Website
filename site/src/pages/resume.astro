@@ -1,0 +1,50 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopBar from "@/components/TopBar.astro";
+---
+<BaseLayout
+  title="Résumé · Luc Desautels"
+  description="Résumé — Luc Desautels."
+>
+  <TopBar />
+
+  <main class="res" id="main">
+    <section class="res__lander shell">
+      <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · RÉSUMÉ</div>
+      <h1 class="res__title">
+        Résumé<span class="res__period">.</span>
+      </h1>
+      <p class="res__body">
+        Content coming soon.
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .res {
+    min-height: 100vh;
+    padding-top: 120px;
+  }
+  .res__lander {
+    padding: 80px var(--page-pad) 120px;
+  }
+  .res__title {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 10vw, 110px);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: 16px 0 0;
+    color: var(--ink);
+  }
+  .res__period { color: var(--trim); }
+  .res__body {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: var(--ink-dim);
+    margin: 32px 0 0;
+    max-width: 480px;
+    line-height: 1.6;
+  }
+</style>

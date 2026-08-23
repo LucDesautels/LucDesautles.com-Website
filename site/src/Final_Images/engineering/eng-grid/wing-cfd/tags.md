@@ -1,3 +1,0 @@
-Aero
-Research
-Mechanical

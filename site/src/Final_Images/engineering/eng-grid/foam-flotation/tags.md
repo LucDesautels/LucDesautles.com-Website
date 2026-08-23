@@ -1,3 +1,0 @@
-Materials
-Mechanical
-Field test

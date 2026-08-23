@@ -1,1 +1,0 @@
-Motor + prop efficiency stand

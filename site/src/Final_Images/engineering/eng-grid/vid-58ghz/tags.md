@@ -1,3 +1,0 @@
-Research
-Electrical
-Field test

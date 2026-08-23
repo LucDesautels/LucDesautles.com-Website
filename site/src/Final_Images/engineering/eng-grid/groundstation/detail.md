@@ -1,1 +1,1 @@
-Tauri + Svelte app that swallows the Mavlink stream and exposes the bits a SAR operator actually wants in one screen. The big red RTL button is wired to a confirmation dialog because I learned that lesson early.
+Placeholder — not yet written up.

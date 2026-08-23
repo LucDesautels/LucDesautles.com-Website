@@ -1,0 +1,54 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopBar from "@/components/TopBar.astro";
+---
+<BaseLayout
+  title="Project Sailfish · Luc Desautels"
+  description="Project Sailfish — an autonomous sailing robotics program."
+>
+  <TopBar />
+
+  <main class="ir" id="main">
+    <section class="ir__lander shell">
+      <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · PROJECT SAILFISH</div>
+      <h1 class="ir__title">
+        Project<br />
+        <span class="ir__italic">Sailfish</span><span class="ir__period">.</span>
+      </h1>
+      <p class="ir__body">
+        Content coming soon.
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .ir {
+    min-height: 100vh;
+    padding-top: 120px;
+  }
+  .ir__lander {
+    padding: 80px var(--page-pad) 120px;
+  }
+  .ir__title {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 10vw, 110px);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: 16px 0 0;
+    color: var(--ink);
+  }
+  .ir__italic {
+    font-style: italic;
+  }
+  .ir__period { color: var(--trim); }
+  .ir__body {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: var(--ink-dim);
+    margin: 32px 0 0;
+    max-width: 480px;
+    line-height: 1.6;
+  }
+</style>

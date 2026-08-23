@@ -29,28 +29,34 @@ const lastName = restName.join(" ");
       </div>
 
       <div class="hero__polaroids" aria-hidden="true">
-        <div class="polaroid polaroid--lg">
-          <Image src={HERO_IMAGES.portrait} alt="" class="polaroid__img" style="height:520px;width:380px" width={760} format="webp" quality={82} loading="eager" decoding="async" />
-        </div>
-        <div class="polaroid polaroid--md">
-          <Image src={HERO_IMAGES.inTheField} alt="" class="polaroid__img" style="width:160px;height:auto" width={320} format="webp" quality={82} loading="eager" decoding="async" />
-          <div class="caption-drop caption-drop--dark">
-            <div class="cd-border cd-border--t"></div>
-            <div class="cd-border cd-border--l"></div>
-            <div class="cd-border cd-border--b"></div>
-            <div class="cd-border cd-border--r"></div>
-            <span class="cd-text" style="white-space:pre;line-height:1.45"></span>
+        {HERO_IMAGES.portrait && (
+          <div class="polaroid polaroid--lg">
+            <Image src={HERO_IMAGES.portrait} alt="" class="polaroid__img" style="height:520px;width:380px" width={760} format="webp" quality={82} loading="eager" decoding="async" />
           </div>
-        </div>
-        <div class="polaroid polaroid--sm">
-          <Image src={HERO_IMAGES.outdoors} alt="" class="polaroid__img" style="width:160px;height:auto" width={320} format="webp" quality={82} loading="eager" decoding="async" />
-          <div class="caption-drop caption-drop--light">
-            <div class="cd-border cd-border--l"></div>
-            <div class="cd-border cd-border--b"></div>
-            <div class="cd-border cd-border--r"></div>
-            <span class="cd-text"></span>
+        )}
+        {HERO_IMAGES.inTheField && (
+          <div class="polaroid polaroid--md">
+            <Image src={HERO_IMAGES.inTheField} alt="" class="polaroid__img" style="width:160px;height:auto" width={320} format="webp" quality={82} loading="eager" decoding="async" />
+            <div class="caption-drop caption-drop--dark">
+              <div class="cd-border cd-border--t"></div>
+              <div class="cd-border cd-border--l"></div>
+              <div class="cd-border cd-border--b"></div>
+              <div class="cd-border cd-border--r"></div>
+              <span class="cd-text" style="white-space:pre;line-height:1.45"></span>
+            </div>
           </div>
-        </div>
+        )}
+        {HERO_IMAGES.outdoors && (
+          <div class="polaroid polaroid--sm">
+            <Image src={HERO_IMAGES.outdoors} alt="" class="polaroid__img" style="width:160px;height:auto" width={320} format="webp" quality={82} loading="eager" decoding="async" />
+            <div class="caption-drop caption-drop--light">
+              <div class="cd-border cd-border--l"></div>
+              <div class="cd-border cd-border--b"></div>
+              <div class="cd-border cd-border--r"></div>
+              <span class="cd-text"></span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
 

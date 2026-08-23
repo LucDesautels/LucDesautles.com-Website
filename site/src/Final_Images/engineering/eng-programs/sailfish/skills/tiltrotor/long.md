@@ -1,1 +1,0 @@
-The transition is the dangerous part of any tilt-rotor: for a few seconds the aircraft is neither a quadcopter nor a plane and the control authority moves between surfaces. The controller blends the two mixers across the tilt angle rather than switching at a threshold, which is what stopped the nose-drop we kept seeing on early flights.

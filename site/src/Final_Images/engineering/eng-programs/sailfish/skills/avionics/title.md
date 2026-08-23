@@ -1,1 +1,0 @@
-Avionics packaging — VTX stack

@@ -1,1 +1,0 @@
-150ft of EL wire stitched into a ski suit, driven by a custom 12V boost board. Built mostly to make other skiers smile, but it taught me a surprising amount about power budgeting and waterproofing flexible electronics.

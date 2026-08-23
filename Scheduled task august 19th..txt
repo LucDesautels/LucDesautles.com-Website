@@ -1,0 +1,15 @@
+Here are some changes to make: 
+1. On the navbar there is a linkedin logo. Make it link to the page https://www.linkedin.com/in/luc-desautels/ not https://www.linkedin.com/in/lucdesautels/
+
+2. Upon mouse hover of that linkedin logo, i would like the official linkedin badge embed they provide to pop up. It's square-ish and make sure it pops up in a way that makes sense and doesn't get cut off going outside the viewport.
+
+Here is the embed code:
+<div class="badge-base LI-profile-badge" data-locale="en_US" data-size="medium" data-theme="light" data-type="HORIZONTAL" data-vanity="luc-desautels" data-version="v1"><a class="badge-base__link LI-simple-link" href="https://ca.linkedin.com/in/luc-desautels?trk=profile-badge">Luc Desautels</a></div>
+
+
+3. Create website pages called:
+Project Sailfish (/impactful-robotics/)  
+First Tech Challenge (/competitive-robotics/)
+Resume (/resume/)
+they don't need to have anything in them for now.
+              

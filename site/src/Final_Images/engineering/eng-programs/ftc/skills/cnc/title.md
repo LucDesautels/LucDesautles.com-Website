@@ -1,1 +1,0 @@
-CNC machining & fixturing

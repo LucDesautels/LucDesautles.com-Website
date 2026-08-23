@@ -1,0 +1,54 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopBar from "@/components/TopBar.astro";
+---
+<BaseLayout
+  title="First Tech Challenge · Luc Desautels"
+  description="First Tech Challenge — competitive robotics program."
+>
+  <TopBar />
+
+  <main class="ctc" id="main">
+    <section class="ctc__lander shell">
+      <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · FIRST TECH CHALLENGE</div>
+      <h1 class="ctc__title">
+        First Tech<br />
+        <span class="ctc__italic">Challenge</span><span class="ctc__period">.</span>
+      </h1>
+      <p class="ctc__body">
+        Content coming soon.
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .ctc {
+    min-height: 100vh;
+    padding-top: 120px;
+  }
+  .ctc__lander {
+    padding: 80px var(--page-pad) 120px;
+  }
+  .ctc__title {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 10vw, 110px);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: 16px 0 0;
+    color: var(--ink);
+  }
+  .ctc__italic {
+    font-style: italic;
+  }
+  .ctc__period { color: var(--trim); }
+  .ctc__body {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: var(--ink-dim);
+    margin: 32px 0 0;
+    max-width: 480px;
+    line-height: 1.6;
+  }
+</style>

@@ -1,1 +1,1 @@
-Fuselage VTX stack
+VTX Stack — Avionics Packaging

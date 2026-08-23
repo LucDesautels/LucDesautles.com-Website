@@ -1,1 +1,0 @@
-Three competing nose layouts, judged on CG, cooling and antenna isolation. The winner buries the VTX heat-sink in the airflow channel, keeps the antenna two wavelengths off the carbon spar, and lets the camera tilt 22° forward without recutting the fuselage. A thermal mock-up with a dummy heat load settled the cooling question before committing.

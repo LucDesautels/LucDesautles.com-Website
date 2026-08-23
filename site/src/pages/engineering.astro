@@ -6,7 +6,7 @@ import EngPrograms from "@/components/EngPrograms.astro";
 import { SITE, ENG_PROJECTS, ENG_TAGS, ENG_LANDER } from "@/data/content";
 import { mdInline } from "@/lib/finalImages";
 ---
-<BaseLayout title="Engineering portfolio · Luc Desautels" description="The full engineering portfolio: ~20 sub-projects across Sailfish, FTC, and standalone work.">
+<BaseLayout title="Engineering portfolio · Luc Desautels" description="The full engineering portfolio: ~28 sub-projects across Sailfish, FTC, and standalone work.">
   <TopBar />
 
   <main class="ep" id="main">
@@ -47,9 +47,9 @@ import { mdInline } from "@/lib/finalImages";
         </div>
 
         <div class="ep__lander-figure" aria-hidden="true">
-          <div class="ep__chip ep__chip--1"><Image src={ENG_LANDER.sailfishImage} alt="Sailfish Gen.3" width={700} format="webp" quality={78} loading="eager" decoding="async" /></div>
-          <div class="ep__chip ep__chip--2"><Image src={ENG_LANDER.ftcArmImage} alt="FTC arm transfer" width={500} format="webp" quality={78} loading="lazy" decoding="async" /></div>
-          <div class="ep__chip ep__chip--3"><Image src={ENG_LANDER.thrustStandImage} alt="Thrust stand" width={500} format="webp" quality={78} loading="lazy" decoding="async" /></div>
+          {ENG_LANDER.sailfishImage && <div class="ep__chip ep__chip--1"><Image src={ENG_LANDER.sailfishImage} alt="Sailfish Gen.3" width={700} format="webp" quality={78} loading="eager" decoding="async" /></div>}
+          {ENG_LANDER.ftcArmImage && <div class="ep__chip ep__chip--2"><Image src={ENG_LANDER.ftcArmImage} alt="FTC arm transfer" width={500} format="webp" quality={78} loading="lazy" decoding="async" /></div>}
+          {ENG_LANDER.thrustStandImage && <div class="ep__chip ep__chip--3"><Image src={ENG_LANDER.thrustStandImage} alt="Thrust stand" width={500} format="webp" quality={78} loading="lazy" decoding="async" /></div>}
           <div class="ep__chip-text">
             <div class="eyebrow eyebrow--accent">// TELEMETRY</div>
             <div class="ep__chip-rows">

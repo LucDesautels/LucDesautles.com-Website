@@ -192,6 +192,14 @@ type RailVariant =
 export default function HorizontalTOC({ sections }: Props) {
   const outerRef = useRef<HTMLDivElement | null>(null);
   const stickyRef = useRef<HTMLDivElement | null>(null);
+  // Separate color layer, painted below the global WaveField canvas so the
+  // wave lines show over the section tint. It can't just be the sticky's
+  // own background: position:sticky always opens a new stacking context, so
+  // once that context is raised above the canvas (needed for the tiles/text
+  // to paint over the waves) its own background would rise with it and
+  // blot the waves out completely. A separate, unraised sibling behind the
+  // content keeps the tint below the canvas while the content stays above.
+  const bgRef = useRef<HTMLDivElement | null>(null);
   const stripRef = useRef<HTMLDivElement | null>(null);
   const railRef = useRef<HTMLDivElement | null>(null);
 
@@ -282,8 +290,10 @@ export default function HorizontalTOC({ sections }: Props) {
         stripRef.current.style.removeProperty("--enter");
       }
       setRailProgress(0);
+      if (bgRef.current) {
+        bgRef.current.style.backgroundColor = sections[0]?.tone ?? "";
+      }
       if (stickyRef.current) {
-        stickyRef.current.style.backgroundColor = sections[0]?.tone ?? "";
         stickyRef.current.classList.remove("htoc__sticky--dark");
       }
       publishWfState({
@@ -299,7 +309,8 @@ export default function HorizontalTOC({ sections }: Props) {
       const outer = outerRef.current;
       const strip = stripRef.current;
       const sticky = stickyRef.current;
-      if (!outer || !strip || !sticky) return;
+      const bg = bgRef.current;
+      if (!outer || !strip || !sticky || !bg) return;
 
       const vh = window.innerHeight;
       const vw = window.innerWidth;
@@ -385,7 +396,7 @@ export default function HorizontalTOC({ sections }: Props) {
       const c1 = sections[seg]?.tone ?? "#f1ede3";
       const c2 = sections[Math.min(seg + 1, sections.length - 1)]?.tone ?? c1;
       const lerped = lerpHex(c1, c2, t);
-      sticky.style.backgroundColor = lerped;
+      bg.style.backgroundColor = lerped;
 
       // Dark text mode follows the dominant section.
       const dominantDark = !!sections[best]?.dark;
@@ -486,7 +497,11 @@ export default function HorizontalTOC({ sections }: Props) {
       style={outerHeight ? { height: outerHeight } : undefined}
       aria-label="Field log — scroll to explore"
     >
-      <div ref={stickyRef} className="htoc__sticky" style={{ backgroundColor: sections[0]?.tone }}>
+      {/* Color layer only — kept out of the sticky content's stacking
+          context so it stays below the global WaveField canvas while the
+          content above renders above it. See bgRef comment. */}
+      <div ref={bgRef} className="htoc__bg" style={{ backgroundColor: sections[0]?.tone }} aria-hidden="true" />
+      <div ref={stickyRef} className="htoc__sticky">
         {/* (Wave background now comes from the global WaveField — no local canvas.) */}
 
         {/* Top-left small section label */}
@@ -646,16 +661,41 @@ export default function HorizontalTOC({ sections }: Props) {
       <style>{`
         .htoc {
           position: relative;
-          /* Outer container has no background — the sticky inside owns the
-             color and fades it as scroll progresses. */
+          /* Outer container has no background — the .htoc__bg layer inside
+             owns the color and fades it as scroll progresses. */
+        }
+        /* Section-tint color layer. Deliberately NOT part of .htoc__sticky's
+           stacking context: position:sticky always opens a new stacking
+           context, and once that context is raised above the global
+           WaveField canvas (z-index: 1, fixed) so the tiles/text/rail can
+           paint over the wave lines, anything painted inside it — including
+           its own background — would rise too and blot the waves out. This
+           sibling stays at the unraised z:auto level, below the canvas, so
+           the tint shows and the waves are visible drawn over it. */
+        .htoc__bg {
+          /* Out-of-flow and spanning the whole (possibly many-viewports-
+             tall) .htoc box — NOT position:sticky. Two in-flow sticky
+             siblings both pinning at top:0 would each claim their own
+             100vh slot in the flow, push each other apart, and desync the
+             scroll-jack math (which assumes the gallery starts exactly at
+             the section's own top). Since this is one giant absolutely
+             positioned rect covering the full section height, whatever
+             color is set is visible at every scroll position without
+             needing its own sticky behavior. */
+          position: absolute;
+          inset: 0;
+          transition: background-color .35s ease;
         }
         .htoc__sticky {
           display: flex;
           flex-direction: column;
-          /* Background color set inline by JS; CSS handles the fade smoothness
-             when transitions kick in (e.g. on first paint, reduced motion). */
-          transition: background-color .35s ease;
           color: var(--ink);
+          /* Raised above the WaveField canvas (z-index: 1) so the tiles,
+             labels, and rail paint on top of the wave lines. The tint
+             itself lives in the unraised .htoc__bg sibling instead — see
+             above — so the waves stay visible against it. */
+          position: relative;
+          z-index: 2;
         }
         .htoc__sticky--dark { color: var(--dark-ink); }
         .htoc__sticky--dark .htoc__corner-mark,

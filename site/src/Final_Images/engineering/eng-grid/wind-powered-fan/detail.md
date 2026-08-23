@@ -1,0 +1,1 @@
+A propeller captures rotational energy from the wind and transfers it with a timing belt to a second propeller that blows air into your face. Built as a spoof project at the University of Waterloo Catalyst summer program.

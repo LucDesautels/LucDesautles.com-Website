@@ -1,3 +1,1 @@
 Electrical
-Mechanical
-Aero

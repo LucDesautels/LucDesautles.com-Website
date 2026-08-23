@@ -1,1 +1,0 @@
-EL-wire light suit

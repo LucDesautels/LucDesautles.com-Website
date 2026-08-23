@@ -1,1 +1,1 @@
-Placeholder write-up — replace this in CONTENT.json. Describe the stack, what runs on it, how it's exposed, and what broke that taught you something. The one-sentence description above is what shows in the row; this longer paragraph is what people read in the lightbox.
+Everything runs behind a reverse proxy: Nextcloud, Syncthing, and an Obsidian vault, alongside private communications and a few hosted websites and utilities — home server infrastructure for photos, videos, and day-to-day tools.

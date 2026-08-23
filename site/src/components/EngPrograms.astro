@@ -48,18 +48,20 @@ const rowThumbs = (imgs: EngSlotImage[]) => imgs.slice(0, 2);
             </div>
           </div>
 
-          <figure class="egp-prog__figure">
-            <Image
-              src={prog.image}
-              alt={prog.imageLabel}
-              loading={pi === 0 ? "eager" : "lazy"}
-              decoding="async"
-              width={900}
-              format="webp"
-              quality={80}
-            />
-            {prog.caption && <figcaption class="egp-prog__cap">// {prog.caption}</figcaption>}
-          </figure>
+          {prog.image && (
+            <figure class="egp-prog__figure">
+              <Image
+                src={prog.image}
+                alt={prog.imageLabel}
+                loading={pi === 0 ? "eager" : "lazy"}
+                decoding="async"
+                width={900}
+                format="webp"
+                quality={80}
+              />
+              {prog.caption && <figcaption class="egp-prog__cap">// {prog.caption}</figcaption>}
+            </figure>
+          )}
         </div>
 
         <!-- Always-open technique rows ────────────────────────────────── -->

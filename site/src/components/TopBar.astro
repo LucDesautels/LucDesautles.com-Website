@@ -1,5 +1,5 @@
 ---
-import { SITE, DEDICATED_PAGES, RESUME_HREF } from "@/data/content";
+import { SITE, DEDICATED_PAGES } from "@/data/content";
 import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
 ---
 <header class="topbar">
@@ -21,18 +21,42 @@ import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
         <a class="topbar__link" href={p.href}>{p.label}</a>
       ))}
       <CopyEmailButton client:load email={SITE.contact.email} />
-      <a class="topbar__btn" href={RESUME_HREF}>Résumé</a>
-      <a
-        class="topbar__linkedin"
-        href={`https://${SITE.contact.linkedin}`}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="LinkedIn"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.65-1.85 3.39-1.85 3.62 0 4.29 2.38 4.29 5.48v6.26zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/>
-        </svg>
-      </a>
+      <a class="topbar__btn" href="/resume/">Résumé</a>
+      <div class="topbar__li-wrap" data-li-wrap>
+        <a
+          class="topbar__linkedin"
+          href={`https://${SITE.contact.linkedin}`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="LinkedIn"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.65-1.85 3.39-1.85 3.62 0 4.29 2.38 4.29 5.48v6.26zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/>
+          </svg>
+        </a>
+        <div class="topbar__li-popup" data-li-popup>
+          <div class="topbar__li-badge-wrap">
+            <div
+              class="badge-base LI-profile-badge"
+              data-locale="en_US"
+              data-size="medium"
+              data-theme="light"
+              data-type="HORIZONTAL"
+              data-vanity="luc-desautels"
+              data-version="v1"
+            >
+              <a class="badge-base__link LI-simple-link" href="https://ca.linkedin.com/in/luc-desautels?trk=profile-badge">Luc Desautels</a>
+            </div>
+            <button
+              type="button"
+              class="topbar__li-overlay"
+              data-li-overlay
+              aria-label="Open Luc Desautels' LinkedIn profile in a new tab"
+            ></button>
+          </div>
+          <script async defer src="https://platform.linkedin.com/badges/js/profile.js"></script>
+        </div>
+      </div>
     </nav>
   </div>
 </header>
@@ -85,6 +109,56 @@ import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
         ticking = true;
         requestAnimationFrame(update);
       }
+    }, { passive: true });
+  }
+
+  // ── LinkedIn badge hover popup ──
+  const liWrap = document.querySelector<HTMLElement>("[data-li-wrap]");
+  const liPopup = document.querySelector<HTMLElement>("[data-li-popup]");
+  const liOverlay = document.querySelector<HTMLButtonElement>("[data-li-overlay]");
+  // The embed is a cross-origin iframe LinkedIn controls, and its internal
+  // links (including "View profile") navigate the current tab rather than
+  // opening a new one. We can't reach into the iframe to fix that, so an
+  // invisible button sits on top and catches every click before it reaches
+  // the iframe, opening the profile in a new tab ourselves instead.
+  liOverlay?.addEventListener("click", () => {
+    window.open("https://ca.linkedin.com/in/luc-desautels?trk=profile-badge", "_blank", "noopener,noreferrer");
+  });
+  if (liWrap && liPopup) {
+    const VIEWPORT_MARGIN = 12;
+    const positionPopup = () => {
+      // Reset to the default (right-aligned) spot before measuring, then
+      // nudge left/right only as far as needed to stay on-screen.
+      liPopup.style.left = "auto";
+      liPopup.style.right = "0px";
+      const rect = liPopup.getBoundingClientRect();
+      let shift = 0;
+      if (rect.right > window.innerWidth - VIEWPORT_MARGIN) {
+        shift = window.innerWidth - VIEWPORT_MARGIN - rect.right;
+      } else if (rect.left < VIEWPORT_MARGIN) {
+        shift = VIEWPORT_MARGIN - rect.left;
+      }
+      if (shift !== 0) {
+        liPopup.style.right = `${0 - shift}px`;
+      }
+    };
+
+    const showPopup = () => {
+      liWrap.classList.add("topbar__li-wrap--open");
+      requestAnimationFrame(positionPopup);
+    };
+    const hidePopup = () => {
+      liWrap.classList.remove("topbar__li-wrap--open");
+    };
+
+    liWrap.addEventListener("mouseenter", showPopup);
+    liWrap.addEventListener("mouseleave", hidePopup);
+    liWrap.addEventListener("focusin", showPopup);
+    liWrap.addEventListener("focusout", (e) => {
+      if (!liWrap.contains((e as FocusEvent).relatedTarget as Node)) hidePopup();
+    });
+    window.addEventListener("resize", () => {
+      if (liWrap.classList.contains("topbar__li-wrap--open")) positionPopup();
     }, { passive: true });
   }
 </script>
@@ -164,6 +238,69 @@ import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
     background: #0a66c2;
     color: #fff;
     border-radius: 4px;
+  }
+  .topbar__li-wrap {
+    position: relative;
+    display: inline-flex;
+    align-self: center;
+  }
+  .topbar__li-popup {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 60;
+    /* Invisible bridge, not a visual gap: it keeps the popup touching the
+       icon's hit box so mousing down into it doesn't cross dead space and
+       trip mouseleave before the cursor arrives. */
+    padding-top: 10px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity .18s ease, transform .18s ease, visibility .18s;
+    pointer-events: none;
+  }
+  .topbar__li-wrap--open .topbar__li-popup {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .topbar__li-popup { transition: opacity .18s ease, visibility .18s; }
+  }
+  .topbar__li-badge-wrap {
+    position: relative;
+    line-height: 0;
+  }
+  /* The embed still ships a plain-text fallback link alongside the iframe;
+     once the iframe renders, the badge already shows the name, so drop the
+     duplicate line instead of showing both. */
+  .LI-profile-badge:has(iframe) > .LI-simple-link {
+    display: none;
+  }
+  /* While the real embed is loading (or if it's blocked, e.g. by an ad
+     blocker), give the plain-text fallback its own small card instead of
+     floating unstyled text with no container. */
+  .LI-simple-link {
+    display: inline-block;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .topbar__li-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
   }
 
   /* Hamburger — hidden on desktop, shown ≤880px (see media query). */

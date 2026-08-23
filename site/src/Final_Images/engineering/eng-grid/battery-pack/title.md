@@ -1,1 +1,1 @@
-Spot-welded 6S Li-ion pack
+Custom Battery Pack Fabrication

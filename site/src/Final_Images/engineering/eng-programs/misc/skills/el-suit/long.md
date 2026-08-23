@@ -1,1 +1,0 @@
-EL wire is easy to light and hard to keep lit on a moving body. The build is mostly about the connections: every splice strain-relieved, the inverters carried where they don't dig in, and the sequencing driven so a single failure doesn't take the whole suit dark.

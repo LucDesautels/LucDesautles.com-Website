@@ -4,12 +4,14 @@ import type { ImageMetadata } from "astro";
 
 // Every image slot on the site lives under src/Final_Images/, addressed by a
 // "slot path" — a repo-relative path with no extension, e.g.
-// "engineering/eng-grid/cnc-chassis/hero". A slot always has a real file:
-// either a real photo, or a generated placeholder PNG with the same slot
-// path baked into it as text (see scripts/lib/placeholder.mjs +
-// scripts/generate-placeholders.mjs). Because of that guarantee, callers
-// never need to branch on "missing image" — resolveImage() always returns
-// something Astro can render.
+// "engineering/eng-grid/cnc-chassis/hero". A slot is meant to have a real
+// file (a real photo, or a generated placeholder PNG with the same slot path
+// baked into it as text — see scripts/lib/placeholder.mjs +
+// scripts/generate-placeholders.mjs), but content is being actively
+// reorganized, so slots go missing transiently. resolveImage() reflects
+// that: it never throws, it warns and returns undefined, and every caller in
+// content.ts drops the item/slide/extra that image belonged to rather than
+// rendering a broken image.
 //
 // Text works the same way: every editable copy field is its own
 // `<slotPath>.md` file sitting next to the images for that item. One field,
@@ -31,19 +33,35 @@ const IMAGE_GLOB = import.meta.glob<{ default: ImageMetadata }>(
 );
 
 const IMAGE_MAP: Record<string, ImageMetadata> = {};
+// Folder (lowercased slot dir) -> file basenames (lowercased, no ext) present in it,
+// in glob-discovery order. Lets resolveHoverImage() find "whichever file isn't hero"
+// for folders that hold exactly a hero + one other image (e.g. box hover states).
+const FOLDER_FILES: Record<string, string[]> = {};
 for (const [specifier, mod] of Object.entries(IMAGE_GLOB)) {
   // specifier looks like "../Final_Images/engineering/eng-grid/cnc-chassis/hero.jpg"
   const rel = specifier.replace(/^\.\.\/Final_Images\//, "").replace(/\.[a-zA-Z0-9]+$/, "");
-  IMAGE_MAP[rel.toLowerCase()] = mod.default;
+  const relLower = rel.toLowerCase();
+  IMAGE_MAP[relLower] = mod.default;
+
+  const slash = relLower.lastIndexOf("/");
+  const dir = slash === -1 ? "" : relLower.slice(0, slash);
+  const base = slash === -1 ? relLower : relLower.slice(slash + 1);
+  (FOLDER_FILES[dir] ??= []).push(base);
 }
 
-/** Resolve a slot path (no extension) to build-time image metadata for <Image>/<Picture>. */
-export function resolveImage(slotPath: string): ImageMetadata {
+/**
+ * Resolve a slot path (no extension) to build-time image metadata for
+ * <Image>/<Picture>. Returns undefined (after a console warning) instead of
+ * throwing when the slot has no file — callers drop whatever that image
+ * belonged to instead of rendering a broken image.
+ */
+export function resolveImage(slotPath: string): ImageMetadata | undefined {
   const meta = IMAGE_MAP[slotPath.toLowerCase()];
   if (!meta) {
-    throw new Error(
-      `[finalImages] Missing image slot "${slotPath}" — expected a file under src/Final_Images/${slotPath}.*. Run "npm run generate:placeholders".`,
+    console.warn(
+      `[finalImages] Missing image slot "${slotPath}" — expected a file under src/Final_Images/${slotPath}.*. Skipping whatever uses it. Run "npm run generate:placeholders" to fill it in.`,
     );
+    return undefined;
   }
   return meta;
 }
@@ -51,6 +69,23 @@ export function resolveImage(slotPath: string): ImageMetadata {
 /** True if a slot path resolves to a real file — lets callers make an optional image truly optional. */
 export function hasImage(slotPath: string): boolean {
   return slotPath.toLowerCase() in IMAGE_MAP;
+}
+
+/**
+ * Given a "<folder>/hero" slot path, resolve the hover-state image: whichever
+ * other file sits in that same folder (any name). Returns undefined if the
+ * folder has no second image, so callers can fall back to the hero-only look.
+ */
+export function resolveHoverImage(heroSlotPath: string): ImageMetadata | undefined {
+  const lower = heroSlotPath.toLowerCase();
+  const slash = lower.lastIndexOf("/");
+  const dir = slash === -1 ? "" : lower.slice(0, slash);
+  const heroBase = slash === -1 ? lower : lower.slice(slash + 1);
+  const siblings = FOLDER_FILES[dir];
+  if (!siblings) return undefined;
+  const otherBase = siblings.find((f) => f !== heroBase);
+  if (!otherBase) return undefined;
+  return IMAGE_MAP[`${dir}/${otherBase}`];
 }
 
 const textCache = new Map<string, string>();

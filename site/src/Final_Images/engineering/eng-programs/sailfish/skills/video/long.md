@@ -1,1 +1,0 @@
-Open water is a mirror at 5.8 GHz: the surface bounce arrives out of phase with the direct path and the picture drops out at ranges that work fine over land. I measured it properly — range sweeps at several altitudes, antenna polarisations compared — and the result changed where the antenna sits on the airframe and how high we fly the search pattern.

@@ -19,8 +19,8 @@ function cap(img: ImageMetadata) {
   const k = Math.min(1, LONG_EDGE / long);
   return { width: Math.round(img.width * k), height: Math.round(img.height * k) };
 }
-const leftDims = cap(leftImg);
-const rightDims = cap(rightImg);
+const leftDims = leftImg ? cap(leftImg) : null;
+const rightDims = rightImg ? cap(rightImg) : null;
 
 // The second sentence (if any) renders as the italic accent line — matches
 // the site's existing two-line blurb treatment either side of the wordmark.
@@ -42,20 +42,22 @@ const [ftcLine1, ftcLine2] = splitBlurb(ROBOTICS_INTRO.ftcBlurb);
 
   <!-- Left robotics image — swoops in from off-screen left as the section
        scrolls in; the resting transform is owned by the wf-tuner "images" tab. -->
-  <div class="ric__cad-wrap ric__cad-wrap--left" data-cad-wrap="left" aria-hidden="true">
-    <Image
-      class="ric__cad ric__cad--left"
-      src={leftImg}
-      alt=""
-      width={leftDims.width}
-      height={leftDims.height}
-      format="webp"
-      quality={78}
-      loading="lazy"
-      decoding="async"
-      draggable={false}
-    />
-  </div>
+  {leftImg && leftDims && (
+    <div class="ric__cad-wrap ric__cad-wrap--left" data-cad-wrap="left" aria-hidden="true">
+      <Image
+        class="ric__cad ric__cad--left"
+        src={leftImg}
+        alt=""
+        width={leftDims.width}
+        height={leftDims.height}
+        format="webp"
+        quality={78}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+      />
+    </div>
+  )}
   <!-- Outer element carries the scroll reveal (slide / cursive slide-out);
        inner [data-hand-label] keeps the wf-tuner translate+rotate. The Caveat
        label shows in slide/highlight/none; the Vara target renders genuine
@@ -72,20 +74,22 @@ const [ftcLine1, ftcLine2] = splitBlurb(ROBOTICS_INTRO.ftcBlurb);
 
   <!-- Right robotics image — swoops in from off-screen right; resting
        transform is owned by the wf-tuner "images" tab. -->
-  <div class="ric__cad-wrap ric__cad-wrap--right" data-cad-wrap="right" aria-hidden="true">
-    <Image
-      class="ric__cad ric__cad--right"
-      src={rightImg}
-      alt=""
-      width={rightDims.width}
-      height={rightDims.height}
-      format="webp"
-      quality={78}
-      loading="lazy"
-      decoding="async"
-      draggable={false}
-    />
-  </div>
+  {rightImg && rightDims && (
+    <div class="ric__cad-wrap ric__cad-wrap--right" data-cad-wrap="right" aria-hidden="true">
+      <Image
+        class="ric__cad ric__cad--right"
+        src={rightImg}
+        alt=""
+        width={rightDims.width}
+        height={rightDims.height}
+        format="webp"
+        quality={78}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+      />
+    </div>
+  )}
   <div class="ric__hand ric__hand--right" data-hand-anim="right">
     <div class="ric__hand-tf" data-hand-label="right">
       <div class="ric__hand-caveat">

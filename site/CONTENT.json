@@ -20,7 +20,7 @@
     "contact": {
       "email": "L@desautels.net",
       "github": "github.com/lucdesautels",
-      "linkedin": "linkedin.com/in/lucdesautels"
+      "linkedin": "linkedin.com/in/luc-desautels"
     }
   },
   "resumeHref": "mailto:L@desautels.net?subject=Resume%20request&body=Hi%20Luc%20%E2%80%94%20could%20you%20send%20me%20your%20latest%20resume%3F%20Thanks%21",
@@ -41,11 +41,11 @@
           "image": "home/robotics-compare/sailfish/1-quick-info/hero",
           "extras": [
             {
-              "label": "TAIL VIEW",
+              "label": "NOSE & GIMBAL — FRONT VIEW",
               "image": "home/robotics-compare/sailfish/1-quick-info/extra-1"
             },
             {
-              "label": "AVIONICS BAY",
+              "label": "EARLY PROTOTYPE — BENCH RIG",
               "image": "home/robotics-compare/sailfish/1-quick-info/extra-2"
             }
           ]
@@ -58,7 +58,20 @@
           "caption": "home/robotics-compare/sailfish/2-proof-point/caption",
           "imageLabel": "AFF LETTER — SCAN",
           "image": "home/robotics-compare/sailfish/2-proof-point/hero",
-          "extras": []
+          "extras": [
+            {
+              "label": "GULF ISLANDS MARINE RESCUE — VISIT",
+              "image": "home/robotics-compare/sailfish/2-proof-point/extra-1"
+            },
+            {
+              "label": "GEN.3 — FIELD READY",
+              "image": "home/robotics-compare/sailfish/2-proof-point/extra-2"
+            },
+            {
+              "label": "FIELD DOCUMENTATION",
+              "image": "home/robotics-compare/sailfish/2-proof-point/extra-3"
+            }
+          ]
         },
         {
           "eyebrow": "Technical",
@@ -70,15 +83,15 @@
           "image": "home/robotics-compare/sailfish/3-technical/hero",
           "extras": [
             {
-              "label": "VTX STACK",
+              "label": "GEN.3 — FIELD SETUP",
               "image": "home/robotics-compare/sailfish/3-technical/extra-1"
             },
             {
-              "label": "WING CARRY-THROUGH",
+              "label": "ELECTRONICS ASSEMBLY — DECK BENCH",
               "image": "home/robotics-compare/sailfish/3-technical/extra-2"
             },
             {
-              "label": "FOAM-CORE FLOAT",
+              "label": "3D PRINTING — GEN.3 PARTS",
               "image": "home/robotics-compare/sailfish/3-technical/extra-3"
             }
           ]
@@ -91,7 +104,20 @@
           "caption": "home/robotics-compare/sailfish/4-leadership/caption",
           "imageLabel": "TEAM PHOTO — STANDUP",
           "image": "home/robotics-compare/sailfish/4-leadership/hero",
-          "extras": []
+          "extras": [
+            {
+              "label": "EARLY BUILD — FIBERGLASSING WITH MENTOR",
+              "image": "home/robotics-compare/sailfish/4-leadership/extra-1"
+            },
+            {
+              "label": "TEAM ASSEMBLY — PROP INSTALL",
+              "image": "home/robotics-compare/sailfish/4-leadership/extra-2"
+            },
+            {
+              "label": "FIELD TEST — SUNSET FLIGHT PREP",
+              "image": "home/robotics-compare/sailfish/4-leadership/extra-3"
+            }
+          ]
         },
         {
           "eyebrow": "Volunteering",
@@ -138,7 +164,16 @@
           "caption": "home/robotics-compare/ftc/2-proof-point/caption",
           "imageLabel": "INSPIRE AWARD — STAGE",
           "image": "home/robotics-compare/ftc/2-proof-point/hero",
-          "extras": []
+          "extras": [
+            {
+              "label": "ONTARIO CHAMPIONSHIP — CONFETTI",
+              "image": "home/robotics-compare/ftc/2-proof-point/extra-1"
+            },
+            {
+              "label": "CENTER STAGE — TEAM WALKOUT",
+              "image": "home/robotics-compare/ftc/2-proof-point/extra-2"
+            }
+          ]
         },
         {
           "eyebrow": "Technical",
@@ -156,6 +191,14 @@
             {
               "label": "ARM TRANSFER",
               "image": "home/robotics-compare/ftc/3-technical/extra-2"
+            },
+            {
+              "label": "DRIVE HUB — CAD DRAWING",
+              "image": "home/robotics-compare/ftc/3-technical/extra-3"
+            },
+            {
+              "label": "CHASSIS — COMPETITION PIT",
+              "image": "home/robotics-compare/ftc/3-technical/extra-4"
             }
           ]
         },
@@ -425,20 +468,20 @@
   ],
   "dedicatedPages": [
     {
+      "label": "Engineering Portfolio",
+      "href": "/engineering"
+    },
+    {
       "label": "Impactful Robotics",
-      "href": "/#sailfish"
+      "href": "/impactful-robotics/"
     },
     {
       "label": "Competitive Robotics",
-      "href": "/#ftc"
+      "href": "/competitive-robotics/"
     },
     {
       "label": "Drone Videography",
       "href": "/drone-videography"
-    },
-    {
-      "label": "More Interests",
-      "href": "/#more"
     }
   ],
   "toc": [
@@ -618,125 +661,339 @@
   ],
   "engineering": [
     {
-      "id": "vtx-stack",
+      "id": "airframe-cad-assembly",
+      "title": "engineering/eng-grid/airframe-cad-assembly/title",
+      "blurb": "engineering/eng-grid/airframe-cad-assembly/blurb",
+      "detail": "engineering/eng-grid/airframe-cad-assembly/detail",
+      "tags": "engineering/eng-grid/airframe-cad-assembly/tags",
       "parent": "Sailfish",
-      "year": "2024",
+      "images": [
+        {
+          "src": "engineering/eng-grid/airframe-cad-assembly/1",
+          "caption": "engineering/eng-grid/airframe-cad-assembly/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/airframe-cad-assembly/requirements",
+      "contribution": "engineering/eng-grid/airframe-cad-assembly/contribution",
+      "result": "engineering/eng-grid/airframe-cad-assembly/result",
+      "homeFeatured": true,
+      "homeFeaturedOrder": 1
+    },
+    {
+      "id": "aero-cfd-analysis",
+      "title": "engineering/eng-grid/aero-cfd-analysis/title",
+      "blurb": "engineering/eng-grid/aero-cfd-analysis/blurb",
+      "detail": "engineering/eng-grid/aero-cfd-analysis/detail",
+      "tags": "engineering/eng-grid/aero-cfd-analysis/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/aero-cfd-analysis/1",
+          "caption": "engineering/eng-grid/aero-cfd-analysis/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/aero-cfd-analysis/requirements",
+      "contribution": "engineering/eng-grid/aero-cfd-analysis/contribution",
+      "result": "engineering/eng-grid/aero-cfd-analysis/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "exotic-3d-printing",
+      "title": "engineering/eng-grid/exotic-3d-printing/title",
+      "blurb": "engineering/eng-grid/exotic-3d-printing/blurb",
+      "detail": "engineering/eng-grid/exotic-3d-printing/detail",
+      "tags": "engineering/eng-grid/exotic-3d-printing/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/exotic-3d-printing/1",
+          "caption": "engineering/eng-grid/exotic-3d-printing/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/exotic-3d-printing/requirements",
+      "contribution": "engineering/eng-grid/exotic-3d-printing/contribution",
+      "result": "engineering/eng-grid/exotic-3d-printing/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "composite-layup",
+      "title": "engineering/eng-grid/composite-layup/title",
+      "blurb": "engineering/eng-grid/composite-layup/blurb",
+      "detail": "engineering/eng-grid/composite-layup/detail",
+      "tags": "engineering/eng-grid/composite-layup/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/composite-layup/1",
+          "caption": "engineering/eng-grid/composite-layup/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/composite-layup/requirements",
+      "contribution": "engineering/eng-grid/composite-layup/contribution",
+      "result": "engineering/eng-grid/composite-layup/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "waterproofing",
+      "title": "engineering/eng-grid/waterproofing/title",
+      "blurb": "engineering/eng-grid/waterproofing/blurb",
+      "detail": "engineering/eng-grid/waterproofing/detail",
+      "tags": "engineering/eng-grid/waterproofing/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/waterproofing/1",
+          "caption": "engineering/eng-grid/waterproofing/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/waterproofing/requirements",
+      "contribution": "engineering/eng-grid/waterproofing/contribution",
+      "result": "engineering/eng-grid/waterproofing/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "propulsion-testing",
+      "title": "engineering/eng-grid/propulsion-testing/title",
+      "blurb": "engineering/eng-grid/propulsion-testing/blurb",
+      "detail": "engineering/eng-grid/propulsion-testing/detail",
+      "tags": "engineering/eng-grid/propulsion-testing/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/propulsion-testing/1",
+          "caption": "engineering/eng-grid/propulsion-testing/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/propulsion-testing/requirements",
+      "contribution": "engineering/eng-grid/propulsion-testing/contribution",
+      "result": "engineering/eng-grid/propulsion-testing/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "power-distribution",
+      "title": "engineering/eng-grid/power-distribution/title",
+      "blurb": "engineering/eng-grid/power-distribution/blurb",
+      "detail": "engineering/eng-grid/power-distribution/detail",
+      "tags": "engineering/eng-grid/power-distribution/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/power-distribution/1",
+          "caption": "engineering/eng-grid/power-distribution/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/power-distribution/requirements",
+      "contribution": "engineering/eng-grid/power-distribution/contribution",
+      "result": "engineering/eng-grid/power-distribution/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "battery-pack",
+      "title": "engineering/eng-grid/battery-pack/title",
+      "blurb": "engineering/eng-grid/battery-pack/blurb",
+      "detail": "engineering/eng-grid/battery-pack/detail",
+      "tags": "engineering/eng-grid/battery-pack/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/battery-pack/1",
+          "caption": "engineering/eng-grid/battery-pack/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/battery-pack/requirements",
+      "contribution": "engineering/eng-grid/battery-pack/contribution",
+      "result": "engineering/eng-grid/battery-pack/result",
+      "homeFeatured": true,
+      "homeFeaturedOrder": 2
+    },
+    {
+      "id": "gimbaled-sensor-array",
+      "title": "engineering/eng-grid/gimbaled-sensor-array/title",
+      "blurb": "engineering/eng-grid/gimbaled-sensor-array/blurb",
+      "detail": "engineering/eng-grid/gimbaled-sensor-array/detail",
+      "tags": "engineering/eng-grid/gimbaled-sensor-array/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/gimbaled-sensor-array/1",
+          "caption": "engineering/eng-grid/gimbaled-sensor-array/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/gimbaled-sensor-array/requirements",
+      "contribution": "engineering/eng-grid/gimbaled-sensor-array/contribution",
+      "result": "engineering/eng-grid/gimbaled-sensor-array/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "vtx-stack",
       "title": "engineering/eng-grid/vtx-stack/title",
       "blurb": "engineering/eng-grid/vtx-stack/blurb",
       "detail": "engineering/eng-grid/vtx-stack/detail",
       "tags": "engineering/eng-grid/vtx-stack/tags",
+      "parent": "Sailfish",
       "images": [
         {
           "src": "engineering/eng-grid/vtx-stack/1",
           "caption": "engineering/eng-grid/vtx-stack/1"
-        },
-        {
-          "src": "engineering/eng-grid/vtx-stack/2",
-          "caption": "engineering/eng-grid/vtx-stack/2"
-        },
-        {
-          "src": "engineering/eng-grid/vtx-stack/3",
-          "caption": "engineering/eng-grid/vtx-stack/3"
         }
       ],
       "requirements": "engineering/eng-grid/vtx-stack/requirements",
       "contribution": "engineering/eng-grid/vtx-stack/contribution",
       "result": "engineering/eng-grid/vtx-stack/result",
       "homeFeatured": true,
-      "homeFeaturedOrder": 1
-    },
-    {
-      "id": "tilt-rotor",
-      "parent": "Sailfish",
-      "year": "2024",
-      "title": "engineering/eng-grid/tilt-rotor/title",
-      "blurb": "engineering/eng-grid/tilt-rotor/blurb",
-      "detail": "engineering/eng-grid/tilt-rotor/detail",
-      "tags": "engineering/eng-grid/tilt-rotor/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/tilt-rotor/1",
-          "caption": "engineering/eng-grid/tilt-rotor/1"
-        },
-        {
-          "src": "engineering/eng-grid/tilt-rotor/2",
-          "caption": "engineering/eng-grid/tilt-rotor/2"
-        }
-      ],
-      "requirements": "engineering/eng-grid/tilt-rotor/requirements",
-      "contribution": "engineering/eng-grid/tilt-rotor/contribution",
-      "result": "engineering/eng-grid/tilt-rotor/result",
-      "homeFeatured": true,
-      "homeFeaturedOrder": 2
-    },
-    {
-      "id": "carry-through",
-      "parent": "Sailfish",
-      "year": "2024",
-      "title": "engineering/eng-grid/carry-through/title",
-      "blurb": "engineering/eng-grid/carry-through/blurb",
-      "detail": "engineering/eng-grid/carry-through/detail",
-      "tags": "engineering/eng-grid/carry-through/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/carry-through/1",
-          "caption": "engineering/eng-grid/carry-through/1"
-        },
-        {
-          "src": "engineering/eng-grid/carry-through/2",
-          "caption": "engineering/eng-grid/carry-through/2"
-        }
-      ],
-      "requirements": "engineering/eng-grid/carry-through/requirements",
-      "contribution": "engineering/eng-grid/carry-through/contribution",
-      "result": "engineering/eng-grid/carry-through/result",
-      "homeFeatured": true,
       "homeFeaturedOrder": 3
     },
     {
-      "id": "cnc-chassis",
-      "parent": "FTC",
-      "year": "2024",
-      "title": "engineering/eng-grid/cnc-chassis/title",
-      "blurb": "engineering/eng-grid/cnc-chassis/blurb",
-      "detail": "engineering/eng-grid/cnc-chassis/detail",
-      "tags": "engineering/eng-grid/cnc-chassis/tags",
+      "id": "video-tx",
+      "title": "engineering/eng-grid/video-tx/title",
+      "blurb": "engineering/eng-grid/video-tx/blurb",
+      "detail": "engineering/eng-grid/video-tx/detail",
+      "tags": "engineering/eng-grid/video-tx/tags",
+      "parent": "Sailfish",
       "images": [
         {
-          "src": "engineering/eng-grid/cnc-chassis/1",
-          "caption": "engineering/eng-grid/cnc-chassis/1"
-        },
-        {
-          "src": "engineering/eng-grid/cnc-chassis/2",
-          "caption": "engineering/eng-grid/cnc-chassis/2"
-        },
-        {
-          "src": "engineering/eng-grid/cnc-chassis/3",
-          "caption": "engineering/eng-grid/cnc-chassis/3"
+          "src": "engineering/eng-grid/video-tx/1",
+          "caption": "engineering/eng-grid/video-tx/1"
         }
       ],
-      "requirements": "engineering/eng-grid/cnc-chassis/requirements",
-      "contribution": "engineering/eng-grid/cnc-chassis/contribution",
-      "result": "engineering/eng-grid/cnc-chassis/result",
+      "requirements": "engineering/eng-grid/video-tx/requirements",
+      "contribution": "engineering/eng-grid/video-tx/contribution",
+      "result": "engineering/eng-grid/video-tx/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "autonomy-electronics",
+      "title": "engineering/eng-grid/autonomy-electronics/title",
+      "blurb": "engineering/eng-grid/autonomy-electronics/blurb",
+      "detail": "engineering/eng-grid/autonomy-electronics/detail",
+      "tags": "engineering/eng-grid/autonomy-electronics/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/autonomy-electronics/1",
+          "caption": "engineering/eng-grid/autonomy-electronics/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/autonomy-electronics/requirements",
+      "contribution": "engineering/eng-grid/autonomy-electronics/contribution",
+      "result": "engineering/eng-grid/autonomy-electronics/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "autonomy-software",
+      "title": "engineering/eng-grid/autonomy-software/title",
+      "blurb": "engineering/eng-grid/autonomy-software/blurb",
+      "detail": "engineering/eng-grid/autonomy-software/detail",
+      "tags": "engineering/eng-grid/autonomy-software/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/autonomy-software/1",
+          "caption": "engineering/eng-grid/autonomy-software/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/autonomy-software/requirements",
+      "contribution": "engineering/eng-grid/autonomy-software/contribution",
+      "result": "engineering/eng-grid/autonomy-software/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "esc-notch-filtering",
+      "title": "engineering/eng-grid/esc-notch-filtering/title",
+      "blurb": "engineering/eng-grid/esc-notch-filtering/blurb",
+      "detail": "engineering/eng-grid/esc-notch-filtering/detail",
+      "tags": "engineering/eng-grid/esc-notch-filtering/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/esc-notch-filtering/1",
+          "caption": "engineering/eng-grid/esc-notch-filtering/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/esc-notch-filtering/requirements",
+      "contribution": "engineering/eng-grid/esc-notch-filtering/contribution",
+      "result": "engineering/eng-grid/esc-notch-filtering/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "search-pattern",
+      "title": "engineering/eng-grid/search-pattern/title",
+      "blurb": "engineering/eng-grid/search-pattern/blurb",
+      "detail": "engineering/eng-grid/search-pattern/detail",
+      "tags": "engineering/eng-grid/search-pattern/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/search-pattern/1",
+          "caption": "engineering/eng-grid/search-pattern/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/search-pattern/requirements",
+      "contribution": "engineering/eng-grid/search-pattern/contribution",
+      "result": "engineering/eng-grid/search-pattern/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "antenna-tracker",
+      "title": "engineering/eng-grid/antenna-tracker/title",
+      "blurb": "engineering/eng-grid/antenna-tracker/blurb",
+      "detail": "engineering/eng-grid/antenna-tracker/detail",
+      "tags": "engineering/eng-grid/antenna-tracker/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/antenna-tracker/1",
+          "caption": "engineering/eng-grid/antenna-tracker/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/antenna-tracker/requirements",
+      "contribution": "engineering/eng-grid/antenna-tracker/contribution",
+      "result": "engineering/eng-grid/antenna-tracker/result",
       "homeFeatured": true,
       "homeFeaturedOrder": 4
     },
     {
+      "id": "groundstation",
+      "title": "engineering/eng-grid/groundstation/title",
+      "blurb": "engineering/eng-grid/groundstation/blurb",
+      "detail": "engineering/eng-grid/groundstation/detail",
+      "tags": "engineering/eng-grid/groundstation/tags",
+      "parent": "Sailfish",
+      "images": [
+        {
+          "src": "engineering/eng-grid/groundstation/1",
+          "caption": "engineering/eng-grid/groundstation/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/groundstation/requirements",
+      "contribution": "engineering/eng-grid/groundstation/contribution",
+      "result": "engineering/eng-grid/groundstation/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
       "id": "arm-transfer",
-      "parent": "FTC",
-      "year": "2024",
       "title": "engineering/eng-grid/arm-transfer/title",
       "blurb": "engineering/eng-grid/arm-transfer/blurb",
       "detail": "engineering/eng-grid/arm-transfer/detail",
       "tags": "engineering/eng-grid/arm-transfer/tags",
+      "parent": "FTC",
       "images": [
         {
           "src": "engineering/eng-grid/arm-transfer/1",
           "caption": "engineering/eng-grid/arm-transfer/1"
-        },
-        {
-          "src": "engineering/eng-grid/arm-transfer/2",
-          "caption": "engineering/eng-grid/arm-transfer/2"
         }
       ],
       "requirements": "engineering/eng-grid/arm-transfer/requirements",
@@ -746,378 +1003,192 @@
       "homeFeaturedOrder": 5
     },
     {
-      "id": "auto-pathing",
+      "id": "cnc-chassis",
+      "title": "engineering/eng-grid/cnc-chassis/title",
+      "blurb": "engineering/eng-grid/cnc-chassis/blurb",
+      "detail": "engineering/eng-grid/cnc-chassis/detail",
+      "tags": "engineering/eng-grid/cnc-chassis/tags",
       "parent": "FTC",
-      "year": "2024",
-      "title": "engineering/eng-grid/auto-pathing/title",
-      "blurb": "engineering/eng-grid/auto-pathing/blurb",
-      "detail": "engineering/eng-grid/auto-pathing/detail",
-      "tags": "engineering/eng-grid/auto-pathing/tags",
       "images": [
         {
-          "src": "engineering/eng-grid/auto-pathing/1",
-          "caption": "engineering/eng-grid/auto-pathing/1"
-        },
-        {
-          "src": "engineering/eng-grid/auto-pathing/2",
-          "caption": "engineering/eng-grid/auto-pathing/2"
+          "src": "engineering/eng-grid/cnc-chassis/1",
+          "caption": "engineering/eng-grid/cnc-chassis/1"
         }
       ],
-      "requirements": "engineering/eng-grid/auto-pathing/requirements",
-      "contribution": "engineering/eng-grid/auto-pathing/contribution",
-      "result": "engineering/eng-grid/auto-pathing/result",
+      "requirements": "engineering/eng-grid/cnc-chassis/requirements",
+      "contribution": "engineering/eng-grid/cnc-chassis/contribution",
+      "result": "engineering/eng-grid/cnc-chassis/result",
       "homeFeatured": true,
       "homeFeaturedOrder": 6
     },
     {
-      "id": "foam-flotation",
-      "parent": "Sailfish",
-      "year": "2023",
-      "title": "engineering/eng-grid/foam-flotation/title",
-      "blurb": "engineering/eng-grid/foam-flotation/blurb",
-      "detail": "engineering/eng-grid/foam-flotation/detail",
-      "tags": "engineering/eng-grid/foam-flotation/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/foam-flotation/1",
-          "caption": "engineering/eng-grid/foam-flotation/1"
-        },
-        {
-          "src": "engineering/eng-grid/foam-flotation/2",
-          "caption": "engineering/eng-grid/foam-flotation/2"
-        },
-        {
-          "src": "engineering/eng-grid/foam-flotation/3",
-          "caption": "engineering/eng-grid/foam-flotation/3"
-        }
-      ],
-      "requirements": "engineering/eng-grid/foam-flotation/requirements",
-      "contribution": "engineering/eng-grid/foam-flotation/contribution",
-      "result": "engineering/eng-grid/foam-flotation/result",
-      "homeFeatured": true,
-      "homeFeaturedOrder": 7
-    },
-    {
-      "id": "groundstation",
-      "parent": "Sailfish",
-      "year": "2024",
-      "title": "engineering/eng-grid/groundstation/title",
-      "blurb": "engineering/eng-grid/groundstation/blurb",
-      "detail": "engineering/eng-grid/groundstation/detail",
-      "tags": "engineering/eng-grid/groundstation/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/groundstation/1",
-          "caption": "engineering/eng-grid/groundstation/1"
-        },
-        {
-          "src": "engineering/eng-grid/groundstation/2",
-          "caption": "engineering/eng-grid/groundstation/2"
-        }
-      ],
-      "requirements": "engineering/eng-grid/groundstation/requirements",
-      "contribution": "engineering/eng-grid/groundstation/contribution",
-      "result": "engineering/eng-grid/groundstation/result",
-      "homeFeatured": true,
-      "homeFeaturedOrder": 8
-    },
-    {
-      "id": "vid-58ghz",
-      "parent": "Sailfish",
-      "year": "2024",
-      "title": "engineering/eng-grid/vid-58ghz/title",
-      "blurb": "engineering/eng-grid/vid-58ghz/blurb",
-      "detail": "engineering/eng-grid/vid-58ghz/detail",
-      "tags": "engineering/eng-grid/vid-58ghz/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/vid-58ghz/1",
-          "caption": "engineering/eng-grid/vid-58ghz/1"
-        },
-        {
-          "src": "engineering/eng-grid/vid-58ghz/2",
-          "caption": "engineering/eng-grid/vid-58ghz/2"
-        }
-      ],
-      "requirements": "engineering/eng-grid/vid-58ghz/requirements",
-      "contribution": "engineering/eng-grid/vid-58ghz/contribution",
-      "result": "engineering/eng-grid/vid-58ghz/result",
-      "homeFeatured": false,
-      "homeFeaturedOrder": null
-    },
-    {
-      "id": "sar-spiral",
-      "parent": "Sailfish",
-      "year": "2024",
-      "title": "engineering/eng-grid/sar-spiral/title",
-      "blurb": "engineering/eng-grid/sar-spiral/blurb",
-      "detail": "engineering/eng-grid/sar-spiral/detail",
-      "tags": "engineering/eng-grid/sar-spiral/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/sar-spiral/1",
-          "caption": "engineering/eng-grid/sar-spiral/1"
-        },
-        {
-          "src": "engineering/eng-grid/sar-spiral/2",
-          "caption": "engineering/eng-grid/sar-spiral/2"
-        }
-      ],
-      "requirements": "engineering/eng-grid/sar-spiral/requirements",
-      "contribution": "engineering/eng-grid/sar-spiral/contribution",
-      "result": "engineering/eng-grid/sar-spiral/result",
-      "homeFeatured": false,
-      "homeFeaturedOrder": null
-    },
-    {
-      "id": "thrust-stand",
-      "parent": "Sailfish",
-      "year": "2023",
-      "title": "engineering/eng-grid/thrust-stand/title",
-      "blurb": "engineering/eng-grid/thrust-stand/blurb",
-      "detail": "engineering/eng-grid/thrust-stand/detail",
-      "tags": "engineering/eng-grid/thrust-stand/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/thrust-stand/1",
-          "caption": "engineering/eng-grid/thrust-stand/1"
-        },
-        {
-          "src": "engineering/eng-grid/thrust-stand/2",
-          "caption": "engineering/eng-grid/thrust-stand/2"
-        },
-        {
-          "src": "engineering/eng-grid/thrust-stand/3",
-          "caption": "engineering/eng-grid/thrust-stand/3"
-        }
-      ],
-      "requirements": "engineering/eng-grid/thrust-stand/requirements",
-      "contribution": "engineering/eng-grid/thrust-stand/contribution",
-      "result": "engineering/eng-grid/thrust-stand/result",
-      "homeFeatured": false,
-      "homeFeaturedOrder": null
-    },
-    {
-      "id": "battery-pack",
-      "parent": "Sailfish",
-      "year": "2024",
-      "title": "engineering/eng-grid/battery-pack/title",
-      "blurb": "engineering/eng-grid/battery-pack/blurb",
-      "detail": "engineering/eng-grid/battery-pack/detail",
-      "tags": "engineering/eng-grid/battery-pack/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/battery-pack/1",
-          "caption": "engineering/eng-grid/battery-pack/1"
-        },
-        {
-          "src": "engineering/eng-grid/battery-pack/2",
-          "caption": "engineering/eng-grid/battery-pack/2"
-        }
-      ],
-      "requirements": "engineering/eng-grid/battery-pack/requirements",
-      "contribution": "engineering/eng-grid/battery-pack/contribution",
-      "result": "engineering/eng-grid/battery-pack/result",
-      "homeFeatured": false,
-      "homeFeaturedOrder": null
-    },
-    {
-      "id": "wing-cfd",
-      "parent": "Sailfish",
-      "year": "2024",
-      "title": "engineering/eng-grid/wing-cfd/title",
-      "blurb": "engineering/eng-grid/wing-cfd/blurb",
-      "detail": "engineering/eng-grid/wing-cfd/detail",
-      "tags": "engineering/eng-grid/wing-cfd/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/wing-cfd/1",
-          "caption": "engineering/eng-grid/wing-cfd/1"
-        },
-        {
-          "src": "engineering/eng-grid/wing-cfd/2",
-          "caption": "engineering/eng-grid/wing-cfd/2"
-        },
-        {
-          "src": "engineering/eng-grid/wing-cfd/3",
-          "caption": "engineering/eng-grid/wing-cfd/3"
-        }
-      ],
-      "requirements": "engineering/eng-grid/wing-cfd/requirements",
-      "contribution": "engineering/eng-grid/wing-cfd/contribution",
-      "result": "engineering/eng-grid/wing-cfd/result",
-      "homeFeatured": false,
-      "homeFeaturedOrder": null
-    },
-    {
-      "id": "oss-release",
-      "parent": "Sailfish",
-      "year": "2024",
-      "title": "engineering/eng-grid/oss-release/title",
-      "blurb": "engineering/eng-grid/oss-release/blurb",
-      "detail": "engineering/eng-grid/oss-release/detail",
-      "tags": "engineering/eng-grid/oss-release/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/oss-release/1",
-          "caption": "engineering/eng-grid/oss-release/1"
-        }
-      ],
-      "requirements": "engineering/eng-grid/oss-release/requirements",
-      "contribution": "engineering/eng-grid/oss-release/contribution",
-      "result": "engineering/eng-grid/oss-release/result",
-      "homeFeatured": false,
-      "homeFeaturedOrder": null
-    },
-    {
-      "id": "el-suit",
-      "parent": "Standalone",
-      "year": "2023",
-      "title": "engineering/eng-grid/el-suit/title",
-      "blurb": "engineering/eng-grid/el-suit/blurb",
-      "detail": "engineering/eng-grid/el-suit/detail",
-      "tags": "engineering/eng-grid/el-suit/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/el-suit/1",
-          "caption": "engineering/eng-grid/el-suit/1"
-        },
-        {
-          "src": "engineering/eng-grid/el-suit/2",
-          "caption": "engineering/eng-grid/el-suit/2"
-        }
-      ],
-      "requirements": "engineering/eng-grid/el-suit/requirements",
-      "contribution": "engineering/eng-grid/el-suit/contribution",
-      "result": "engineering/eng-grid/el-suit/result",
-      "homeFeatured": false,
-      "homeFeaturedOrder": null
-    },
-    {
-      "id": "library-box",
-      "parent": "Standalone",
-      "year": "2022",
-      "title": "engineering/eng-grid/library-box/title",
-      "blurb": "engineering/eng-grid/library-box/blurb",
-      "detail": "engineering/eng-grid/library-box/detail",
-      "tags": "engineering/eng-grid/library-box/tags",
-      "images": [
-        {
-          "src": "engineering/eng-grid/library-box/1",
-          "caption": "engineering/eng-grid/library-box/1"
-        },
-        {
-          "src": "engineering/eng-grid/library-box/2",
-          "caption": "engineering/eng-grid/library-box/2"
-        },
-        {
-          "src": "engineering/eng-grid/library-box/3",
-          "caption": "engineering/eng-grid/library-box/3"
-        }
-      ],
-      "requirements": "engineering/eng-grid/library-box/requirements",
-      "contribution": "engineering/eng-grid/library-box/contribution",
-      "result": "engineering/eng-grid/library-box/result",
-      "homeFeatured": false,
-      "homeFeaturedOrder": null
-    },
-    {
-      "id": "rookie-docs",
+      "id": "mentoring-onboarding",
+      "title": "engineering/eng-grid/mentoring-onboarding/title",
+      "blurb": "engineering/eng-grid/mentoring-onboarding/blurb",
+      "detail": "engineering/eng-grid/mentoring-onboarding/detail",
+      "tags": "engineering/eng-grid/mentoring-onboarding/tags",
       "parent": "FTC",
-      "year": "2024",
-      "title": "engineering/eng-grid/rookie-docs/title",
-      "blurb": "engineering/eng-grid/rookie-docs/blurb",
-      "detail": "engineering/eng-grid/rookie-docs/detail",
-      "tags": "engineering/eng-grid/rookie-docs/tags",
       "images": [
         {
-          "src": "engineering/eng-grid/rookie-docs/1",
-          "caption": "engineering/eng-grid/rookie-docs/1"
+          "src": "engineering/eng-grid/mentoring-onboarding/1",
+          "caption": "engineering/eng-grid/mentoring-onboarding/1"
         }
       ],
-      "requirements": "engineering/eng-grid/rookie-docs/requirements",
-      "contribution": "engineering/eng-grid/rookie-docs/contribution",
-      "result": "engineering/eng-grid/rookie-docs/result",
+      "requirements": "engineering/eng-grid/mentoring-onboarding/requirements",
+      "contribution": "engineering/eng-grid/mentoring-onboarding/contribution",
+      "result": "engineering/eng-grid/mentoring-onboarding/result",
       "homeFeatured": false,
       "homeFeaturedOrder": null
     },
     {
-      "id": "stem-bilingual",
-      "parent": "Standalone",
-      "year": "2024",
-      "title": "engineering/eng-grid/stem-bilingual/title",
-      "blurb": "engineering/eng-grid/stem-bilingual/blurb",
-      "detail": "engineering/eng-grid/stem-bilingual/detail",
-      "tags": "engineering/eng-grid/stem-bilingual/tags",
+      "id": "girl-guides-outreach",
+      "title": "engineering/eng-grid/girl-guides-outreach/title",
+      "blurb": "engineering/eng-grid/girl-guides-outreach/blurb",
+      "detail": "engineering/eng-grid/girl-guides-outreach/detail",
+      "tags": "engineering/eng-grid/girl-guides-outreach/tags",
+      "parent": "FTC",
       "images": [
         {
-          "src": "engineering/eng-grid/stem-bilingual/1",
-          "caption": "engineering/eng-grid/stem-bilingual/1"
+          "src": "engineering/eng-grid/girl-guides-outreach/1",
+          "caption": "engineering/eng-grid/girl-guides-outreach/1"
         }
       ],
-      "requirements": "engineering/eng-grid/stem-bilingual/requirements",
-      "contribution": "engineering/eng-grid/stem-bilingual/contribution",
-      "result": "engineering/eng-grid/stem-bilingual/result",
+      "requirements": "engineering/eng-grid/girl-guides-outreach/requirements",
+      "contribution": "engineering/eng-grid/girl-guides-outreach/contribution",
+      "result": "engineering/eng-grid/girl-guides-outreach/result",
       "homeFeatured": false,
       "homeFeaturedOrder": null
     },
     {
-      "id": "drone-photo",
-      "parent": "Standalone",
-      "year": "2024",
-      "title": "engineering/eng-grid/drone-photo/title",
-      "blurb": "engineering/eng-grid/drone-photo/blurb",
-      "detail": "engineering/eng-grid/drone-photo/detail",
-      "tags": "engineering/eng-grid/drone-photo/tags",
+      "id": "lighthouse-database",
+      "title": "engineering/eng-grid/lighthouse-database/title",
+      "blurb": "engineering/eng-grid/lighthouse-database/blurb",
+      "detail": "engineering/eng-grid/lighthouse-database/detail",
+      "tags": "engineering/eng-grid/lighthouse-database/tags",
+      "parent": "FTC",
       "images": [
         {
-          "src": "engineering/eng-grid/drone-photo/1",
-          "caption": "engineering/eng-grid/drone-photo/1"
-        },
-        {
-          "src": "engineering/eng-grid/drone-photo/2",
-          "caption": "engineering/eng-grid/drone-photo/2"
-        },
-        {
-          "src": "engineering/eng-grid/drone-photo/3",
-          "caption": "engineering/eng-grid/drone-photo/3"
-        },
-        {
-          "src": "engineering/eng-grid/drone-photo/4",
-          "caption": "engineering/eng-grid/drone-photo/4"
-        },
-        {
-          "src": "engineering/eng-grid/drone-photo/5",
-          "caption": "engineering/eng-grid/drone-photo/5"
+          "src": "engineering/eng-grid/lighthouse-database/1",
+          "caption": "engineering/eng-grid/lighthouse-database/1"
         }
       ],
-      "requirements": "engineering/eng-grid/drone-photo/requirements",
-      "contribution": "engineering/eng-grid/drone-photo/contribution",
-      "result": "engineering/eng-grid/drone-photo/result",
+      "requirements": "engineering/eng-grid/lighthouse-database/requirements",
+      "contribution": "engineering/eng-grid/lighthouse-database/contribution",
+      "result": "engineering/eng-grid/lighthouse-database/result",
       "homeFeatured": false,
       "homeFeaturedOrder": null
     },
     {
-      "id": "fiddle-pickup",
+      "id": "electroplating-graphite",
+      "title": "engineering/eng-grid/electroplating-graphite/title",
+      "blurb": "engineering/eng-grid/electroplating-graphite/blurb",
+      "detail": "engineering/eng-grid/electroplating-graphite/detail",
+      "tags": "engineering/eng-grid/electroplating-graphite/tags",
       "parent": "Standalone",
-      "year": "2023",
-      "title": "engineering/eng-grid/fiddle-pickup/title",
-      "blurb": "engineering/eng-grid/fiddle-pickup/blurb",
-      "detail": "engineering/eng-grid/fiddle-pickup/detail",
-      "tags": "engineering/eng-grid/fiddle-pickup/tags",
       "images": [
         {
-          "src": "engineering/eng-grid/fiddle-pickup/1",
-          "caption": "engineering/eng-grid/fiddle-pickup/1"
-        },
-        {
-          "src": "engineering/eng-grid/fiddle-pickup/2",
-          "caption": "engineering/eng-grid/fiddle-pickup/2"
+          "src": "engineering/eng-grid/electroplating-graphite/1",
+          "caption": "engineering/eng-grid/electroplating-graphite/1"
         }
       ],
-      "requirements": "engineering/eng-grid/fiddle-pickup/requirements",
-      "contribution": "engineering/eng-grid/fiddle-pickup/contribution",
-      "result": "engineering/eng-grid/fiddle-pickup/result",
+      "requirements": "engineering/eng-grid/electroplating-graphite/requirements",
+      "contribution": "engineering/eng-grid/electroplating-graphite/contribution",
+      "result": "engineering/eng-grid/electroplating-graphite/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "free-little-library",
+      "title": "engineering/eng-grid/free-little-library/title",
+      "blurb": "engineering/eng-grid/free-little-library/blurb",
+      "detail": "engineering/eng-grid/free-little-library/detail",
+      "tags": "engineering/eng-grid/free-little-library/tags",
+      "parent": "Standalone",
+      "images": [
+        {
+          "src": "engineering/eng-grid/free-little-library/1",
+          "caption": "engineering/eng-grid/free-little-library/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/free-little-library/requirements",
+      "contribution": "engineering/eng-grid/free-little-library/contribution",
+      "result": "engineering/eng-grid/free-little-library/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "self-hosted-server",
+      "title": "engineering/eng-grid/self-hosted-server/title",
+      "blurb": "engineering/eng-grid/self-hosted-server/blurb",
+      "detail": "engineering/eng-grid/self-hosted-server/detail",
+      "tags": "engineering/eng-grid/self-hosted-server/tags",
+      "parent": "Standalone",
+      "images": [
+        {
+          "src": "engineering/eng-grid/self-hosted-server/1",
+          "caption": "engineering/eng-grid/self-hosted-server/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/self-hosted-server/requirements",
+      "contribution": "engineering/eng-grid/self-hosted-server/contribution",
+      "result": "engineering/eng-grid/self-hosted-server/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "bike-generator",
+      "title": "engineering/eng-grid/bike-generator/title",
+      "blurb": "engineering/eng-grid/bike-generator/blurb",
+      "detail": "engineering/eng-grid/bike-generator/detail",
+      "tags": "engineering/eng-grid/bike-generator/tags",
+      "parent": "Standalone",
+      "images": [
+        {
+          "src": "engineering/eng-grid/bike-generator/1",
+          "caption": "engineering/eng-grid/bike-generator/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/bike-generator/requirements",
+      "contribution": "engineering/eng-grid/bike-generator/contribution",
+      "result": "engineering/eng-grid/bike-generator/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "mbot-pickup-arm",
+      "title": "engineering/eng-grid/mbot-pickup-arm/title",
+      "blurb": "engineering/eng-grid/mbot-pickup-arm/blurb",
+      "detail": "engineering/eng-grid/mbot-pickup-arm/detail",
+      "tags": "engineering/eng-grid/mbot-pickup-arm/tags",
+      "parent": "Standalone",
+      "images": [
+        {
+          "src": "engineering/eng-grid/mbot-pickup-arm/1",
+          "caption": "engineering/eng-grid/mbot-pickup-arm/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/mbot-pickup-arm/requirements",
+      "contribution": "engineering/eng-grid/mbot-pickup-arm/contribution",
+      "result": "engineering/eng-grid/mbot-pickup-arm/result",
+      "homeFeatured": false,
+      "homeFeaturedOrder": null
+    },
+    {
+      "id": "wind-powered-fan",
+      "title": "engineering/eng-grid/wind-powered-fan/title",
+      "blurb": "engineering/eng-grid/wind-powered-fan/blurb",
+      "detail": "engineering/eng-grid/wind-powered-fan/detail",
+      "tags": "engineering/eng-grid/wind-powered-fan/tags",
+      "parent": "Standalone",
+      "images": [
+        {
+          "src": "engineering/eng-grid/wind-powered-fan/1",
+          "caption": "engineering/eng-grid/wind-powered-fan/1"
+        }
+      ],
+      "requirements": "engineering/eng-grid/wind-powered-fan/requirements",
+      "contribution": "engineering/eng-grid/wind-powered-fan/contribution",
+      "result": "engineering/eng-grid/wind-powered-fan/result",
       "homeFeatured": false,
       "homeFeaturedOrder": null
     }
@@ -1136,105 +1207,79 @@
       "caption": "engineering/eng-programs/ftc/caption",
       "skills": [
         {
-          "id": "ftc-cnc",
-          "title": "engineering/eng-programs/ftc/skills/cnc/title",
-          "desc": "engineering/eng-programs/ftc/skills/cnc/desc",
-          "tags": [
-            "Manufacturing",
-            "CAD",
-            "Mechanical"
-          ],
-          "long": "engineering/eng-programs/ftc/skills/cnc/long",
-          "images": [
-            {
-              "src": "engineering/eng-grid/cnc-chassis/1",
-              "caption": "Chassis plate mid-cut"
-            },
-            {
-              "src": "engineering/eng-grid/cnc-chassis/2",
-              "caption": "Soft jaws + tab-and-drop workholding"
-            },
-            {
-              "src": "engineering/eng-grid/cnc-chassis/3",
-              "caption": "Finished plate, deburred"
-            }
-          ]
-        },
-        {
-          "id": "ftc-arm",
-          "title": "engineering/eng-programs/ftc/skills/arm/title",
-          "desc": "engineering/eng-programs/ftc/skills/arm/desc",
+          "id": "ftc-arm-transfer",
+          "title": "engineering/eng-programs/ftc/skills/arm-transfer/title",
+          "desc": "engineering/eng-programs/ftc/skills/arm-transfer/desc",
           "tags": [
             "Mechanical",
-            "Manufacturing"
+            "CAD"
           ],
-          "long": "engineering/eng-programs/ftc/skills/arm/long",
+          "long": "engineering/eng-programs/ftc/skills/arm-transfer/long",
           "images": [
             {
-              "src": "engineering/eng-grid/arm-transfer/1",
-              "caption": "Arm assembly on the robot"
-            },
-            {
-              "src": "engineering/eng-grid/arm-transfer/2",
-              "caption": "Passive hand-off seat"
+              "src": "engineering/eng-programs/ftc/skills/arm-transfer/1",
+              "caption": "Arm & transfer mechanism"
             }
           ]
         },
         {
-          "id": "ftc-auto",
-          "title": "engineering/eng-programs/ftc/skills/auto/title",
-          "desc": "engineering/eng-programs/ftc/skills/auto/desc",
+          "id": "ftc-cnc-chassis",
+          "title": "engineering/eng-programs/ftc/skills/cnc-chassis/title",
+          "desc": "engineering/eng-programs/ftc/skills/cnc-chassis/desc",
+          "tags": [
+            "Manufacturing",
+            "Mechanical"
+          ],
+          "long": "engineering/eng-programs/ftc/skills/cnc-chassis/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/ftc/skills/cnc-chassis/1",
+              "caption": "CNC chassis"
+            }
+          ]
+        },
+        {
+          "id": "ftc-mentoring",
+          "title": "engineering/eng-programs/ftc/skills/mentoring/title",
+          "desc": "engineering/eng-programs/ftc/skills/mentoring/desc",
+          "tags": [
+            "Leadership"
+          ],
+          "long": "engineering/eng-programs/ftc/skills/mentoring/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/ftc/skills/mentoring/1",
+              "caption": "Mentoring session"
+            }
+          ]
+        },
+        {
+          "id": "ftc-girl-guides",
+          "title": "engineering/eng-programs/ftc/skills/girl-guides/title",
+          "desc": "engineering/eng-programs/ftc/skills/girl-guides/desc",
+          "tags": [
+            "Outreach"
+          ],
+          "long": "engineering/eng-programs/ftc/skills/girl-guides/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/ftc/skills/girl-guides/1",
+              "caption": "Girl Guides outreach event"
+            }
+          ]
+        },
+        {
+          "id": "ftc-lighthouse-db",
+          "title": "engineering/eng-programs/ftc/skills/lighthouse-db/title",
+          "desc": "engineering/eng-programs/ftc/skills/lighthouse-db/desc",
           "tags": [
             "Software"
           ],
-          "long": "engineering/eng-programs/ftc/skills/auto/long",
+          "long": "engineering/eng-programs/ftc/skills/lighthouse-db/long",
           "images": [
             {
-              "src": "engineering/eng-grid/auto-pathing/1",
-              "caption": "Path plan overlay"
-            },
-            {
-              "src": "engineering/eng-grid/auto-pathing/2",
-              "caption": "Robot running auto on the practice field"
-            }
-          ]
-        },
-        {
-          "id": "ftc-design-review",
-          "title": "engineering/eng-programs/ftc/skills/design-review/title",
-          "desc": "engineering/eng-programs/ftc/skills/design-review/desc",
-          "tags": [
-            "CAD",
-            "Mechanical"
-          ],
-          "long": "engineering/eng-programs/ftc/skills/design-review/long",
-          "images": [
-            {
-              "src": "home/robotics-compare/ftc/3-technical/extra-1",
-              "caption": "Fixturing detail"
-            },
-            {
-              "src": "home/robotics-compare/ftc/3-technical/extra-2",
-              "caption": "Arm transfer in CAD"
-            }
-          ]
-        },
-        {
-          "id": "ftc-docs",
-          "title": "engineering/eng-programs/ftc/skills/docs/title",
-          "desc": "engineering/eng-programs/ftc/skills/docs/desc",
-          "tags": [
-            "Open source"
-          ],
-          "long": "engineering/eng-programs/ftc/skills/docs/long",
-          "images": [
-            {
-              "src": "engineering/eng-grid/rookie-docs/1",
-              "caption": "Rookie handbook"
-            },
-            {
-              "src": "home/robotics-compare/ftc/4-leadership/hero",
-              "caption": "Design review with newer members"
+              "src": "engineering/eng-programs/ftc/skills/lighthouse-db/1",
+              "caption": "Lighthouse database"
             }
           ]
         }
@@ -1253,139 +1298,51 @@
       "caption": "engineering/eng-programs/sailfish/caption",
       "skills": [
         {
-          "id": "sf-materials",
-          "title": "engineering/eng-programs/sailfish/skills/materials/title",
-          "desc": "engineering/eng-programs/sailfish/skills/materials/desc",
-          "tags": [
-            "Materials",
-            "Manufacturing",
-            "Field test"
-          ],
-          "long": "engineering/eng-programs/sailfish/skills/materials/long",
-          "images": [
-            {
-              "src": "engineering/eng-grid/foam-flotation/1",
-              "caption": "Foam core before layup"
-            },
-            {
-              "src": "engineering/eng-grid/foam-flotation/2",
-              "caption": "Glass skin, wet layup"
-            },
-            {
-              "src": "engineering/eng-grid/foam-flotation/3",
-              "caption": "Water landing test"
-            }
-          ]
-        },
-        {
-          "id": "sf-video",
-          "title": "engineering/eng-programs/sailfish/skills/video/title",
-          "desc": "engineering/eng-programs/sailfish/skills/video/desc",
-          "tags": [
-            "Research",
-            "Electrical",
-            "Field test"
-          ],
-          "long": "engineering/eng-programs/sailfish/skills/video/long",
-          "images": [
-            {
-              "src": "engineering/eng-grid/vid-58ghz/1",
-              "caption": "Range test setup, shoreline"
-            },
-            {
-              "src": "engineering/eng-grid/vid-58ghz/2",
-              "caption": "Link quality vs. altitude"
-            }
-          ]
-        },
-        {
-          "id": "sf-assembly",
-          "title": "engineering/eng-programs/sailfish/skills/assembly/title",
-          "desc": "engineering/eng-programs/sailfish/skills/assembly/desc",
+          "id": "sf-airframe-cad",
+          "title": "engineering/eng-programs/sailfish/skills/airframe-cad/title",
+          "desc": "engineering/eng-programs/sailfish/skills/airframe-cad/desc",
           "tags": [
             "CAD",
             "Mechanical",
-            "Materials"
-          ],
-          "long": "engineering/eng-programs/sailfish/skills/assembly/long",
-          "images": [
-            {
-              "src": "engineering/eng-grid/carry-through/1",
-              "caption": "Carry-through assembly"
-            },
-            {
-              "src": "engineering/eng-grid/carry-through/2",
-              "caption": "Spar seated in the saddle"
-            }
-          ]
-        },
-        {
-          "id": "sf-avionics",
-          "title": "engineering/eng-programs/sailfish/skills/avionics/title",
-          "desc": "engineering/eng-programs/sailfish/skills/avionics/desc",
-          "tags": [
-            "Electrical",
-            "Mechanical",
             "Aero"
           ],
-          "long": "engineering/eng-programs/sailfish/skills/avionics/long",
+          "long": "engineering/eng-programs/sailfish/skills/airframe-cad/long",
           "images": [
             {
-              "src": "engineering/eng-grid/vtx-stack/1",
-              "caption": "VTX + camera stack, nose cone open"
-            },
-            {
-              "src": "engineering/eng-grid/vtx-stack/2",
-              "caption": "Heat-sink in the airflow channel"
-            },
-            {
-              "src": "engineering/eng-grid/vtx-stack/3",
-              "caption": "CG balance check on the bench"
+              "src": "engineering/eng-programs/sailfish/skills/airframe-cad/1",
+              "caption": "Exploded CAD assembly, Gen.3 airframe"
             }
           ]
         },
         {
-          "id": "sf-tiltrotor",
-          "title": "engineering/eng-programs/sailfish/skills/tiltrotor/title",
-          "desc": "engineering/eng-programs/sailfish/skills/tiltrotor/desc",
+          "id": "sf-manufacturing",
+          "title": "engineering/eng-programs/sailfish/skills/manufacturing/title",
+          "desc": "engineering/eng-programs/sailfish/skills/manufacturing/desc",
           "tags": [
-            "Electrical",
-            "Software"
+            "Manufacturing",
+            "Materials"
           ],
-          "long": "engineering/eng-programs/sailfish/skills/tiltrotor/long",
+          "long": "engineering/eng-programs/sailfish/skills/manufacturing/long",
           "images": [
             {
-              "src": "engineering/eng-grid/tilt-rotor/1",
-              "caption": "Tilt mechanism and controller"
-            },
-            {
-              "src": "engineering/eng-grid/tilt-rotor/2",
-              "caption": "Bench test of the transition blend"
+              "src": "engineering/eng-programs/sailfish/skills/manufacturing/1",
+              "caption": "Manufacturing — 3D printing and composite work"
             }
           ]
         },
         {
-          "id": "sf-aero",
-          "title": "engineering/eng-programs/sailfish/skills/aero/title",
-          "desc": "engineering/eng-programs/sailfish/skills/aero/desc",
+          "id": "sf-waterproofing",
+          "title": "engineering/eng-programs/sailfish/skills/waterproofing/title",
+          "desc": "engineering/eng-programs/sailfish/skills/waterproofing/desc",
           "tags": [
-            "Aero",
-            "Research",
-            "Mechanical"
+            "Mechanical",
+            "Materials"
           ],
-          "long": "engineering/eng-programs/sailfish/skills/aero/long",
+          "long": "engineering/eng-programs/sailfish/skills/waterproofing/long",
           "images": [
             {
-              "src": "engineering/eng-grid/wing-cfd/1",
-              "caption": "CFD pressure distribution"
-            },
-            {
-              "src": "engineering/eng-grid/wing-cfd/2",
-              "caption": "Tufts taped to the wing"
-            },
-            {
-              "src": "engineering/eng-grid/wing-cfd/3",
-              "caption": "Separation captured in flight"
+              "src": "engineering/eng-programs/sailfish/skills/waterproofing/1",
+              "caption": "Waterproofing detail"
             }
           ]
         },
@@ -1401,16 +1358,23 @@
           "long": "engineering/eng-programs/sailfish/skills/propulsion/long",
           "images": [
             {
-              "src": "engineering/eng-grid/thrust-stand/1",
-              "caption": "Thrust stand on the bench"
-            },
+              "src": "engineering/eng-programs/sailfish/skills/propulsion/1",
+              "caption": "Power-train bench test"
+            }
+          ]
+        },
+        {
+          "id": "sf-power-distribution",
+          "title": "engineering/eng-programs/sailfish/skills/power-distribution/title",
+          "desc": "engineering/eng-programs/sailfish/skills/power-distribution/desc",
+          "tags": [
+            "Electrical"
+          ],
+          "long": "engineering/eng-programs/sailfish/skills/power-distribution/long",
+          "images": [
             {
-              "src": "engineering/eng-grid/thrust-stand/2",
-              "caption": "Load cell and RPM pickup"
-            },
-            {
-              "src": "engineering/eng-grid/thrust-stand/3",
-              "caption": "Efficiency sweep results"
+              "src": "engineering/eng-programs/sailfish/skills/power-distribution/1",
+              "caption": "Power distribution wiring"
             }
           ]
         },
@@ -1425,51 +1389,120 @@
           "long": "engineering/eng-programs/sailfish/skills/battery/long",
           "images": [
             {
-              "src": "engineering/eng-grid/battery-pack/1",
-              "caption": "6S pack, spot-welded"
-            },
-            {
-              "src": "engineering/eng-grid/battery-pack/2",
-              "caption": "Balance leads and strain relief"
+              "src": "engineering/eng-programs/sailfish/skills/battery/1",
+              "caption": "Custom battery pack"
             }
           ]
         },
         {
-          "id": "sf-sar",
-          "title": "engineering/eng-programs/sailfish/skills/sar/title",
-          "desc": "engineering/eng-programs/sailfish/skills/sar/desc",
+          "id": "sf-avionics-payload",
+          "title": "engineering/eng-programs/sailfish/skills/avionics-payload/title",
+          "desc": "engineering/eng-programs/sailfish/skills/avionics-payload/desc",
+          "tags": [
+            "Electrical",
+            "Mechanical"
+          ],
+          "long": "engineering/eng-programs/sailfish/skills/avionics-payload/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/sailfish/skills/avionics-payload/1",
+              "caption": "VTX stack and sensor gimbal"
+            }
+          ]
+        },
+        {
+          "id": "sf-video-tx",
+          "title": "engineering/eng-programs/sailfish/skills/video-tx/title",
+          "desc": "engineering/eng-programs/sailfish/skills/video-tx/desc",
+          "tags": [
+            "Research",
+            "Electrical"
+          ],
+          "long": "engineering/eng-programs/sailfish/skills/video-tx/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/sailfish/skills/video-tx/1",
+              "caption": "Video transmission range test"
+            }
+          ]
+        },
+        {
+          "id": "sf-autonomy-electronics",
+          "title": "engineering/eng-programs/sailfish/skills/autonomy-electronics/title",
+          "desc": "engineering/eng-programs/sailfish/skills/autonomy-electronics/desc",
+          "tags": [
+            "Electrical",
+            "Software"
+          ],
+          "long": "engineering/eng-programs/sailfish/skills/autonomy-electronics/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/sailfish/skills/autonomy-electronics/1",
+              "caption": "Autonomous flight electronics"
+            }
+          ]
+        },
+        {
+          "id": "sf-autonomy-software",
+          "title": "engineering/eng-programs/sailfish/skills/autonomy-software/title",
+          "desc": "engineering/eng-programs/sailfish/skills/autonomy-software/desc",
+          "tags": [
+            "Software"
+          ],
+          "long": "engineering/eng-programs/sailfish/skills/autonomy-software/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/sailfish/skills/autonomy-software/1",
+              "caption": "ArduPilot failsafe simulation"
+            }
+          ]
+        },
+        {
+          "id": "sf-esc-tuning",
+          "title": "engineering/eng-programs/sailfish/skills/esc-tuning/title",
+          "desc": "engineering/eng-programs/sailfish/skills/esc-tuning/desc",
+          "tags": [
+            "Electrical",
+            "Software"
+          ],
+          "long": "engineering/eng-programs/sailfish/skills/esc-tuning/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/sailfish/skills/esc-tuning/1",
+              "caption": "Notch-filtered vibration graph"
+            }
+          ]
+        },
+        {
+          "id": "sf-search-pattern",
+          "title": "engineering/eng-programs/sailfish/skills/search-pattern/title",
+          "desc": "engineering/eng-programs/sailfish/skills/search-pattern/desc",
           "tags": [
             "Research",
             "Software"
           ],
-          "long": "engineering/eng-programs/sailfish/skills/sar/long",
+          "long": "engineering/eng-programs/sailfish/skills/search-pattern/long",
           "images": [
             {
-              "src": "engineering/eng-grid/sar-spiral/1",
-              "caption": "Spiral coverage model"
-            },
-            {
-              "src": "engineering/eng-grid/sar-spiral/2",
-              "caption": "Pattern flown over open water"
+              "src": "engineering/eng-programs/sailfish/skills/search-pattern/1",
+              "caption": "Search-pattern model"
             }
           ]
         },
         {
-          "id": "sf-groundstation",
-          "title": "engineering/eng-programs/sailfish/skills/groundstation/title",
-          "desc": "engineering/eng-programs/sailfish/skills/groundstation/desc",
+          "id": "sf-antenna-tracker",
+          "title": "engineering/eng-programs/sailfish/skills/antenna-tracker/title",
+          "desc": "engineering/eng-programs/sailfish/skills/antenna-tracker/desc",
           "tags": [
+            "Electrical",
+            "Mechanical",
             "Software"
           ],
-          "long": "engineering/eng-programs/sailfish/skills/groundstation/long",
+          "long": "engineering/eng-programs/sailfish/skills/antenna-tracker/long",
           "images": [
             {
-              "src": "engineering/eng-grid/groundstation/1",
-              "caption": "Ground-station UI"
-            },
-            {
-              "src": "engineering/eng-grid/groundstation/2",
-              "caption": "Station set up in the field"
+              "src": "engineering/eng-programs/sailfish/skills/antenna-tracker/1",
+              "caption": "Antenna tracker and ground station"
             }
           ]
         }
@@ -1487,112 +1520,98 @@
       "caption": "engineering/eng-programs/misc/caption",
       "skills": [
         {
+          "id": "misc-electroplating",
+          "title": "engineering/eng-programs/misc/skills/electroplating/title",
+          "desc": "engineering/eng-programs/misc/skills/electroplating/desc",
+          "tags": [
+            "Research",
+            "Materials"
+          ],
+          "long": "engineering/eng-programs/misc/skills/electroplating/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/misc/skills/electroplating/1",
+              "caption": "Electroplated graphite"
+            }
+          ]
+        },
+        {
+          "id": "misc-library-box",
+          "title": "engineering/eng-programs/misc/skills/library-box/title",
+          "desc": "engineering/eng-programs/misc/skills/library-box/desc",
+          "tags": [
+            "Manufacturing",
+            "Community"
+          ],
+          "long": "engineering/eng-programs/misc/skills/library-box/long",
+          "images": [
+            {
+              "src": "engineering/eng-programs/misc/skills/library-box/1",
+              "caption": "Free little library"
+            }
+          ]
+        },
+        {
           "id": "misc-selfhost",
           "title": "engineering/eng-programs/misc/skills/selfhost/title",
           "desc": "engineering/eng-programs/misc/skills/selfhost/desc",
           "tags": [
-            "Software"
+            "Software",
+            "Electrical"
           ],
           "long": "engineering/eng-programs/misc/skills/selfhost/long",
           "images": [
             {
               "src": "engineering/eng-programs/misc/skills/selfhost/1",
-              "label": "SELF-HOSTED STACK — RACK"
-            },
-            {
-              "src": "engineering/eng-programs/misc/skills/selfhost/2",
-              "label": "SERVICE DASHBOARD"
+              "caption": "Home server rack"
             }
           ]
         },
         {
-          "id": "misc-security",
-          "title": "engineering/eng-programs/misc/skills/security/title",
-          "desc": "engineering/eng-programs/misc/skills/security/desc",
+          "id": "misc-bike-generator",
+          "title": "engineering/eng-programs/misc/skills/bike-generator/title",
+          "desc": "engineering/eng-programs/misc/skills/bike-generator/desc",
           "tags": [
-            "Electrical",
-            "Software"
+            "Mechanical",
+            "Research"
           ],
-          "long": "engineering/eng-programs/misc/skills/security/long",
+          "long": "engineering/eng-programs/misc/skills/bike-generator/long",
           "images": [
             {
-              "src": "engineering/eng-programs/misc/skills/security/1",
-              "label": "HARDWARE TOKENS"
-            },
-            {
-              "src": "engineering/eng-programs/misc/skills/security/2",
-              "label": "ACCESS CONTROL BENCH"
+              "src": "engineering/eng-programs/misc/skills/bike-generator/1",
+              "caption": "Stationary-bike generator"
             }
           ]
         },
         {
-          "id": "misc-drone-photo",
-          "title": "engineering/eng-programs/misc/skills/drone-photo/title",
-          "desc": "engineering/eng-programs/misc/skills/drone-photo/desc",
+          "id": "misc-mbot",
+          "title": "engineering/eng-programs/misc/skills/mbot/title",
+          "desc": "engineering/eng-programs/misc/skills/mbot/desc",
           "tags": [
             "Mechanical",
             "CAD"
           ],
-          "long": "engineering/eng-programs/misc/skills/drone-photo/long",
+          "long": "engineering/eng-programs/misc/skills/mbot/long",
           "images": [
             {
-              "src": "engineering/eng-grid/drone-photo/1",
-              "caption": "Camera rig assembled"
-            },
-            {
-              "src": "engineering/eng-grid/drone-photo/2",
-              "caption": "Gimbal mount and dampers"
-            },
-            {
-              "src": "engineering/eng-grid/drone-photo/3",
-              "caption": "In the field"
-            },
-            {
-              "src": "engineering/eng-grid/drone-photo/4",
-              "caption": "Frame from the rig"
-            },
-            {
-              "src": "engineering/eng-grid/drone-photo/5",
-              "caption": "Flight prep"
+              "src": "engineering/eng-programs/misc/skills/mbot/1",
+              "caption": "MBot with scoop and flipper"
             }
           ]
         },
         {
-          "id": "misc-el-suit",
-          "title": "engineering/eng-programs/misc/skills/el-suit/title",
-          "desc": "engineering/eng-programs/misc/skills/el-suit/desc",
+          "id": "misc-wind-fan",
+          "title": "engineering/eng-programs/misc/skills/wind-fan/title",
+          "desc": "engineering/eng-programs/misc/skills/wind-fan/desc",
           "tags": [
-            "Electrical",
-            "Manufacturing"
+            "Mechanical",
+            "Research"
           ],
-          "long": "engineering/eng-programs/misc/skills/el-suit/long",
+          "long": "engineering/eng-programs/misc/skills/wind-fan/long",
           "images": [
             {
-              "src": "engineering/eng-grid/el-suit/1",
-              "caption": "Suit lit up"
-            },
-            {
-              "src": "engineering/eng-grid/el-suit/2",
-              "caption": "Inverter and splice detail"
-            }
-          ]
-        },
-        {
-          "id": "misc-fiddle",
-          "title": "engineering/eng-programs/misc/skills/fiddle/title",
-          "desc": "engineering/eng-programs/misc/skills/fiddle/desc",
-          "tags": [
-            "Electrical"
-          ],
-          "long": "engineering/eng-programs/misc/skills/fiddle/long",
-          "images": [
-            {
-              "src": "engineering/eng-grid/fiddle-pickup/1",
-              "caption": "Pickup mounted at the bridge"
-            },
-            {
-              "src": "engineering/eng-grid/fiddle-pickup/2",
-              "caption": "JFET buffer preamp"
+              "src": "engineering/eng-programs/misc/skills/wind-fan/1",
+              "caption": "Wind-powered fan"
             }
           ]
         }
@@ -1602,7 +1621,7 @@
   "engLander": {
     "sailfishImage": "home/robotics-compare/sailfish/1-quick-info/hero",
     "ftcArmImage": "engineering/eng-grid/arm-transfer/1",
-    "thrustStandImage": "engineering/eng-grid/thrust-stand/1",
+    "thrustStandImage": "engineering/eng-grid/propulsion-testing/1",
     "byline": "engineering/eng-lander/byline",
     "tagline": "engineering/eng-lander/tagline",
     "scrollProgramsLabel": "engineering/eng-lander/scroll-programs-label",

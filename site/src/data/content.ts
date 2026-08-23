@@ -6,7 +6,7 @@
 
 import type { ImageMetadata } from "astro";
 import raw from "../../CONTENT.json";
-import { resolveImage, readText, readTagList } from "../lib/finalImages";
+import { resolveImage, resolveHoverImage, readText, readTagList } from "../lib/finalImages";
 
 // ── Types (resolved — what components actually consume) ────────────────────
 
@@ -40,6 +40,8 @@ export type Item = {
   /** Second paragraph, essay cards only. */
   long?: string;
   image: ImageMetadata;
+  /** Second image in the same folder (any filename besides hero.*), shown on hover if present. */
+  hoverImage?: ImageMetadata;
   href?: string;
 };
 export type Group = { id: string; title: string; items: Item[] };
@@ -85,7 +87,7 @@ export type EngProgram = {
   years: string;
   href?: string;
   blurb: string;
-  image: ImageMetadata;
+  image?: ImageMetadata;
   imageLabel: string;
   caption?: string;
   skills: EngSkill[];
@@ -112,7 +114,14 @@ export type EngProject = {
 
 type Raw = typeof raw;
 
-function resolveSlide(s: Raw["robotics"][number]["slides"][number]): RoboticsSlide {
+/** True if x isn't null/undefined — narrows a .map(...).filter(isDefined) to drop the missing ones. */
+function isDefined<T>(x: T | null | undefined): x is T {
+  return x != null;
+}
+
+function resolveSlide(s: Raw["robotics"][number]["slides"][number]): RoboticsSlide | null {
+  const image = resolveImage(s.image);
+  if (!image) return null;
   return {
     eyebrow: s.eyebrow,
     title: readText(s.title),
@@ -120,12 +129,19 @@ function resolveSlide(s: Raw["robotics"][number]["slides"][number]): RoboticsSli
     longBody: readText(s.longBody),
     caption: readText(s.caption),
     imageLabel: s.imageLabel,
-    image: resolveImage(s.image),
-    extras: s.extras.map((e) => ({ label: e.label, image: resolveImage(e.image) })),
+    image,
+    extras: s.extras
+      .map((e) => {
+        const img = resolveImage(e.image);
+        return img ? { label: e.label, image: img } : null;
+      })
+      .filter(isDefined),
   };
 }
 
-function resolveItem(it: Raw["metaGroups"][number]["groups"][number]["items"][number]): Item {
+function resolveItem(it: Raw["metaGroups"][number]["groups"][number]["items"][number]): Item | null {
+  const image = resolveImage(it.image);
+  if (!image) return null;
   return {
     standout: it.standout,
     outlined: it.outlined,
@@ -133,12 +149,20 @@ function resolveItem(it: Raw["metaGroups"][number]["groups"][number]["items"][nu
     title: readText(it.title),
     body: readText(it.body),
     long: it.long ? readText(it.long) : undefined,
-    image: resolveImage(it.image),
+    image,
+    hoverImage: resolveHoverImage(it.image),
     href: it.href,
   };
 }
 
-function resolveEngProject(p: Raw["engineering"][number]): EngProject {
+function resolveEngProject(p: Raw["engineering"][number]): EngProject | null {
+  const images = p.images
+    .map((img) => {
+      const src = resolveImage(img.src);
+      return src ? { src, caption: readText(img.caption) } : null;
+    })
+    .filter(isDefined);
+  if (images.length === 0) return null;
   return {
     id: p.id,
     parent: p.parent as EngProject["parent"],
@@ -147,7 +171,7 @@ function resolveEngProject(p: Raw["engineering"][number]): EngProject {
     blurb: readText(p.blurb),
     detail: readText(p.detail),
     tags: readTagList(p.tags),
-    images: p.images.map((img) => ({ src: resolveImage(img.src), caption: readText(img.caption) })),
+    images,
     requirements: readText(p.requirements),
     contribution: readText(p.contribution),
     result: readText(p.result),
@@ -157,6 +181,27 @@ function resolveEngProject(p: Raw["engineering"][number]): EngProject {
 }
 
 function resolveEngProgram(prog: Raw["engPrograms"][number]): EngProgram {
+  const skills = prog.skills
+    .map((sk) => {
+      const images = sk.images
+        .map((im) => {
+          const src = resolveImage(im.src);
+          return src
+            ? { src, caption: "caption" in im ? im.caption : undefined, label: "label" in im ? im.label : undefined }
+            : null;
+        })
+        .filter(isDefined);
+      if (images.length === 0) return null;
+      return {
+        id: sk.id,
+        title: readText(sk.title),
+        desc: readText(sk.desc),
+        tags: sk.tags,
+        long: readText(sk.long),
+        images,
+      };
+    })
+    .filter(isDefined);
   return {
     id: prog.id,
     eyebrow: prog.eyebrow,
@@ -168,18 +213,7 @@ function resolveEngProgram(prog: Raw["engPrograms"][number]): EngProgram {
     image: resolveImage(prog.image),
     imageLabel: prog.imageLabel,
     caption: prog.caption ? readText(prog.caption) : undefined,
-    skills: prog.skills.map((sk) => ({
-      id: sk.id,
-      title: readText(sk.title),
-      desc: readText(sk.desc),
-      tags: sk.tags,
-      long: readText(sk.long),
-      images: sk.images.map((im) => ({
-        src: resolveImage(im.src),
-        caption: "caption" in im ? im.caption : undefined,
-        label: "label" in im ? im.label : undefined,
-      })),
-    })),
+    skills,
   };
 }
 
@@ -198,7 +232,7 @@ export const ROBOTICS: RoboticsProgram[] = raw.robotics.map((prog) => ({
   title: prog.title,
   subtitle: readText(prog.subtitle),
   href: prog.href,
-  slides: prog.slides.map(resolveSlide),
+  slides: prog.slides.map(resolveSlide).filter(isDefined),
 }));
 
 export const VALUES = {
@@ -217,7 +251,7 @@ export const META_GROUPS: MetaGroup[] = raw.metaGroups.map((meta) => ({
   title: meta.title,
   subtitle: meta.subtitle,
   audiences: meta.audiences,
-  groups: meta.groups.map((g) => ({ id: g.id, title: g.title, items: g.items.map(resolveItem) })),
+  groups: meta.groups.map((g) => ({ id: g.id, title: g.title, items: g.items.map(resolveItem).filter(isDefined) })),
 }));
 
 export const DEDICATED_PAGES = raw.dedicatedPages as { label: string; href: string }[];
@@ -227,11 +261,16 @@ export const TOC: TocSection[] = raw.toc.map((sec) => ({
   label: sec.label,
   tone: sec.tone,
   dark: sec.dark,
-  items: sec.items.map((it) => ({ tag: it.tag, label: it.label, h: it.h, w: it.w, big: it.big, image: resolveImage(it.image) })),
+  items: sec.items
+    .map((it) => {
+      const image = resolveImage(it.image);
+      return image ? { tag: it.tag, label: it.label, h: it.h, w: it.w, big: it.big, image } : null;
+    })
+    .filter(isDefined),
 }));
 
 export const ENG_PROGRAMS: EngProgram[] = raw.engPrograms.map(resolveEngProgram);
-export const ENG_PROJECTS: EngProject[] = raw.engineering.map(resolveEngProject);
+export const ENG_PROJECTS: EngProject[] = raw.engineering.map(resolveEngProject).filter(isDefined);
 
 /** Union of every tag actually in use across the full project grid — drives the /engineering filter pills. */
 export const ENG_TAGS: EngTag[] = Array.from(new Set(ENG_PROJECTS.flatMap((p) => p.tags))).sort();

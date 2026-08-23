@@ -1,1 +1,1 @@
-Off-the-shelf packs are sized for hobby flights, not a 20-minute search leg. Building our own meant choosing the cell for the discharge curve we actually needed and welding it properly — nickel strip, spot welder, no soldering directly to cans. The failure mode we designed against was a balance lead chafing through in flight, so the routing and strain relief got as much attention as the cells.
+Placeholder — not yet written up.

@@ -1,1 +1,0 @@
-A Notion site organising freely-available STEM material in EN and FR by age and subject. Hands out at Girl Guide STEM seminars and 3D-printer workshops; quietly used by a few francophone teachers I know.

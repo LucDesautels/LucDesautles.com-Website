@@ -1,0 +1,1 @@
+Built for SHAD: a generator that attaches to a stationary bike, backed by a business plan pitching it to gyms. Like most human-power alternative energy, the physics works, but it doesn't come close to competing with solar on cost.

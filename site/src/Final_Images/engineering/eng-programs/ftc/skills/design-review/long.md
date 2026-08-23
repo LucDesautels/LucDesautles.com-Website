@@ -1,1 +1,0 @@
-Every subsystem went through a full assembly in CAD with the real hardware modelled — motors, bearings, the actual extrusion — so interference showed up on screen instead of on the machine. The review itself mattered as much as the model: walking three other builders through the assembly caught things I'd stopped seeing.

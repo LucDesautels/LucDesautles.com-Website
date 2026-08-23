@@ -1,1 +1,0 @@
-Arm & transfer mechanism

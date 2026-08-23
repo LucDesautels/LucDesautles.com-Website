@@ -1,1 +1,1 @@
-An iteration of three nose layouts. The final design buries the VTX heat-sink in the airflow channel, keeps the antenna two wavelengths from the carbon spar, and lets the camera tilt 22° forward without recutting the fuselage.
+4K colour goes out over a digital VTX on 5.8GHz RHCP; the infrared feed goes out over an analog VTX on 5.8GHz LHCP. Both modules have their own custom active-cooling setup, are vibration-isolated, and route waste heat back toward the battery cells.

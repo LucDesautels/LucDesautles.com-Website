@@ -1,1 +1,0 @@
-Optimized SAR spiral

@@ -1,1 +1,0 @@
-A photography airframe has different priorities than a search aircraft: vibration isolation, predictable slow flight, and a gimbal mount that doesn't transmit motor noise into the footage. The rig went through several iterations of damper stiffness before the footage stopped jellying at cruise.

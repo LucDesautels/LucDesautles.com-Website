@@ -1,0 +1,1 @@
+Dozens of individual part designs across hundreds of iterations, built up into a large assembly and sub-assembly structure with joints constrained to realistic movement bounds. Kept under version control with a consistent naming convention, and rendered as exploded animations for presentation.
