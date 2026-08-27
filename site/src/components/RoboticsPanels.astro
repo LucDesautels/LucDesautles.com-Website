@@ -6,79 +6,101 @@ const cols = ROBOTICS; // [Sailfish, FTC]
 const N = 5; // slides per column
 ---
 <section class="rp" id="sailfish" data-rp data-rsec="robotics-panels">
-  <!-- Sticky band: column headers + media + progress bars ─────────────── -->
-  <div class="rp__stickytop">
-    <div class="rp__shell shell">
-      <div class="rp__grid rp__grid--top">
-        {cols.map((p, ci) => (
-          <div class="col col--top" data-col={ci} id={ci === 1 ? "ftc" : undefined}>
-            <div class="col__head">
-              <div class="col__topline">
-                <div class="eyebrow eyebrow--dark">{p.eyebrow}</div>
-                <div class="col__counter">{String(ci + 1).padStart(2, "0")} / 02</div>
-              </div>
-              <h3 class="col__title">{p.title}</h3>
-              {p.subtitle && <div class="col__subtitle">{p.subtitle}</div>}
-            </div>
-
-            <div class="col__media">
-              <div class="col__img" data-col={ci} role="button" tabindex="0" aria-label={`Open ${p.title} lightbox`}>
-                {p.slides.map((s, si) => (
-                  <div class={`col__slide${si === 0 ? " is-active" : ""}`} data-slide={si}>
-                    <Image class="col__photo" src={s.image} alt={s.imageLabel} loading={si === 0 ? "eager" : "lazy"} decoding="async" width={900} format="webp" quality={80} />
-                    {s.caption && <div class="col__caption">// {s.caption}</div>}
-                  </div>
-                ))}
-              </div>
-
-              <div class="col__bars" data-col={ci} aria-label="Slide progress">
-                {Array.from({ length: N }).map((_, si) => (
-                  <button class={`bar${si === 0 ? " is-active" : ""}`} data-col={ci} data-idx={si} aria-label={`Go to slide ${si + 1}`} type="button">
-                    <span class="bar__fill"></span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
+  <!-- Pin wrapper — the sticky band's containing block, so the pin's release
+       point is set by *this* box, not the whole section. Its height is pulled
+       up by --rp-tail (set in the script) so the band unpins the moment the
+       last row + CTAs have fully arrived at the bottom of the viewport; the
+       matching positive margin below hands the removed space back to the
+       document so nothing after it moves. -->
+  <div class="rp__pin" data-rp-pin>
+    <!-- Minimalist scroll marker — where you are in the five rows. Hidden by
+         CSS on viewports with no gutter to spare. -->
+    <div class="rp__toc" data-rp-toc aria-hidden="true">
+      <div class="rp__toc-stick">
+        <ol class="rp__toc-list">
+          {cols[0].slides.map((s, si) => (
+            <li class="rp__toc-item" data-toc-item={si}>
+              <span class="rp__toc-label">{s.eyebrow}</span>
+            </li>
+          ))}
+        </ol>
       </div>
     </div>
-  </div>
 
-  <!-- Scroll-revealed info rows. Aligned across columns via shared grid. ── -->
-  <div class="rp__rowsband">
-    <div class="rp__shell shell">
-      <div class="rp__grid rp__grid--rows" style={`--n:${N}`}>
-        {Array.from({ length: N }).map((_, si) => (
-          <>
-            {cols.map((p, ci) => (
-              <button
-                class={`row${si === 0 ? " is-active" : ""}`}
-                data-col={ci}
-                data-idx={si}
-                style={`grid-row:${si + 1}; grid-column:${ci + 1};`}
-                type="button"
-                aria-label={`${p.title} — ${p.slides[si].title}`}
-              >
-                <span class="row__indicator" aria-hidden="true"></span>
-                <span class="row__inner">
-                  <span class="eyebrow eyebrow--dark">&gt; {p.slides[si].eyebrow}</span>
-                  <span class="row__title">{p.slides[si].title}</span>
-                  <span class="row__body">{p.slides[si].body}</span>
-                </span>
-              </button>
-            ))}
-          </>
-        ))}
-      </div>
+    <!-- Sticky band: column headers + media + progress bars ─────────────── -->
+    <div class="rp__stickytop">
+      <div class="rp__shell shell">
+        <div class="rp__grid rp__grid--top">
+          {cols.map((p, ci) => (
+            <div class="col col--top" data-col={ci} id={ci === 1 ? "ftc" : undefined}>
+              <div class="col__head">
+                <div class="col__topline">
+                  <div class="eyebrow eyebrow--dark">{p.eyebrow}</div>
+                  <div class="col__counter">{String(ci + 1).padStart(2, "0")} / 02</div>
+                </div>
+                <h3 class="col__title">{p.title}</h3>
+                {p.subtitle && <div class="col__subtitle">{p.subtitle}</div>}
+              </div>
 
-      <div class="rp__ctas">
-        {cols.map((p) => (
-          <a class="rp__cta" href={p.href}>Open dedicated page →</a>
-        ))}
+              <div class="col__media">
+                <div class="col__img" data-col={ci} role="button" tabindex="0" aria-label={`Open ${p.title} lightbox`}>
+                  {p.slides.map((s, si) => (
+                    <div class={`col__slide${si === 0 ? " is-active" : ""}`} data-slide={si}>
+                      <Image class="col__photo" src={s.image} alt={s.imageLabel} loading={si === 0 ? "eager" : "lazy"} decoding="async" width={900} format="webp" quality={80} />
+                      {s.caption && <div class="col__caption">// {s.caption}</div>}
+                    </div>
+                  ))}
+                </div>
+
+                <div class="col__bars" data-col={ci} aria-label="Slide progress">
+                  {Array.from({ length: N }).map((_, si) => (
+                    <button class={`bar${si === 0 ? " is-active" : ""}`} data-col={ci} data-idx={si} aria-label={`Go to slide ${si + 1}`} type="button">
+                      <span class="bar__fill"></span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
+
+    <!-- Scroll-revealed info rows. Aligned across columns via shared grid. ── -->
+    <div class="rp__rowsband">
+      <div class="rp__shell shell">
+        <div class="rp__grid rp__grid--rows" style={`--n:${N}`}>
+          {Array.from({ length: N }).map((_, si) => (
+            <>
+              {cols.map((p, ci) => (
+                <button
+                  class={`row${si === 0 ? " is-active" : ""}`}
+                  data-col={ci}
+                  data-idx={si}
+                  style={`grid-row:${si + 1}; grid-column:${ci + 1};`}
+                  type="button"
+                  aria-label={`${p.title} — ${p.slides[si].title}`}
+                >
+                  <span class="row__indicator" aria-hidden="true"></span>
+                  <span class="row__inner">
+                    <span class="eyebrow eyebrow--dark">&gt; {p.slides[si].eyebrow}</span>
+                    <span class="row__title">{p.slides[si].title}</span>
+                    <span class="row__body">{p.slides[si].body}</span>
+                  </span>
+                </button>
+              ))}
+            </>
+          ))}
+        </div>
+
+        <div class="rp__ctas">
+          {cols.map((p) => (
+            <a class="rp__cta" href={p.href}>Open dedicated page →</a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div><!-- /.rp__pin -->
 
   <!-- Lightbox: rendered once, toggles visibility on click. ────────────── -->
   <div class="rplb" data-rplb hidden aria-hidden="true" data-rsec="lightbox">
@@ -199,7 +221,102 @@ const N = 5; // slides per column
   const N = 5;
 
   const root = document.querySelector("[data-rp]") as HTMLElement | null;
-  if (root) initRoboticsPanels(root);
+  if (root) {
+    initRoboticsPanels(root);
+    initPinRelease(root);
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Pin release + scroll marker.
+  //
+  // The band is pinned by plain position:sticky, so it lets go when its
+  // containing block's bottom reaches it. Left alone, that means the last row
+  // has to travel all the way *up behind* the band before the page scrolls on
+  // — a whole reading-gap of scrolling where the rows are gone and the next
+  // section is already creeping into the gap. --rp-tail shortens the pin
+  // wrapper by exactly that gap, so the band releases the moment the last row
+  // and the CTAs have fully arrived, and normal scrolling takes over from
+  // there. The same value is handed back as margin, so nothing below moves.
+  // ────────────────────────────────────────────────────────────────────────
+  function initPinRelease(root: HTMLElement) {
+    const pin = root.querySelector<HTMLElement>("[data-rp-pin]");
+    const band = root.querySelector<HTMLElement>(".rp__stickytop");
+    const rowsband = root.querySelector<HTMLElement>(".rp__rowsband");
+    const toc = root.querySelector<HTMLElement>("[data-rp-toc]");
+    const items = [...root.querySelectorAll<HTMLElement>("[data-toc-item]")];
+    const rows = [...root.querySelectorAll<HTMLElement>('.row[data-col="0"]')];
+    if (!pin || !band) return;
+
+    function measure() {
+      // Below the 960px breakpoint the band isn't sticky at all — no pin, no
+      // tail. Reading the used position keeps the two in sync automatically.
+      if (getComputedStyle(band!).position !== "sticky") {
+        pin!.style.setProperty("--rp-tail", "0px");
+        return;
+      }
+      // Where the band's bottom edge lands once pinned: its (negative) top
+      // inset plus its own height. Everything below that, down to the bottom
+      // of the viewport, is the reading gap the rows scroll through.
+      const inset = parseFloat(getComputedStyle(band!).top) || 0;
+      const gap = window.innerHeight - (inset + band!.offsetHeight);
+      // Never pull up by more than the rows themselves: on a very tall window
+      // the gap can swallow the whole run, and a tail past that would shrink
+      // the wrapper below the band's own height (no pin at all, plus a
+      // negative-height box). Capping it there degrades gracefully — the
+      // taller the window, the less pinned scrolling there is left to do.
+      const cap = rowsband ? rowsband.offsetHeight : 0;
+      const tail = Math.min(Math.max(0, gap), cap);
+      pin!.style.setProperty("--rp-tail", Math.round(tail) + "px");
+    }
+
+    let live = false;
+    let marked = -1;
+    function pass() {
+      const inset = parseFloat(getComputedStyle(band!).top) || 0;
+      const b = band!.getBoundingClientRect();
+      // Stuck = held at the inset AND the wrapper still has room below it.
+      // At the release point the two bottoms meet, and this goes false.
+      const stuck =
+        b.top <= inset + 0.5 &&
+        pin!.getBoundingClientRect().bottom > b.bottom + 0.5;
+      if (stuck !== live) {
+        live = stuck;
+        toc?.classList.toggle("is-live", live);
+      }
+      if (!toc || !rows.length) return;
+
+      // Active row = the one nearest the middle of the reading gap, i.e.
+      // whatever you are actually looking at between band and fold.
+      const mid = (b.bottom + window.innerHeight) / 2;
+      let best = 0;
+      let bestD = Infinity;
+      rows.forEach((r, i) => {
+        const rect = r.getBoundingClientRect();
+        const d = Math.abs((rect.top + rect.bottom) / 2 - mid);
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      if (best === marked) return;
+      marked = best;
+      items.forEach((el, i) => {
+        el.classList.toggle("is-on", i === best);
+        el.classList.toggle("is-past", i < best);
+      });
+    }
+
+    let queued = false;
+    function onScroll() {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; pass(); });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", () => { measure(); onScroll(); }, { passive: true });
+    // The band's height moves with its images (and with font loading), and
+    // the tail is measured off that height — re-measure whenever it changes.
+    if ("ResizeObserver" in window) new ResizeObserver(measure).observe(band);
+    measure();
+    pass();
+  }
 
   function initRoboticsPanels(root: HTMLElement) {
     const slidesByCol: NodeListOf<HTMLElement>[] = [
@@ -528,8 +645,30 @@ const N = 5; // slides per column
        distance; extra padding here only pads the pin release, forcing the
        user to keep scrolling past the CTAs before the next section appears. */
     padding: 0;
+    /* Own the pin wrapper's margins so the dark background still covers the
+       space --rp-tail hands back (a collapsed-through margin would leave a
+       transparent strip above the next section). */
+    display: flow-root;
   }
   .rp__shell { padding: 0 var(--page-pad); }
+
+  /* ── Pin wrapper ─────────────────────────────────────────────────────
+     The band sticks until *this* box's bottom passes it, so shortening the
+     box makes the pin let go earlier. --rp-tail (script-set, 0 without JS
+     or on narrow screens) is exactly the height of the reading gap between
+     the band's bottom edge and the bottom of the viewport — the stretch the
+     last row used to have to travel *behind* the band before scrolling
+     resumed. Pulling the rows band up by it releases the pin the instant
+     the last row and CTAs have fully arrived; the same value as a positive
+     margin here puts the document back where it was, so the section's height
+     and everything below it are untouched. flow-root keeps the negative
+     margin from collapsing out (it has to count against the box's height). */
+  .rp__pin {
+    position: relative;
+    display: flow-root;
+    margin-bottom: var(--rp-tail, 0px);
+  }
+  .rp__rowsband { margin-bottom: calc(-1 * var(--rp-tail, 0px)); }
 
   /* Sticky band pins to top of viewport while rows scroll past.
      Top is negative so engagement is *delayed* — pinning kicks in when the
@@ -553,6 +692,87 @@ const N = 5; // slides per column
     grid-template-columns: 1fr 1fr;
     grid-template-rows: repeat(var(--n, 5), auto);
     margin-top: 28px;
+  }
+
+  /* ── Scroll marker ───────────────────────────────────────────────────
+     A hairline spine of the five row labels, set vertically so the whole
+     thing lives inside the page gutter and never crowds the columns. It's
+     sticky inside .rp__pin, so it arrives and leaves exactly with the pin.
+     z-index clears the band (5) — it paints in the band's empty gutter. */
+  .rp__toc {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    /* The gutter left of the columns: the shell's centring margin once the
+       viewport passes --content-max, plus its padding. Right-aligning the
+       rail inside it keeps the marker beside the content on a wide desktop
+       instead of stranded against the window edge. */
+    width: calc(max(0px, (100% - var(--content-max)) / 2) + var(--page-pad));
+    /* The wrapper stops where the *pin* does, which is --rp-tail short of the
+       visible bottom of the rows — reach back down to the real edge, or the
+       sticky child gets dragged up off centre before the band even releases. */
+    bottom: calc(-1 * var(--rp-tail, 0px));
+    z-index: 6;
+    pointer-events: none;
+  }
+  /* Zero-height anchor: the marker hangs off this line rather than being a
+     438px box the wrapper's bottom edge can shove around mid-scroll. */
+  .rp__toc-stick {
+    position: sticky;
+    top: 50vh;
+    height: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-right: 16px;
+    opacity: 0;
+    transition: opacity 420ms ease;
+  }
+  .rp__toc.is-live .rp__toc-stick { opacity: 1; }
+
+  .rp__toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-left: 1px solid var(--dark-line);
+    transform: translateY(-50%); /* centre the run on the anchor line */
+  }
+  /* -1px so the active segment sits *on* the hairline rather than beside it. */
+  .rp__toc-item {
+    margin-left: -1px;
+    padding-left: 10px;
+    border-left: 2px solid transparent;
+    opacity: 0.55;
+    transition: opacity 300ms ease, border-color 300ms ease;
+  }
+  .rp__toc-label {
+    display: block;
+    writing-mode: vertical-rl;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dark-dim);
+    transition: color 300ms ease;
+  }
+  /* Passed rows stay faintly lit so the run reads as a progress track. */
+  .rp__toc-item.is-past { opacity: 0.8; }
+  .rp__toc-item.is-past .rp__toc-label { color: var(--dark-dim); }
+  .rp__toc-item.is-on {
+    opacity: 1;
+    border-left-color: var(--accent);
+  }
+  .rp__toc-item.is-on .rp__toc-label { color: var(--accent); }
+
+  /* Only where the gutter can hold it and the column layout is the two-up
+     one: a laptop/desktop 4:3 or 16:9, not a phone or a short window. */
+  @media (min-width: 1120px) and (min-height: 640px) {
+    .rp__toc { display: block; }
   }
 
   /* ── Column header (above image) ─────────────────────────────────── */

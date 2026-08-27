@@ -1,1 +1,2 @@
-Autonomous Flight Software — Configuration & Simulation
+Autonomous Flight Software - Configuration \& Simulation
+
