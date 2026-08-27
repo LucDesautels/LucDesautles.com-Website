@@ -1,0 +1,1 @@
+With input and a set of requirements from Canadian Coast Guard personnel, we quickly figured out why this project was novel. Compared to drones used for land rescue, an MSAR drone faces three core challenges that no existing product addresses.

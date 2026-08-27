@@ -1,0 +1,1 @@
+As a busy IBDP student, I significantly improved my studying and time management skills to balance academics with project time. I centered three IB assessments around the project: my Extended Essay, Physics IA, and Math IA.

@@ -1,0 +1,1 @@
+In May 2024, I assembled a team of 6 high school students experienced in competitive robotics, software and business. I led the team through eighteen months of development, managing timelines, delegating work, and keeping momentum through failures and setbacks.

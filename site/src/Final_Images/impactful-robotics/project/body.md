@@ -1,0 +1,1 @@
+Marine search and rescue is currently performed by specialized boats and planes. We set out to develop a proof of technology for a long range, low cost, autonomous drone to reduce the time and cost for Coast Guard and volunteer rescue to make first visual contact at an emergency site.

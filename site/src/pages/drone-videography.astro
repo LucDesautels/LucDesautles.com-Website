@@ -1,6 +1,29 @@
 ---
+import { Image } from "astro:assets";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import TopBar from "@/components/TopBar.astro";
+import { SITE } from "@/data/content";
+import { readText, listSlotDirs, listSlotImages } from "@/lib/finalImages";
+
+// Ported from the Webflow "drone-portfolio" page. The two-zone snap scroll
+// (hero -> portfolio, portfolio scrolls internally, two intentional upward
+// flicks return to the hero) is Luc's own mechanic from that export, rebuilt
+// here without jQuery/Webflow IX2.
+//
+// Content lives in src/Final_Images/drone-videography/. Projects are
+// enumerated straight from the folder tree: make a numbered folder under
+// projects/ with title.md, year.md, location.md and 1.jpg, 2.jpg, ... and it
+// shows up. The number prefix only controls order.
+const B = "drone-videography";
+const t = (p: string) => readText(`${B}/${p}`);
+
+const projects = listSlotDirs(`${B}/projects`).map((slug) => ({
+  slug,
+  title: readText(`${B}/projects/${slug}/title`),
+  year: readText(`${B}/projects/${slug}/year`),
+  location: readText(`${B}/projects/${slug}/location`),
+  images: listSlotImages(`${B}/projects/${slug}`),
+}));
 ---
 <BaseLayout
   title="Drone Videography · Luc Desautels"
@@ -8,47 +31,462 @@ import TopBar from "@/components/TopBar.astro";
 >
   <TopBar />
 
-  <main class="dv" id="main">
-    <section class="dv__lander shell">
-      <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · DRONE VIDEOGRAPHY</div>
-      <h1 class="dv__title">
-        Drone<br />
-        <span class="dv__italic">Videography</span><span class="dv__period">.</span>
-      </h1>
-      <p class="dv__body">
-        Landscapes and natural environments filmed from above. Content coming soon.
-      </p>
+  <main class="dv" id="main" data-dv-root>
+    <!-- Zone 1 — hero ───────────────────────────────────────────────── -->
+    <section class="dv__hero" id="dv-hero">
+      <div class="dv__hero-inner shell">
+        <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · DRONE VIDEOGRAPHY</div>
+        <h1 class="dv__title">
+          Drone<br />
+          <span class="dv__title-em">Videography</span><span class="dv__period">.</span>
+        </h1>
+        <p class="dv__tagline">{t("intro/tagline")}</p>
+        <button class="dv__cue" type="button" data-dv-enter>
+          <span>View the work</span>
+          <span class="dv__cue-arrow" aria-hidden="true">↓</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Zone 2 — portfolio ──────────────────────────────────────────── -->
+    <section class="dv__portfolio" id="dv-portfolio">
+      <div class="dv__scroll" id="dv-scroll">
+        <div class="dv__grid shell">
+          <aside class="dv__side">
+            <p class="dv__blurb">{t("intro/blurb")}</p>
+
+            <nav class="dv__navblock" aria-label="Locations">
+              <h2 class="dv__navhead">Locations</h2>
+              <ul class="dv__navlist">
+                {projects.map((p) => (
+                  <li><a class="dv__navlink" href={`#dv-${p.slug}`}>{p.title}</a></li>
+                ))}
+              </ul>
+            </nav>
+
+            <nav class="dv__navblock" aria-label="Socials">
+              <h2 class="dv__navhead">Socials</h2>
+              <ul class="dv__navlist">
+                <li><a class="dv__navlink" href="https://www.linkedin.com/in/luc-desautels/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+                <li><a class="dv__navlink" href={`mailto:${SITE.contact.email}`}>{SITE.contact.email}</a></li>
+                <li><a class="dv__navlink" href="/">Back to LucDesautels.com</a></li>
+              </ul>
+            </nav>
+
+            <button class="dv__back" type="button" data-dv-exit>↑ Back to top</button>
+          </aside>
+
+          <div class="dv__list">
+            {projects.map((p) => (
+              <article class="dv__card" id={`dv-${p.slug}`}>
+                <div class="dv__card-head">
+                  <h3 class="dv__card-title">{p.title}</h3>
+                  <div class="dv__card-meta">
+                    <span class="dv__card-year">{p.year}</span>
+                    <span class="dv__card-loc">{p.location}</span>
+                  </div>
+                </div>
+
+                {p.images.length > 0 && (
+                  <div class="dv__marquee">
+                    <div class="dv__marquee-track">
+                      {[...p.images, ...p.images].map((src, i) => (
+                        <span class="dv__shot">
+                          <Image
+                            src={src}
+                            alt={i < p.images.length ? `${p.title} — frame ${i + 1}` : ""}
+                            width={640}
+                            format="webp"
+                            quality={78}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </article>
+            ))}
+
+            {projects.length === 0 && (
+              <p class="dv__empty">
+                No projects yet — add a folder under
+                <code>src/Final_Images/drone-videography/projects/</code>.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 </BaseLayout>
 
+<script>
+  // Two-zone snap scroll. Rebuilt from the Webflow export's custom script:
+  // the hero and the portfolio each fill the viewport inside a fixed wrapper
+  // that translates by 100vh. Downward wheel in the hero enters the
+  // portfolio; the portfolio scrolls internally; at its top, two deliberate
+  // upward flicks (momentum below the threshold is ignored) return to the
+  // hero.
+  //
+  // Skipped entirely under prefers-reduced-motion, where the page is left as
+  // an ordinary scrolling document.
+  const root = document.querySelector<HTMLElement>("[data-dv-root]");
+  const hero = document.getElementById("dv-hero");
+  const portfolio = document.getElementById("dv-portfolio");
+  const inner = document.getElementById("dv-scroll");
+
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (root && hero && portfolio && inner && !reduced) {
+    const DURATION = 700;
+    const INTENT = 8; // wheel delta below this is treated as coasting
+
+    let zone: "hero" | "portfolio" = "hero";
+    let animating = false;
+    let exitLocked = false;
+    let armed = false;
+    let flickTimer: number | undefined;
+    let lockTimer: number | undefined;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "dv__wrapper";
+    hero.parentNode!.insertBefore(wrapper, hero);
+    wrapper.appendChild(hero);
+    wrapper.appendChild(portfolio);
+    document.documentElement.classList.add("dv-locked");
+
+    const enter = () => {
+      if (animating || zone === "portfolio") return;
+      animating = true;
+      wrapper.style.transform = "translateY(-100svh)";
+      window.setTimeout(() => {
+        animating = false;
+        zone = "portfolio";
+        exitLocked = true;
+        window.clearTimeout(lockTimer);
+        lockTimer = window.setTimeout(() => (exitLocked = false), 1000);
+      }, DURATION);
+    };
+
+    const exit = () => {
+      if (animating || zone === "hero") return;
+      animating = true;
+      inner.scrollTop = 0;
+      wrapper.style.transform = "translateY(0)";
+      window.setTimeout(() => {
+        animating = false;
+        zone = "hero";
+      }, DURATION);
+    };
+
+    document.querySelector("[data-dv-enter]")?.addEventListener("click", enter);
+    document.querySelector("[data-dv-exit]")?.addEventListener("click", exit);
+
+    window.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        if (animating) return;
+
+        if (zone === "hero") {
+          if (e.deltaY > 0) enter();
+          return;
+        }
+
+        if (e.deltaY > 0) {
+          armed = false;
+          inner.scrollTop += e.deltaY;
+          return;
+        }
+
+        const intentional = e.deltaY < -INTENT;
+        if (inner.scrollTop > 0) {
+          armed = false;
+          if (intentional) inner.scrollTop += e.deltaY;
+          return;
+        }
+        if (!intentional) return;
+
+        window.clearTimeout(flickTimer);
+        flickTimer = window.setTimeout(() => {
+          if (!armed) {
+            armed = true;
+          } else if (!exitLocked) {
+            armed = false;
+            exit();
+          }
+        }, 80);
+      },
+      { passive: false },
+    );
+
+    // Keyboard parity — the wheel hijack would otherwise strand keyboard users.
+    window.addEventListener("keydown", (e) => {
+      const target = e.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (zone === "hero" && (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ")) {
+        e.preventDefault();
+        enter();
+      } else if (zone === "portfolio" && e.key === "Escape") {
+        e.preventDefault();
+        exit();
+      }
+    });
+
+    let touchY = 0;
+    window.addEventListener("touchstart", (e) => (touchY = e.touches[0].clientY), { passive: true });
+    window.addEventListener(
+      "touchmove",
+      (e) => {
+        if (animating) return;
+        const delta = touchY - e.touches[0].clientY;
+        if (zone === "hero" && delta > 30) {
+          e.preventDefault();
+          enter();
+        } else if (zone === "portfolio" && !exitLocked && inner.scrollTop === 0 && delta < -30) {
+          e.preventDefault();
+          exit();
+        }
+      },
+      { passive: false },
+    );
+  }
+</script>
+
+<style is:global>
+  html.dv-locked,
+  html.dv-locked body {
+    overflow: hidden;
+    height: 100%;
+  }
+  .dv__wrapper {
+    position: fixed;
+    inset: 0 0 auto 0;
+    width: 100%;
+    transition: transform 0.7s cubic-bezier(0.77, 0, 0.175, 1);
+    will-change: transform;
+  }
+  html.dv-locked .dv__hero,
+  html.dv-locked .dv__portfolio {
+    height: 100svh;
+  }
+</style>
+
 <style>
   .dv {
-    min-height: 100vh;
-    padding-top: 120px;
+    background: var(--dark);
+    color: var(--dark-ink);
   }
-  .dv__lander {
-    padding: 80px var(--page-pad) 120px;
+
+  /* ── Hero ───────────────────────────────────────────────────────── */
+  .dv__hero {
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    background: var(--dark);
+  }
+  .dv__hero-inner {
+    padding: calc(var(--topbar-h) + 40px) var(--page-pad) 40px;
   }
   .dv__title {
     font-family: var(--font-display);
-    font-size: clamp(56px, 10vw, 110px);
+    font-size: clamp(56px, 11vw, 128px);
     font-weight: 500;
-    line-height: 0.95;
+    line-height: 0.94;
     letter-spacing: -0.03em;
     margin: 16px 0 0;
-    color: var(--ink);
+    color: var(--dark-ink);
   }
-  .dv__italic {
-    font-style: italic;
-  }
+  .dv__title-em { font-style: italic; }
   .dv__period { color: var(--trim); }
-  .dv__body {
+  .dv__tagline {
     font-family: var(--font-body);
-    font-size: 18px;
-    color: var(--ink-dim);
-    margin: 32px 0 0;
-    max-width: 480px;
+    font-size: clamp(17px, 2vw, 21px);
     line-height: 1.6;
+    color: var(--dark-dim);
+    margin: 28px 0 0;
+    max-width: 52ch;
+  }
+  .dv__cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin: 44px 0 0;
+    padding: 12px 22px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dark-ink);
+    background: var(--dark-panel);
+    border: 1px solid var(--dark-line);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .dv__cue:hover { border-color: var(--accent); color: var(--accent); }
+  .dv__cue:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .dv__cue-arrow { animation: dv-bob 1.8s ease-in-out infinite; }
+  @keyframes dv-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+  }
+
+  /* ── Portfolio zone ─────────────────────────────────────────────── */
+  .dv__portfolio {
+    min-height: 100svh;
+    background: var(--dark);
+    border-top: 1px solid var(--dark-line);
+  }
+  .dv__scroll {
+    height: 100svh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .dv__scroll::-webkit-scrollbar { width: 6px; }
+  .dv__scroll::-webkit-scrollbar-track { background: transparent; }
+  .dv__scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 10px;
+  }
+  .dv__scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+
+  .dv__grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 56px;
+    padding: calc(var(--topbar-h) + 48px) var(--page-pad) 96px;
+    align-items: start;
+  }
+
+  /* ── Sidebar ────────────────────────────────────────────────────── */
+  .dv__side { position: sticky; top: 0; }
+  .dv__blurb {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: var(--dark-dim);
+    margin: 0 0 36px;
+  }
+  .dv__navblock { margin-bottom: 30px; }
+  .dv__navhead {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--dark-mute);
+    margin: 0 0 12px;
+  }
+  .dv__navlist { list-style: none; margin: 0; padding: 0; }
+  .dv__navlist li + li { margin-top: 7px; }
+  .dv__navlink {
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--dark-ink);
+    text-decoration: none;
+    transition: color 0.18s ease;
+  }
+  .dv__navlink:hover { color: var(--accent); }
+  .dv__back {
+    margin-top: 8px;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dark-mute);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .dv__back:hover { color: var(--accent); }
+
+  /* ── Project cards ──────────────────────────────────────────────── */
+  .dv__list { min-width: 0; }
+  .dv__card {
+    border-top: 1px solid var(--dark-line);
+    padding: 30px 0 34px;
+  }
+  .dv__card:first-child { border-top: 0; padding-top: 0; }
+  .dv__card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .dv__card-title {
+    font-family: var(--font-display);
+    font-size: clamp(26px, 3.4vw, 40px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--dark-ink);
+    margin: 0;
+  }
+  .dv__card-meta {
+    display: flex;
+    gap: 16px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .dv__card-year { color: var(--accent); }
+  .dv__card-loc { color: var(--dark-mute); }
+
+  .dv__marquee {
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  }
+  .dv__marquee-track {
+    display: flex;
+    gap: 14px;
+    width: max-content;
+    animation: dv-marquee 38s linear infinite;
+  }
+  .dv__card:hover .dv__marquee-track { animation-play-state: paused; }
+  @keyframes dv-marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .dv__shot {
+    display: block;
+    width: clamp(220px, 26vw, 320px);
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.04);
+    flex: none;
+  }
+  .dv__shot :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .dv__empty {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--dark-mute);
+  }
+  .dv__empty code { color: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dv__marquee-track { animation: none; }
+    .dv__cue-arrow { animation: none; }
+  }
+
+  /* ── Responsive ─────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .dv__grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .dv__side { position: static; }
   }
 </style>

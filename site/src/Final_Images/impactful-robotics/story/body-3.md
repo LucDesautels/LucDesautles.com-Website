@@ -1,0 +1,1 @@
+As a busy IBDP student, I significantly improved my studying and time management skills to balance academics with project time. I also centered my IB Extended Essay around video transmission over water; my Physics Internal Assessment research on motor efficiency testing; and my Math IA on optimizing a parametric spiral for drone search pattern considering wind and current.

@@ -1,0 +1,1 @@
+I ran extensive motor-battery thrust tests to characterize the power system performance. These tests informed the selection of motor and propeller combinations that maximize endurance while meeting the thrust requirements for hover and forward flight. This work fed directly into my Physics IA research on motor efficiency.

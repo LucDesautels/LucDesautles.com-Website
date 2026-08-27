@@ -1,54 +1,650 @@
 ---
+import { Image } from "astro:assets";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import TopBar from "@/components/TopBar.astro";
+import Footer from "@/components/Footer.astro";
+import { resolveImage, readText } from "@/lib/finalImages";
+
+// Ported from the Webflow "Project Sailfish" page. Copy lives in
+// src/Final_Images/impactful-robotics/ as one .md per field, images as one
+// slot per folder — same convention as the rest of the site, so this page is
+// editable without touching code. See IMAGE_GUIDE.md.
+const B = "impactful-robotics";
+const t = (p: string) => readText(`${B}/${p}`);
+const img = (p: string) => resolveImage(`${B}/${p}`);
+
+const challenges = ["extended-range", "waterproofing", "harsh-conditions"].map((slug) => ({
+  slug,
+  title: t(`project/challenges/${slug}/title`),
+  desc: t(`project/challenges/${slug}/desc`),
+}));
+
+const engCards = [
+  { slug: "thrust-testing", alt: "Motor test rig" },
+  { slug: "hover-tuning", alt: "Hover flight" },
+  { slug: "search-pattern", alt: "Search pattern diagram" },
+  { slug: "video-transmission", alt: "Video transmission diagram" },
+  { slug: "fuselage", alt: "Fuselage CAD render" },
+  { slug: "wings", alt: "Wing manufacturing" },
+].map((c) => ({
+  ...c,
+  src: img(`involvement/engineering/${c.slug}/hero`),
+  tag: t(`involvement/engineering/${c.slug}/tag`),
+  title: t(`involvement/engineering/${c.slug}/title`),
+  body: t(`involvement/engineering/${c.slug}/body`),
+}));
+
+const leadItems = [
+  "founded-team",
+  "stakeholder-engagement",
+  "leading-setbacks",
+  "balancing-academics",
+].map((slug, i) => ({
+  slug,
+  num: String(i + 1).padStart(2, "0"),
+  title: t(`involvement/leadership/${slug}/title`),
+  body: t(`involvement/leadership/${slug}/body`),
+}));
+
+const specs = [
+  { val: "2 m", label: "Wingspan" },
+  { val: "5 kg", label: "Weight" },
+  { val: "160 km", label: "Endurance" },
+  { val: "VTOL", label: "Takeoff & Landing" },
+];
+
+const innovations = [
+  "waterproof-fuselage",
+  "composite-wings",
+  "autonomous-flight",
+  "vtol-hover",
+].map((slug, i) => ({
+  slug,
+  num: String(i + 1).padStart(2, "0"),
+  title: t(`gen3/innovations/${slug}/title`),
+  desc: t(`gen3/innovations/${slug}/desc`),
+}));
+
+const heroImg = img("hero/hero");
+const storyImg = img("story/team");
+const gen3Img = img("gen3/hero");
 ---
 <BaseLayout
   title="Project Sailfish · Luc Desautels"
-  description="Project Sailfish — an autonomous sailing robotics program."
+  description="A proof of technology for a low-cost, autonomous marine search and rescue drone — 2 m wingspan, 160 km endurance, VTOL."
 >
   <TopBar />
 
-  <main class="ir" id="main">
-    <section class="ir__lander shell">
-      <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · PROJECT SAILFISH</div>
-      <h1 class="ir__title">
-        Project<br />
-        <span class="ir__italic">Sailfish</span><span class="ir__period">.</span>
-      </h1>
-      <p class="ir__body">
-        Content coming soon.
-      </p>
+  <main class="psf" id="main">
+    <!-- Hero ────────────────────────────────────────────────────────── -->
+    <section class="psf__hero">
+      <div class="psf__hero-inner shell">
+        <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · IMPACTFUL ROBOTICS</div>
+        <h1 class="psf__title">
+          Project<br />
+          <span class="psf__title-em">Sailfish</span><span class="psf__period">.</span>
+        </h1>
+        <p class="psf__tagline">{t("hero/tagline")}</p>
+        <div class="psf__badges">
+          <span class="psf__badge">{t("hero/badge-1")}</span>
+          <span class="psf__badge">{t("hero/badge-2")}</span>
+        </div>
+        <p class="psf__detail">{t("hero/detail")}</p>
+      </div>
+      {heroImg && (
+        <figure class="psf__hero-fig shell">
+          <Image src={heroImg} alt="Sailfish drone in flight" width={1800} format="webp" quality={82} loading="eager" decoding="async" />
+        </figure>
+      )}
+    </section>
+
+    <!-- The Project ─────────────────────────────────────────────────── -->
+    <section class="psf__sec psf__sec--dark">
+      <div class="psf__cont shell">
+        <div class="eyebrow eyebrow--dark">§ 01 — The Project</div>
+        <h2 class="psf__h2">{t("project/heading")}</h2>
+        <p class="psf__body">{t("project/body")}</p>
+
+        <hr class="psf__rule" />
+
+        <h2 class="psf__h2 psf__h2--sub">{t("project/challenge-heading")}</h2>
+        <p class="psf__body">{t("project/challenge-intro")}</p>
+
+        <ul class="psf__challenges">
+          {challenges.map((c) => (
+            <li class="psf__challenge">
+              <h3 class="psf__challenge-t">{c.title}</h3>
+              <p class="psf__challenge-d">{c.desc}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <!-- The Story ───────────────────────────────────────────────────── -->
+    <section class="psf__sec psf__sec--light">
+      <div class="psf__cont shell">
+        <div class="eyebrow eyebrow--accent">§ 02 — The Story</div>
+        <h2 class="psf__h2">{t("story/heading")}</h2>
+        <p class="psf__body">{t("story/body-1")}</p>
+        <p class="psf__body">{t("story/body-2")}</p>
+
+        {storyImg && (
+          <figure class="psf__fig">
+            <Image src={storyImg} alt="The team with an early Sailfish prototype" width={1400} format="webp" quality={80} loading="lazy" decoding="async" />
+          </figure>
+        )}
+
+        <p class="psf__body">{t("story/body-3")}</p>
+
+        <blockquote class="psf__quote">{t("story/quote")}</blockquote>
+
+        <p class="psf__body">{t("story/body-4")}</p>
+        <p class="psf__body">{t("story/body-5")}</p>
+
+        <aside class="psf__recog">
+          <p class="psf__recog-q">{t("story/recognition")}</p>
+          <p class="psf__recog-a">{t("story/recognition-attr")}</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- My Involvement ──────────────────────────────────────────────── -->
+    <section class="psf__sec psf__sec--dark">
+      <div class="psf__cont psf__cont--wide shell">
+        <div class="eyebrow eyebrow--dark">§ 03 — My Involvement</div>
+        <h2 class="psf__h2">{t("involvement/heading")}</h2>
+
+        <div class="psf__tabs" data-psf-tabs>
+          <div class="psf__tabbtns" role="tablist" aria-label="My involvement">
+            <button class="psf__tabbtn is-active" role="tab" aria-selected="true" aria-controls="psf-panel-eng" id="psf-tab-eng">Engineering Work</button>
+            <button class="psf__tabbtn" role="tab" aria-selected="false" aria-controls="psf-panel-lead" id="psf-tab-lead">Leadership &amp; Team</button>
+          </div>
+
+          <div class="psf__panel is-active" role="tabpanel" id="psf-panel-eng" aria-labelledby="psf-tab-eng">
+            <ul class="psf__enggrid">
+              {engCards.map((c) => (
+                <li class="psf__engcard">
+                  {c.src && (
+                    <div class="psf__engcard-img">
+                      <Image src={c.src} alt={c.alt} width={800} format="webp" quality={78} loading="lazy" decoding="async" />
+                    </div>
+                  )}
+                  <div class="psf__engcard-body">
+                    <div class="psf__engcard-tag">{c.tag}</div>
+                    <h3 class="psf__engcard-t">{c.title}</h3>
+                    <p class="psf__engcard-d">{c.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="psf__panel" role="tabpanel" id="psf-panel-lead" aria-labelledby="psf-tab-lead" hidden>
+            <ul class="psf__leadlist">
+              {leadItems.map((l) => (
+                <li class="psf__lead">
+                  <div class="psf__lead-num">{l.num}</div>
+                  <div class="psf__lead-body">
+                    <h3 class="psf__lead-t">{l.title}</h3>
+                    <p class="psf__lead-d">{l.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Generation 3 ────────────────────────────────────────────────── -->
+    <section class="psf__sec psf__sec--light">
+      <div class="psf__cont shell">
+        <div class="eyebrow eyebrow--accent">§ 04 — Generation 3 Proof of Technology</div>
+        <h2 class="psf__h2">{t("gen3/heading")}</h2>
+
+        {gen3Img && (
+          <figure class="psf__fig">
+            <Image src={gen3Img} alt="The third-generation Sailfish aircraft" width={1600} format="webp" quality={82} loading="lazy" decoding="async" />
+          </figure>
+        )}
+
+        <dl class="psf__specs">
+          {specs.map((s) => (
+            <div class="psf__spec">
+              <dt class="psf__spec-v">{s.val}</dt>
+              <dd class="psf__spec-l">{s.label}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <ul class="psf__innov">
+          {innovations.map((n) => (
+            <li class="psf__innov-row">
+              <div class="psf__innov-num">{n.num}</div>
+              <div>
+                <h3 class="psf__innov-t">{n.title}</h3>
+                <p class="psf__innov-d">{n.desc}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   </main>
+
+  <Footer />
 </BaseLayout>
 
+<script>
+  // Replaces the Webflow-CDN-hosted psftabs2 script, which stops resolving
+  // once the Webflow site is unpublished.
+  document.querySelectorAll<HTMLElement>("[data-psf-tabs]").forEach((root) => {
+    const btns = Array.from(root.querySelectorAll<HTMLButtonElement>(".psf__tabbtn"));
+    const panels = Array.from(root.querySelectorAll<HTMLElement>(".psf__panel"));
+
+    const select = (i: number) => {
+      btns.forEach((b, bi) => {
+        b.classList.toggle("is-active", bi === i);
+        b.setAttribute("aria-selected", String(bi === i));
+      });
+      panels.forEach((p, pi) => {
+        p.classList.toggle("is-active", pi === i);
+        p.hidden = pi !== i;
+      });
+    };
+
+    btns.forEach((b, i) => {
+      b.addEventListener("click", () => select(i));
+      b.addEventListener("keydown", (e) => {
+        if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+        e.preventDefault();
+        const next = (i + (e.key === "ArrowRight" ? 1 : btns.length - 1)) % btns.length;
+        select(next);
+        btns[next].focus();
+      });
+    });
+  });
+</script>
+
 <style>
-  .ir {
-    min-height: 100vh;
-    padding-top: 120px;
+  /* ── Shared ─────────────────────────────────────────────────────── */
+  .psf {
+    background: var(--bg);
   }
-  .ir__lander {
-    padding: 80px var(--page-pad) 120px;
+  .psf__cont {
+    max-width: 900px;
+    padding: 0 var(--page-pad);
   }
-  .ir__title {
+  .psf__cont--wide {
+    max-width: 1120px;
+  }
+  .psf__sec {
+    padding: clamp(72px, 9vw, 128px) 0;
+  }
+  .psf__sec--dark {
+    background: var(--dark);
+    color: var(--dark-ink);
+  }
+  .psf__sec--light {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .psf__h2 {
+    font-family: var(--font-display);
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin: 18px 0 28px;
+  }
+  .psf__h2--sub {
+    font-size: clamp(26px, 3.2vw, 36px);
+  }
+  .psf__body {
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.75;
+    margin: 0 0 22px;
+    max-width: 68ch;
+  }
+  .psf__sec--dark .psf__body { color: var(--dark-dim); }
+  .psf__sec--light .psf__body { color: var(--ink-dim); }
+
+  .psf__rule {
+    border: 0;
+    border-top: 1px solid var(--dark-line);
+    margin: 56px 0 48px;
+  }
+  .psf__fig {
+    margin: 40px 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-warm);
+  }
+  .psf__fig :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ── Hero ───────────────────────────────────────────────────────── */
+  .psf__hero {
+    background: var(--dark);
+    color: var(--dark-ink);
+    padding: calc(var(--topbar-h) + 72px) 0 clamp(64px, 8vw, 104px);
+  }
+  .psf__hero-inner {
+    max-width: 900px;
+    padding: 0 var(--page-pad);
+  }
+  .psf__title {
     font-family: var(--font-display);
     font-size: clamp(56px, 10vw, 110px);
     font-weight: 500;
     line-height: 0.95;
     letter-spacing: -0.03em;
     margin: 16px 0 0;
+    color: var(--dark-ink);
+  }
+  .psf__title-em { font-style: italic; }
+  .psf__period { color: var(--trim); }
+
+  .psf__tagline {
+    font-family: var(--font-body);
+    font-size: clamp(19px, 2.2vw, 24px);
+    line-height: 1.5;
+    color: var(--dark-dim);
+    margin: 28px 0 0;
+    max-width: 46ch;
+  }
+  .psf__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 28px 0 0;
+  }
+  .psf__badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dark-ink);
+    border: 1px solid var(--dark-line);
+    background: var(--dark-panel);
+    border-radius: 999px;
+    padding: 7px 14px;
+  }
+  .psf__detail {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--dark-mute);
+    margin: 28px 0 0;
+    max-width: 62ch;
+  }
+  .psf__hero-fig {
+    margin: clamp(48px, 6vw, 72px) auto 0;
+    padding: 0 var(--page-pad);
+  }
+  .psf__hero-fig :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+  }
+
+  /* ── Challenge cards ────────────────────────────────────────────── */
+  .psf__challenges {
+    list-style: none;
+    margin: 44px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .psf__challenge {
+    background: var(--dark-panel);
+    border: 1px solid var(--dark-line);
+    border-radius: 10px;
+    padding: 26px;
+  }
+  .psf__challenge-t {
+    font-family: var(--font-tech);
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--dark-ink);
+    margin: 0 0 10px;
+  }
+  .psf__challenge-d {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: var(--dark-dim);
+    margin: 0;
+  }
+
+  /* ── Story extras ───────────────────────────────────────────────── */
+  .psf__quote {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(19px, 2.3vw, 23px);
+    line-height: 1.55;
+    color: var(--ink);
+    border-left: 3px solid var(--accent);
+    margin: 40px 0;
+    padding: 6px 0 6px 26px;
+    max-width: 62ch;
+  }
+  .psf__recog {
+    background: var(--bg-warm);
+    border-radius: 10px;
+    padding: 28px 30px;
+    margin: 44px 0 0;
+  }
+  .psf__recog-q {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--ink-dim);
+    margin: 0 0 14px;
+  }
+  .psf__recog-a {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  /* ── Tabs ───────────────────────────────────────────────────────── */
+  .psf__tabs { margin-top: 36px; }
+  .psf__tabbtns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-bottom: 1px solid var(--dark-line);
+    padding-bottom: 14px;
+    margin-bottom: 36px;
+  }
+  .psf__tabbtn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--dark-mute);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+  .psf__tabbtn:hover { color: var(--dark-ink); }
+  .psf__tabbtn.is-active {
+    color: var(--dark-ink);
+    background: var(--dark-panel);
+    border-color: var(--dark-line);
+  }
+  .psf__tabbtn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .psf__panel[hidden] { display: none; }
+
+  /* ── Engineering cards ──────────────────────────────────────────── */
+  .psf__enggrid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  .psf__engcard {
+    background: var(--dark-panel);
+    border: 1px solid var(--dark-line);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .psf__engcard-img {
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .psf__engcard-img :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .psf__engcard-body { padding: 22px; }
+  .psf__engcard-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .psf__engcard-t {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--dark-ink);
+    margin: 0 0 10px;
+  }
+  .psf__engcard-d {
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--dark-dim);
+    margin: 0;
+  }
+
+  /* ── Leadership list ────────────────────────────────────────────── */
+  .psf__leadlist { list-style: none; margin: 0; padding: 0; }
+  .psf__lead {
+    display: flex;
+    gap: 22px;
+    padding: 26px 0;
+    border-bottom: 1px solid var(--dark-line-soft);
+  }
+  .psf__lead:last-child { border-bottom: 0; }
+  .psf__lead-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 30px;
+    padding-top: 5px;
+  }
+  .psf__lead-t {
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 500;
+    color: var(--dark-ink);
+    margin: 0 0 8px;
+  }
+  .psf__lead-d {
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--dark-dim);
+    margin: 0;
+    max-width: 68ch;
+  }
+
+  /* ── Specs + innovations ────────────────────────────────────────── */
+  .psf__specs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin: 48px 0;
+  }
+  .psf__spec {
+    text-align: center;
+    background: var(--bg-warm);
+    border-radius: 10px;
+    padding: 26px 14px;
+  }
+  .psf__spec-v {
+    font-family: var(--font-tech);
+    font-size: clamp(28px, 3.4vw, 38px);
+    line-height: 1;
     color: var(--ink);
   }
-  .ir__italic {
-    font-style: italic;
+  .psf__spec-l {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 10px 0 0;
   }
-  .ir__period { color: var(--trim); }
-  .ir__body {
+  .psf__innov { list-style: none; margin: 40px 0 0; padding: 0; }
+  .psf__innov-row {
+    display: flex;
+    gap: 22px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .psf__innov-row:last-child { border-bottom: 0; }
+  .psf__innov-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 30px;
+    padding-top: 5px;
+  }
+  .psf__innov-t {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink);
+    margin: 0 0 7px;
+  }
+  .psf__innov-d {
     font-family: var(--font-body);
-    font-size: 18px;
+    font-size: 15px;
+    line-height: 1.7;
     color: var(--ink-dim);
-    margin: 32px 0 0;
-    max-width: 480px;
-    line-height: 1.6;
+    margin: 0;
+    max-width: 68ch;
+  }
+
+  /* ── Responsive ─────────────────────────────────────────────────── */
+  @media (max-width: 960px) {
+    .psf__challenges { grid-template-columns: 1fr; }
+    .psf__enggrid { grid-template-columns: repeat(2, 1fr); }
+    .psf__specs { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .psf__enggrid { grid-template-columns: 1fr; }
+    .psf__lead, .psf__innov-row { gap: 14px; }
   }
 </style>

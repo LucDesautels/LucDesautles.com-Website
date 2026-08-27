@@ -1,0 +1,1 @@
+In the unforgiving field of aerospace engineering even small failures can be catastrophic. Our testing often involved crashes that erased dozens of hours of work. I learned to stay motivated and lead the team through setbacks.

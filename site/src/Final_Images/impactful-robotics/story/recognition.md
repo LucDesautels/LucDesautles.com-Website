@@ -1,0 +1,1 @@
+We've received a letter of recognition from the CEO of the Airforce Foundation commending us and encouraging us to apply for their scholarship. The letter was endorsed by a Navy Captain who, for decades, has been a key advisor to the Chief of Defense Staff (head of Armed Forces).

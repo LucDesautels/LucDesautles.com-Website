@@ -1,0 +1,1 @@
+With input from Coast Guard and other experts to create a set of requirements, we figured out why our project is first of its kind: compared to drones used for land rescue, an MSAR drone requires longer range, waterproofing and reliability in harsh conditions.

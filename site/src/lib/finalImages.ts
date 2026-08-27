@@ -136,3 +136,33 @@ export function readTagList(slotPath: string): string[] {
     .map((l) => l.trim())
     .filter(Boolean);
 }
+
+/**
+ * Sub-folder names directly under `prefix` (a Final_Images-relative dir),
+ * numeric-aware sorted so an "01-", "02-" naming prefix controls display
+ * order. Lets a section enumerate its items from the folder tree instead of
+ * a hand-maintained list — add a folder, get an item.
+ */
+export function listSlotDirs(prefix: string): string[] {
+  const dir = path.join(FINAL_IMAGES_DIR, prefix);
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+}
+
+/**
+ * Every image sitting directly in one slot dir, numeric-aware sorted by
+ * basename ("1", "2", "10"). For galleries where the count varies per item
+ * and naming a fixed set of slots would be wrong.
+ */
+export function listSlotImages(dirPath: string): ImageMetadata[] {
+  const dir = dirPath.toLowerCase();
+  const bases = FOLDER_FILES[dir] ?? [];
+  return [...bases]
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((b) => IMAGE_MAP[`${dir}/${b}`])
+    .filter((m): m is ImageMetadata => Boolean(m));
+}

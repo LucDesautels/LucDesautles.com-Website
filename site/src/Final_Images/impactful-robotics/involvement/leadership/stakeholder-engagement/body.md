@@ -1,0 +1,1 @@
+Engaged with Canadian Coast Guard personnel and other experts to create a set of requirements. Networked with university students and professors from UBC, Waterloo, and Queen's; industry experts; and hobbyists in the drone community working on surprisingly high-tech projects.
