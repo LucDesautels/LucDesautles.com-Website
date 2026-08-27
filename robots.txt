@@ -1,0 +1,5 @@
+# Allow all crawlers. No off-limits sections at the moment.
+User-agent: *
+Allow: /
+
+Sitemap: https://lucdesautels.com/sitemap.xml
