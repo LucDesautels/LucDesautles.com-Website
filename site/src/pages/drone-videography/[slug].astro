@@ -1,0 +1,230 @@
+---
+import { Image } from "astro:assets";
+import {
+  readText,
+  readTextOptional,
+  resolveImage,
+  listSlotDirs,
+  listSlotImages,
+  mdInline,
+} from "@/lib/finalImages";
+import DroneNav from "@/components/webflow/DroneNav.astro";
+
+// Faithful port of the Webflow CMS template page `detail_projects.html`.
+// This is a real route, exactly as the template was: in Webflow the project
+// cards linked to the collection item page. Because it reuses the identical
+// left sidebar, only the right-hand .layout-content column changes — which is
+// what makes it read as the panel swapping in place rather than a page load.
+const B = "drone-videography";
+const ASSETS = "/webflow/drone-videography";
+
+const dirs = listSlotDirs(`${B}/projects`);
+const index = dirs.map((dir) => ({ dir, slug: dir.replace(/^\d+-/, ""), title: readText(`${B}/projects/${dir}/title`) }));
+
+export async function getStaticPaths() {
+  const { listSlotDirs: dirsOf } = await import("@/lib/finalImages");
+  return dirsOf("drone-videography/projects").map((dir) => ({
+    params: { slug: dir.replace(/^\d+-/, "") },
+    props: { dir },
+  }));
+}
+
+const { dir } = Astro.props;
+const f = (n: string) => readTextOptional(`${B}/projects/${dir}/${n}`);
+const paragraphs = (s: string) => s.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+
+const project = {
+  title: f("title"),
+  year: f("year"),
+  description: f("description"),
+  location: f("location"),
+  client: f("client"),
+  gear: f("gear"),
+  background: paragraphs(f("background")),
+  details: paragraphs(f("details")),
+  featured: resolveImage(`${B}/projects/${dir}/hero`),
+  small: listSlotImages(`${B}/projects/${dir}/detail/small`),
+  large: listSlotImages(`${B}/projects/${dir}/detail/large`),
+  singleSmall: resolveImage(`${B}/projects/${dir}/detail/single-small`),
+  singleLarge: resolveImage(`${B}/projects/${dir}/detail/single-large`),
+};
+const current = dir.replace(/^\d+-/, "");
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{project.title} · Drone Videography · Luc Desautels</title>
+    <meta name="description" content={project.description} />
+    <meta property="og:title" content={`${project.title} · Luc Desautels`} />
+    <meta property="og:type" content="article" />
+    <link rel="stylesheet" href={`${ASSETS}/css/normalize.css`} />
+    <link rel="stylesheet" href={`${ASSETS}/css/webflow.css`} />
+    <link rel="stylesheet" href={`${ASSETS}/css/luke-s-newest-site-667-portfolio.webflow.css`} />
+    <link rel="shortcut icon" href={`${ASSETS}/images/favicon.svg`} type="image/x-icon" />
+    <link rel="apple-touch-icon" href={`${ASSETS}/images/webclip.svg`} />
+    <script is:inline>
+      !(function (o, c) {
+        var n = c.documentElement,
+          t = " w-mod-";
+        n.className += t + "js";
+        ("ontouchstart" in o || (o.DocumentTouch && c instanceof DocumentTouch)) &&
+          (n.className += t + "touch");
+      })(window, document);
+    </script>
+  </head>
+
+  <body>
+    <div class="layout">
+      <div class="w-layout-grid layout-grid">
+        <DroneNav projects={index} current={current} />
+
+        <div id="w-node-_427fbb97-4520-33e7-d424-69590c37ea0c-d93b2b76" class="layout-content">
+          <div class="project-hero">
+            <div class="project-title">
+              <h1 class="display-l">{project.title}</h1>
+              <div class="display-l display-light">{project.year}</div>
+            </div>
+
+            {project.featured && (
+              <div class="project-image-wrapper">
+                <Image
+                  src={project.featured}
+                  alt={project.title}
+                  width={1800}
+                  format="webp"
+                  quality={82}
+                  loading="eager"
+                  decoding="async"
+                  class="project-image"
+                />
+              </div>
+            )}
+
+            <div class="project-content-info">
+              <div class="w-layout-grid grid">
+                <div id="w-node-_225ef5e1-76cd-d5bb-5a58-542f2e66de7e-2e66de7c" class="project-info-item">
+                  <div class="body display-light">Info</div>
+                  <div class="body">{project.description}</div>
+                </div>
+                <div id="w-node-_93d50c09-5468-944a-dc0d-a0e97a1fcdac-7a1fcdac" class="project-info-item">
+                  <div class="body display-light">Region</div>
+                  <div class="body">{project.location}</div>
+                </div>
+                <div id="w-node-_93d50c09-5468-944a-dc0d-a0e97a1fcdac-7a1fcdac" class="project-info-item">
+                  <div class="body display-light">Location</div>
+                  <div class="body">{project.client}</div>
+                </div>
+                <div id="w-node-_93d50c09-5468-944a-dc0d-a0e97a1fcdac-7a1fcdac" class="project-info-item">
+                  <div class="body display-light">Gear</div>
+                  <div class="body">{project.gear}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="project-content">
+            <div class="w-layout-grid grid">
+              <div id="w-node-_35e2a284-b392-e20d-ece3-895e87003351-d93b2b76" class="project-content-item">
+                <div class="rich-text w-richtext">
+                  {project.background.map((para) => <p set:html={mdInline(para)} />)}
+                </div>
+              </div>
+            </div>
+
+            <div class="project-image-list">
+              {project.small.length > 0 && (
+                <div role="list" class="w-layout-grid grid">
+                  {project.small.map((src, i) => (
+                    <div id="w-node-_400770a9-77a6-a313-384c-d92501298ea6-d93b2b76" role="listitem">
+                      <div class="project-image-wrapper">
+                        <Image
+                          src={src}
+                          alt={`${project.title} — ${i + 1}`}
+                          width={900}
+                          format="webp"
+                          quality={80}
+                          loading="lazy"
+                          decoding="async"
+                          class="project-image"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {project.large.map((src, i) => (
+                <div class="project-image-wrapper">
+                  <Image
+                    src={src}
+                    alt={`${project.title} — wide ${i + 1}`}
+                    width={1800}
+                    format="webp"
+                    quality={82}
+                    loading="lazy"
+                    decoding="async"
+                    class="project-image"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div class="w-layout-grid grid">
+              <div id="w-node-_9538256c-3f1a-4c24-bfae-a0c93b981bf7-d93b2b76" class="project-content-item">
+                <div class="rich-text w-richtext">
+                  {project.details.map((para) => <p set:html={mdInline(para)} />)}
+                </div>
+              </div>
+            </div>
+
+            <div class="w-layout-grid grid">
+              {project.singleLarge && (
+                <div id="w-node-e4208a3a-d131-a00d-6031-047b0f66cebf-d93b2b76" class="component-grid-wrapper">
+                  <div class="project-image-wrapper">
+                    <Image
+                      src={project.singleLarge}
+                      alt={`${project.title} — feature`}
+                      width={1400}
+                      format="webp"
+                      quality={82}
+                      loading="lazy"
+                      decoding="async"
+                      class="project-image"
+                    />
+                  </div>
+                </div>
+              )}
+              {project.singleSmall && (
+                <div id="w-node-_6f74e7e1-c610-5e4b-3e4b-c66d9bf9f6ce-d93b2b76" class="component-grid-wrapper">
+                  <div class="project-image-wrapper">
+                    <Image
+                      src={project.singleSmall}
+                      alt={`${project.title} — detail`}
+                      width={900}
+                      format="webp"
+                      quality={80}
+                      loading="lazy"
+                      decoding="async"
+                      class="project-image"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style is:global>
+      /* Astro's <Image> emits intrinsic width/height; the template sized these
+         purely with CSS. */
+      .project-image { width: 100%; height: 100%; object-fit: cover; }
+      .project-image-wrapper { overflow: hidden; }
+      /* The template's rich text expects real <p> spacing. */
+      .rich-text p:last-child { margin-bottom: 0; }
+    </style>
+  </body>
+</html>

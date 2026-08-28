@@ -1,0 +1,70 @@
+---
+// The Webflow template's left sidebar, shared by the portfolio index and the
+// project detail pages. Reproducing it in one place is what makes the detail
+// pages read as the right-hand panel swapping rather than a full page load —
+// which is how the template behaved.
+import { readText } from "@/lib/finalImages";
+import { SITE } from "@/data/content";
+
+interface Props {
+  projects: { slug: string; title: string }[];
+  current?: string;
+  assets?: string;
+}
+const { projects, current, assets = "/webflow/drone-videography" } = Astro.props;
+const blurb = readText("drone-videography/intro/blurb");
+---
+<div id="w-node-f07d9bc0-ac14-acac-7e55-92e97fb92134-7fb92134" class="nav">
+  <div class="nav-item">
+    <div class="nav-item-title">
+      <a href="/drone-videography" class="nav-brand w-inline-block">
+        <img
+          src={`${assets}/images/Luc-Desautels---Small-Final-Luc-upright-3x.svg`}
+          loading="lazy"
+          alt="Luc Desautels"
+          class="nav-brand-logo"
+        />
+      </a>
+      <p class="paragraph">{blurb}</p>
+    </div>
+  </div>
+
+  <div class="nav-item nav-item-menu">
+    <div class="nav-menu">
+      <div class="nav-menu-links">
+        <div class="nav-menu-list">
+          <div class="display-s display-light">Locations</div>
+          <div class="nav-menu-list-wrapper">
+            <div role="list" class="nav-menu-list">
+              {projects.map((p) => (
+                <div role="listitem" class="nav-menu-list-item">
+                  <a
+                    href={`/drone-videography/${p.slug}`}
+                    class:list={["nav-link", p.slug === current && "w--current"]}
+                    aria-current={p.slug === current ? "page" : undefined}
+                  >
+                    {p.title}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-menu-links">
+        <div class="nav-menu-list">
+          <div class="display-s display-light">Socials</div>
+          <a
+            href="https://www.linkedin.com/in/luc-desautels/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="nav-link">LinkedIn</a
+          >
+          <a href={`mailto:${SITE.contact.email}`} class="nav-link">{SITE.contact.email}</a>
+          <a href="/" class="nav-link">Back To LucDesautels.com</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
