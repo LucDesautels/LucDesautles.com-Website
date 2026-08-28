@@ -1,0 +1,133 @@
+---
+// Webflow IX2 replacements for the footer and the Next Project card, taken
+// verbatim from the export's action lists. Included by both the gallery index
+// and the project detail pages so the two stay in sync.
+//
+//   a-7   "Footer - Marquee"              .footer-image-marquee-line
+//                                          translateX 0 -> -100%, 15s linear, loop
+//   a-19  "Next Project Card - Marquee"   .next-project-card-marquee-line, same
+//   a-6   "Footer - Scroll In View"       SCROLL_PROGRESS 0 -> 100:
+//                                          .section-footer-overlay  opacity 1 -> 0
+//                                          .footer-content          translateY 10% -> 0
+//                                          .footer-image-marquee    translateY 15% -> 0
+//   a-20/ "Next Project Card - Hover"     500ms outQuart:
+//   a-21                                   card height 250px -> auto
+//                                          .next-project-card-title opacity 1 -> .55
+//                                          ...-line-item-overlay    opacity 1 -> 0
+//
+// `scrollRoot` is the element whose scrolling drives a-6: the document on the
+// detail pages, the pinned .portfolio-scroll pane on the gallery index.
+interface Props {
+  scrollRoot?: string;
+}
+const { scrollRoot } = Astro.props;
+---
+<style is:global>
+  /* a-7 + a-19 — both marquees. Two identical lines sit side by side so the
+     wrap at -100% is seamless. */
+  .footer-image-marquee-line,
+  .next-project-card-marquee-line {
+    animation: dv-marquee-15s 15s linear infinite;
+  }
+  @keyframes dv-marquee-15s {
+    from { transform: translateX(0%); }
+    to { transform: translateX(-100%); }
+  }
+
+  /* a-6 — footer scroll-in-view. JS writes --footer-p (0..1) onto the section;
+     these three read it, so the reveal tracks scroll position exactly rather
+     than running on a timer. */
+  .section-footer-overlay {
+    opacity: calc(1 - var(--footer-p, 0));
+  }
+  .footer-content {
+    transform: translateY(calc((1 - var(--footer-p, 0)) * 10%));
+  }
+  .footer-image-marquee {
+    transform: translateY(calc((1 - var(--footer-p, 0)) * 15%));
+  }
+
+  /* a-20 / a-21 — Next Project card hover. The card collapses to 250px and
+     expands to its natural height; `auto` isn't animatable, so the script
+     measures it and writes a px value, which is what IX2 did too. */
+  .next-project-card {
+    height: 250px;
+    transition: height 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+  .next-project-card-title,
+  .next-project-card-marquee-line-item-overlay {
+    opacity: 1;
+    transition: opacity 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+  .next-project-card:hover .next-project-card-title,
+  .next-project-card:focus-visible .next-project-card-title {
+    opacity: 0.55;
+  }
+  .next-project-card:hover .next-project-card-marquee-line-item-overlay,
+  .next-project-card:focus-visible .next-project-card-marquee-line-item-overlay {
+    opacity: 0;
+  }
+  .next-project-card:focus-visible {
+    outline: 2px solid var(--color--brand-primary);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .footer-image-marquee-line,
+    .next-project-card-marquee-line { animation: none; }
+    .next-project-card,
+    .next-project-card-title,
+    .next-project-card-marquee-line-item-overlay { transition-duration: 1ms; }
+  }
+</style>
+
+<script is:inline define:vars={{ scrollRoot }}>
+  (function () {
+    // ── a-6: footer scroll progress ───────────────────────────────────────
+    var footer = document.querySelector(".section-footer");
+    var root = scrollRoot ? document.querySelector(scrollRoot) : null;
+
+    if (footer) {
+      var ticking = false;
+      var update = function () {
+        ticking = false;
+        var rect = footer.getBoundingClientRect();
+        var viewH = root ? root.clientHeight : window.innerHeight;
+        var top = root ? rect.top - root.getBoundingClientRect().top : rect.top;
+        // 0 as it starts entering, 1 once it has fully passed through.
+        var p = (viewH - top) / (viewH + rect.height);
+        p = p < 0 ? 0 : p > 1 ? 1 : p;
+        footer.style.setProperty("--footer-p", String(p));
+      };
+      var onScroll = function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(update);
+      };
+      (root || window).addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll, { passive: true });
+      update();
+    }
+
+    // ── a-20 / a-21: Next Project card expand ─────────────────────────────
+    document.querySelectorAll(".next-project-card").forEach(function (card) {
+      var natural = function () {
+        var prev = card.style.height;
+        var prevTransition = card.style.transition;
+        card.style.transition = "none";
+        card.style.height = "auto";
+        var h = card.getBoundingClientRect().height;
+        card.style.height = prev || "250px";
+        void card.offsetHeight; // force reflow so the transition re-arms
+        card.style.transition = prevTransition;
+        return h;
+      };
+      var open = function () { card.style.height = natural() + "px"; };
+      var close = function () { card.style.height = "250px"; };
+      card.addEventListener("mouseenter", open);
+      card.addEventListener("mouseleave", close);
+      card.addEventListener("focus", open);
+      card.addEventListener("blur", close);
+    });
+  })();
+</script>

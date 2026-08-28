@@ -9,6 +9,9 @@ import {
   mdInline,
 } from "@/lib/finalImages";
 import DroneNav from "@/components/webflow/DroneNav.astro";
+import DroneNextProject from "@/components/webflow/DroneNextProject.astro";
+import DroneFooter from "@/components/webflow/DroneFooter.astro";
+import DroneMotion from "@/components/webflow/DroneMotion.astro";
 
 // Faithful port of the Webflow CMS template page `detail_projects.html`.
 // This is a real route, exactly as the template was: in Webflow the project
@@ -49,6 +52,18 @@ const project = {
   singleLarge: resolveImage(`${B}/projects/${dir}/detail/single-large`),
 };
 const current = dir.replace(/^\d+-/, "");
+
+// The CMS's own "Next Project" field describes exactly the sort order, wrapping
+// at the end (ucluelet -> kye-bay -> sandbanks -> bala -> telegraph-cove ->
+// ucluelet), so deriving it from folder order reproduces that chain and stays
+// correct when projects are added or reordered.
+const pos = dirs.indexOf(dir);
+const nextDir = dirs[(pos + 1) % dirs.length];
+const next = {
+  slug: nextDir.replace(/^\d+-/, ""),
+  title: readText(`${B}/projects/${nextDir}/title`),
+  marquee: listSlotImages(`${B}/projects/${nextDir}/marquee`),
+};
 ---
 <!doctype html>
 <html lang="en">
@@ -214,9 +229,14 @@ const current = dir.replace(/^\d+-/, "");
               )}
             </div>
           </div>
+
+          <DroneNextProject slug={next.slug} title={next.title} marquee={next.marquee} />
         </div>
       </div>
     </div>
+
+    <DroneFooter projects={index} />
+    <DroneMotion />
 
     <style is:global>
       /* Astro's <Image> emits intrinsic width/height; the template sized these

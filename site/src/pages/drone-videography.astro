@@ -3,6 +3,8 @@ import { Image } from "astro:assets";
 import { readText, readTextOptional, resolveImage, listSlotDirs, listSlotImages } from "@/lib/finalImages";
 import { SITE } from "@/data/content";
 import DroneNav from "@/components/webflow/DroneNav.astro";
+import DroneFooter from "@/components/webflow/DroneFooter.astro";
+import DroneMotion from "@/components/webflow/DroneMotion.astro";
 
 // FAITHFUL port of the Webflow "drone-portfolio" page — the template's own
 // layout, styling and motion, not this site's design system. (The version
@@ -207,6 +209,8 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
             </div>
           </div>
         </div>
+
+        <DroneFooter projects={projects} />
       </div>
     </section>
 
@@ -322,6 +326,8 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
         else initLayout();
       })();
     </script>
+
+    <DroneMotion scrollRoot=".portfolio-scroll" />
 
     <style is:global>
       /* ── Page-level custom CSS from the export's <head> ────────────

@@ -1,0 +1,90 @@
+---
+// The Webflow template's footer, markup-for-markup. On the index it sits
+// inside #portfolio-scroll after .layout (so it's revealed at the end of the
+// gallery scroll, exactly as in the export); on the detail pages it sits after
+// .layout in normal flow.
+//
+// .section-footer-fixed is position:fixed, so the footer panel stays pinned to
+// the bottom of the viewport while the content above scrolls over it — that's
+// the reveal effect, and it's template CSS, not something added here.
+//
+// Marquee images are read from Final_Images/drone-videography/footer/marquee/,
+// so dropping numbered files in there swaps them. The template rendered two
+// identical lines side by side to make the 15s loop seamless; same here.
+import { Image } from "astro:assets";
+import { readText, listSlotImages } from "@/lib/finalImages";
+import { SITE } from "@/data/content";
+
+interface Props {
+  projects: { slug: string; title: string }[];
+  assets?: string;
+}
+const { projects, assets = "/webflow/drone-videography" } = Astro.props;
+
+const pitch = readText("drone-videography/footer/pitch");
+const credit = readText("drone-videography/footer/credit");
+const marquee = listSlotImages("drone-videography/footer/marquee");
+const year = new Date().getFullYear();
+---
+<section class="section section-footer">
+  <div class="section-footer-overlay"></div>
+  <div class="section-footer-fixed">
+    <div class="footer-image-marquee">
+      {[0, 1].map(() => (
+        <div class="footer-image-marquee-line">
+          {marquee.map((src, i) => (
+            <div class:list={["footer-image-marquee-line-item", i === 2 && "footer-image-marquee-line-item-3"]}>
+              <Image
+                src={src}
+                alt=""
+                width={1200}
+                format="webp"
+                quality={80}
+                loading="lazy"
+                decoding="async"
+                class="footer-image-marquee-line-item-image"
+              />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+
+    <div class="footer-content">
+      <div class="w-layout-grid grid grid-footer">
+        <div id="w-node-_9b4d9944-3056-1d01-b8b4-055dba6667bc-ba6667a8" class="footer-content-line-item">
+          <p class="body-l">{pitch}</p>
+        </div>
+
+        <div id="w-node-_9b4d9944-3056-1d01-b8b4-055dba6667bf-ba6667a8" class="footer-content-line-item footer-content-line-item-list">
+          <div class="display-s display-light">Locations</div>
+          {projects.map((p) => (
+            <a href={`/drone-videography/${p.slug}`} class="nav-link">{p.title}</a>
+          ))}
+        </div>
+
+        <div id="w-node-_2011b65c-3c99-049d-b89e-5864ec448574-ba6667a8" class="footer-content-line-item footer-content-line-item-list">
+          <div class="display-s display-light">Socials</div>
+          <a href="https://www.linkedin.com/in/luc-desautels/" target="_blank" rel="noopener noreferrer" class="nav-link">LinkedIn</a>
+          <a href={`mailto:${SITE.contact.email}`} class="nav-link">{SITE.contact.email}</a>
+          <a href="/" class="nav-link">Back To LucDesautels.com</a>
+        </div>
+      </div>
+
+      <div class="footer-content-bottom">
+        <div class="footer-content-bottom-meta">
+          <div class="body">{credit}</div>
+        </div>
+        <img
+          src={`${assets}/images/Luc-Desautels---Small-Final-Luc-upright-3x.svg`}
+          loading="lazy"
+          alt="Luc Desautels"
+          class="footer-content-bottom-type"
+        />
+        <div class="footer-content-bottom-year">
+          <div class="display-m display-m-footer-meta">{year}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

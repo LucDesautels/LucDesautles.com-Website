@@ -1,0 +1,57 @@
+---
+// The Webflow template's "Next Project" card from detail_projects.html,
+// markup-for-markup.
+//
+// Motion comes from the export's ix2 lists a-19/a-20/a-21, reproduced in CSS +
+// a little JS on the detail page:
+//   a-19  .next-project-card-marquee-line translateX 0 -> -100%, 15s linear loop
+//   a-20  hover in,  500ms outQuart: card height 250px -> auto,
+//         .next-project-card-title opacity 1 -> .55,
+//         .next-project-card-marquee-line-item-overlay opacity 1 -> 0
+//   a-21  hover out, 500ms outQuart: back to 250px / 1 / 1
+//
+// The card's images are the next project's three Marquee Images — the same
+// three that slide on its card in the gallery.
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+interface Props {
+  slug: string;
+  title: string;
+  marquee: ImageMetadata[];
+}
+const { slug, title, marquee } = Astro.props;
+---
+<div class="next-project-card-wrapper">
+  <a href={`/drone-videography/${slug}`} class="next-project-card w-inline-block">
+    <div class="next-project-card-title">
+      <div class="next-project-card-title-start">
+        <div class="display-m">Next Project</div>
+        <div class="display-m">→</div>
+      </div>
+      <div class="display-m">{title}</div>
+    </div>
+
+    <div class="next-project-card-marquee">
+      {[0, 1].map(() => (
+        <div class="next-project-card-marquee-line">
+          {marquee.map((src) => (
+            <div class="next-project-card-marquee-line-item">
+              <Image
+                src={src}
+                alt=""
+                width={720}
+                format="webp"
+                quality={78}
+                loading="lazy"
+                decoding="async"
+                class="next-project-card-marquee-line-item-image"
+              />
+              <div class="next-project-card-marquee-line-item-overlay"></div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  </a>
+</div>
