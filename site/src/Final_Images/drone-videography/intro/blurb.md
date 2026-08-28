@@ -1,1 +1,1 @@
-TODO — replace with your sidebar blurb. Two lines about what you shoot and where.
+TODO — your sidebar blurb. Two lines on what you shoot and where. (The Karo template's line here was "Cinematic-style photographer creating striking, brand-ready imagery" — replaced rather than kept.)

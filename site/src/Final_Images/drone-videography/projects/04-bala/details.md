@@ -1,0 +1,1 @@
+Known as the Cranberry Capital of Ontario, Bala is famous for its cranberry farms, including Johnston’s Cranberry Marsh and Muskoka Lakes Farm & Winery, and hosts the annual Bala Cranberry Festival each fall.

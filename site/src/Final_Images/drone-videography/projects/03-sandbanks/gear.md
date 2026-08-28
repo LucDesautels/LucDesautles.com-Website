@@ -1,0 +1,1 @@
+DJI Mini 2
