@@ -324,6 +324,27 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
     </script>
 
     <style is:global>
+      /* ── Page-level custom CSS from the export's <head> ────────────
+         This is what makes the gallery scrollable. `.portfolio` is
+         height:100vh + overflow:hidden (template CSS), so the inner pane is
+         the only thing that can scroll, and the snap-scroll script drives it
+         by writing `inner.scrollTop`. Without overflow-y here that pane
+         computes `overflow-y: visible`, scrollTop is pinned at 0, and the
+         gallery is unscrollable — the content is simply clipped. */
+      .portfolio-scroll {
+        height: 100%;
+        overflow-y: scroll;
+      }
+      .portfolio-scroll::-webkit-scrollbar { width: 6px; }
+      .portfolio-scroll::-webkit-scrollbar-track { background: transparent; }
+      .portfolio-scroll::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.25);
+        border-radius: 10px;
+      }
+      .portfolio-scroll::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(0, 0, 0, 0.45);
+      }
+
       /* ── Webflow IX2 replacements ──────────────────────────────────
          Values taken verbatim from the export's ix2 action lists a-3
          (marquee), a-4 (hover in) and a-5 (hover out). outQuart is
