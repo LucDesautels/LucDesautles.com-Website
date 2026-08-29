@@ -22,7 +22,6 @@ interface Props {
 const { projects, assets = "/webflow/drone-videography" } = Astro.props;
 
 const pitch = readText("drone-videography/footer/pitch");
-const credit = readText("drone-videography/footer/credit");
 const marquee = listSlotImages("drone-videography/footer/marquee");
 const year = new Date().getFullYear();
 ---
@@ -64,7 +63,7 @@ const year = new Date().getFullYear();
         </div>
 
         <div id="w-node-_2011b65c-3c99-049d-b89e-5864ec448574-ba6667a8" class="footer-content-line-item footer-content-line-item-list">
-          <div class="display-s display-light">Socials</div>
+          <div class="display-s display-light">Elsewhere</div>
           <a href="https://www.linkedin.com/in/luc-desautels/" target="_blank" rel="noopener noreferrer" class="nav-link">LinkedIn</a>
           <a href={`mailto:${SITE.contact.email}`} class="nav-link">{SITE.contact.email}</a>
           <a href="/" class="nav-link">Back To LucDesautels.com</a>
@@ -73,7 +72,12 @@ const year = new Date().getFullYear();
 
       <div class="footer-content-bottom">
         <div class="footer-content-bottom-meta">
-          <div class="body">{credit}</div>
+          <div class="body">
+            <code>/drone-videography/</code> is based on
+            <a href="https://shapedbyrobin.com/templates/karo" target="_blank" rel="noopener noreferrer" class="link">Karo</a>
+            by
+            <a href="https://shapedbyrobin.com/templates" target="_blank" rel="noopener noreferrer" class="link">Robin</a>.
+          </div>
         </div>
         <img
           src={`${assets}/images/Luc-Desautels---Small-Final-Luc-upright-3x.svg`}

@@ -66,7 +66,7 @@ L@desautels.net
 
 **Email button — copied state** · _hardcoded in `src/components/islands/CopyEmailButton.tsx`_
 ```
-Copied!
+Copied.
 ```
 
 **Email button — tooltip** · _hardcoded in `src/components/islands/CopyEmailButton.tsx`_
@@ -143,7 +143,7 @@ Commit {SHA}
 
 **Link line** · _hardcoded in `src/components/CpsCounter.astro`_
 ```
-yo contact me to hop on hypixel bedwars ;)
+contact me to hop on hypixel bedwars ;)
 ```
 
 ---
@@ -154,7 +154,7 @@ yo contact me to hop on hypixel bedwars ;)
 
 **Eyebrow (above the name)** · _hardcoded in `src/components/Hero.astro`_
 ```
-Preview - Personal Portfolio 2026
+Personal Portfolio website {add current year here !}
 ```
 
 **Name (giant display type)** · _hardcoded in `CONTENT.json` → `site.name`_
@@ -164,7 +164,7 @@ Luc Desautels   →  rendered as "Luc" / "Desautels" italic + accent period
 
 **Tagline (paragraph under the name)** · `home/hero/tagline.md`
 ```
-My main focus right now is in **robotics**, however I also rock climb, play fiddle, and have a passion for **drone photography**.
+I'm deeply involved in robotics and thrive in competitive environments. I'm passionate about impactful engineering and startup work, backed by extensive technical and leadership experience. Outside of that, you'll find me rock climbing, playing fiddle, or shooting drone photography. [BY THE WAY: Make sure that there is an orange underline on the words competitive environments linking to competitive robotics page, an underline under impactful engineering to it's page, and extensive technical and leadership experience linking to the engineering portfolio page. And also drone photography linking to the drone videography page.]
 ```
 
 ### Hero meta row (three stats under the tagline)
@@ -176,7 +176,7 @@ Currently
 
 **Meta value (under "Currently")** · `home/hero/meta-currently.md`
 ```
-Engineering
+Engineering Transfer, Thompson Rivers University
 ```
 
 **Meta label** · _hardcoded in `CONTENT.json` → `site.meta`_
@@ -218,7 +218,7 @@ field testing
 
 **Intro label** · _hardcoded in `src/components/islands/FilterPills.tsx`_
 ```
-Show me —
+Show me -
 ```
 
 **Pill "full" — label / label when active / short name / description** · _hardcoded in `src/data/filters.ts`_
@@ -260,7 +260,7 @@ Engineering portfolio →
 
 **Extra pill (link out)** · _hardcoded in `src/components/islands/FilterPills.tsx`_
 ```
-↓ Résumé
+[Make there be a document looking icon here] Résumé
 ```
 
 ### Floating filter indicator (bottom-right once a filter is on)
@@ -286,7 +286,7 @@ Table of contents
 
 **Section aria label** · _hardcoded in `src/components/islands/HorizontalTOC.tsx`_
 ```
-Field log — scroll to explore
+Here's what I've been up to...
 ```
 
 
@@ -400,24 +400,24 @@ FTC Team 16366
 
 **Left blurb (Sailfish)** · `home/robotics-intro/sailfish-blurb.md`
 ```
-Three generations of an open-sourced autonomous SAR drone. Built to reach lost crews faster.
+Building over water search and rescue drones. Three generations of novel, low cost, long range, VTOL, autonomous, and open-sourced drones. Founded and lead the team over two years and worked on deeply technical engineering challenges.
 ```
 
 > The blurb is auto-split at the first sentence break — sentence 1 is roman, the rest is italic on a second line.
 
 **Right blurb (FTC)** · `home/robotics-intro/ftc-blurb.md`
 ```
-Five years FTC — competitor, mechanical lead, mentor. Ontario Inspire 2024 + Worlds, Houston.
+Five years in FTC — club member, mechanical & electrical competition team, then mentor. Placed #1 in the Ontario championship winning the Inspire Award in 2024. Competed in the exclusive World Championships in Huston, Tx as a team representing Canada.
 ```
 
 **Left CTA** · _hardcoded in `src/components/RoboticsIntroF.astro`_
 ```
-↳ Project Sailfish
+↳ Dedicated page on Project Sailfish
 ```
 
 **Right CTA** · _hardcoded in `src/components/RoboticsIntroF.astro`_
 ```
-↳ FTC Team 16366
+↳ Learn more about my work in FTC Team 16366
 ```
 
 ## 2.5 Robotics comparison panels (the pinned two-column carousel)
@@ -445,7 +445,7 @@ Open dedicated page →
 
 **Lightbox first-open hint** · _hardcoded in `src/components/RoboticsPanels.astro`_
 ```
-‹ Click this side — back        Click this side — next ›
+‹ Click this side = back        Click this side = next ›
 ```
 
 
@@ -486,7 +486,7 @@ A proof of technology for a low-cost, autonomous marine search and rescue drone.
 
 **Photo caption (under the big photo, prefixed `//`)** · `home/robotics-compare/sailfish/1-quick-info/caption.md`
 ```
-Sailfish Gen.3 · field test, Lake Ontario
+Sailfish Gen.3 · field test. Saltspring Island, BC
 ```
 
 **Long body (lightbox only)** · `home/robotics-compare/sailfish/1-quick-info/long-body.md`
@@ -1576,7 +1576,7 @@ Full write-up →
 
 **Program name** · _hardcoded in `CONTENT.json` → `engPrograms[].title`_
 ```
-FIRST® Tech Challenge
+First® Tech Challenge
 ```
 
 **Years** · `engineering/eng-programs/ftc/years.md`

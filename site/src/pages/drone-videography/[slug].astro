@@ -231,6 +231,13 @@ const next = {
           </div>
 
           <DroneNextProject slug={next.slug} title={next.title} marquee={next.marquee} />
+
+          <a href="/drone-videography" class="dv-back-foot" data-dv-return>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
+            </svg>
+            <span>Back to the gallery</span>
+          </a>
         </div>
       </div>
     </div>
@@ -245,6 +252,27 @@ const next = {
       .project-image-wrapper { overflow: hidden; }
       /* The template's rich text expects real <p> spacing. */
       .rich-text p:last-child { margin-bottom: 0; }
+
+      /* Quiet companion to the Next Project card — same destination as the
+         arrow beside the logo, for anyone who has read to the bottom. */
+      .dv-back-foot {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: calc(var(--_spacing---spacing--space) / 1.5);
+        color: var(--color--shade-6);
+        opacity: var(--_typography---light-opacity);
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+          opacity 0.2s cubic-bezier(0.165, 0.84, 0.44, 1),
+          transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+      }
+      .dv-back-foot:hover { opacity: 1; }
+      .dv-back-foot:active { transform: scale(0.96); }
+      .dv-back-foot:focus-visible { outline: 2px solid var(--color--brand-primary); outline-offset: 3px; }
+      .dv-back-foot svg { transition: transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1); }
+      .dv-back-foot:hover svg { transform: translateX(-3px); }
     </style>
   </body>
 </html>

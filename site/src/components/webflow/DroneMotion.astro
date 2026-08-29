@@ -1,19 +1,20 @@
 ---
-// Webflow IX2 replacements for the footer and the Next Project card, taken
-// verbatim from the export's action lists. Included by both the gallery index
-// and the project detail pages so the two stay in sync.
+// Webflow IX2 replacements for the footer, the Next Project card and the
+// mobile nav toggle, taken from the export's action lists. Included by both the
+// gallery index and the project detail pages so the two stay in sync.
 //
 //   a-7   "Footer - Marquee"              .footer-image-marquee-line
 //                                          translateX 0 -> -100%, 15s linear, loop
 //   a-19  "Next Project Card - Marquee"   .next-project-card-marquee-line, same
-//   a-6   "Footer - Scroll In View"       SCROLL_PROGRESS 0 -> 100:
-//                                          .section-footer-overlay  opacity 1 -> 0
-//                                          .footer-content          translateY 10% -> 0
-//                                          .footer-image-marquee    translateY 15% -> 0
-//   a-20/ "Next Project Card - Hover"     500ms outQuart:
-//   a-21                                   card height 250px -> auto
-//                                          .next-project-card-title opacity 1 -> .55
-//                                          ...-line-item-overlay    opacity 1 -> 0
+//   a-6   "Footer - Scroll In View"       overlay opacity 1 -> 0,
+//                                          .footer-content       translateY 10% -> 0,
+//                                          .footer-image-marquee translateY 15% -> 0
+//   a-20/ "Next Project Card - Hover"     500ms outQuart: card height 250px ->
+//   a-21                                   auto, title opacity 1 -> .55,
+//                                          image overlay opacity 1 -> 0
+//   a-12/ "Nav - Open / Close"            MOUSE_CLICK on .nav-button, medium/
+//   a-13                                   small/tiny only: .nav-item-menu
+//                                          height 0 <-> auto, 500ms outQuart
 //
 // `scrollRoot` is the element whose scrolling drives a-6: the document on the
 // detail pages, the pinned .portfolio-scroll pane on the gallery index.
@@ -34,11 +35,13 @@ const { scrollRoot } = Astro.props;
     to { transform: translateX(-100%); }
   }
 
-  /* a-6 — footer scroll-in-view. JS writes --footer-p (0..1) onto the section;
-     these three read it, so the reveal tracks scroll position exactly rather
-     than running on a timer. */
+  /* a-6 — footer scroll-in-view. JS writes --footer-p (0..1) onto the section.
+     0 is "just starting to appear", 1 is "fully revealed" (the footer fills
+     the viewport). The dark overlay is mapped to clear at 0.85 rather than 1,
+     so it's gone once the footer is mostly revealed instead of lingering at
+     the bottom of the page. */
   .section-footer-overlay {
-    opacity: calc(1 - var(--footer-p, 0));
+    opacity: clamp(0, calc((0.85 - var(--footer-p, 0)) / 0.85), 1);
   }
   .footer-content {
     transform: translateY(calc((1 - var(--footer-p, 0)) * 10%));
@@ -83,6 +86,8 @@ const { scrollRoot } = Astro.props;
 
 <script is:inline define:vars={{ scrollRoot }}>
   (function () {
+    var OUT_QUART_MS = 500;
+
     // ── a-6: footer scroll progress ───────────────────────────────────────
     var footer = document.querySelector(".section-footer");
     var root = scrollRoot ? document.querySelector(scrollRoot) : null;
@@ -94,8 +99,12 @@ const { scrollRoot } = Astro.props;
         var rect = footer.getBoundingClientRect();
         var viewH = root ? root.clientHeight : window.innerHeight;
         var top = root ? rect.top - root.getBoundingClientRect().top : rect.top;
-        // 0 as it starts entering, 1 once it has fully passed through.
-        var p = (viewH - top) / (viewH + rect.height);
+        // 0 as the footer starts to appear, 1 once it fills the viewport.
+        // Normalising over the entering phase (rather than the full transit)
+        // matters because the footer is the last thing on the page and is
+        // 100vh tall — it can never scroll past, so a full-transit mapping
+        // would top out halfway and leave the overlay permanently dark.
+        var p = (viewH - top) / viewH;
         p = p < 0 ? 0 : p > 1 ? 1 : p;
         footer.style.setProperty("--footer-p", String(p));
       };
@@ -106,6 +115,7 @@ const { scrollRoot } = Astro.props;
       };
       (root || window).addEventListener("scroll", onScroll, { passive: true });
       window.addEventListener("resize", onScroll, { passive: true });
+      window.addEventListener("load", update);
       update();
     }
 
@@ -128,6 +138,67 @@ const { scrollRoot } = Astro.props;
       card.addEventListener("mouseleave", close);
       card.addEventListener("focus", open);
       card.addEventListener("blur", close);
+    });
+
+    // ── a-12 / a-13: mobile nav toggle ────────────────────────────────────
+    var toggle = document.querySelector("[data-dv-nav-toggle]");
+    var menu = document.getElementById("dv-nav-menu");
+    var MOBILE = "(max-width: 991px)";
+
+    if (toggle && menu) {
+      var setOpen = function (open, animate) {
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+        if (!animate) {
+          menu.style.height = open ? "auto" : "0px";
+          return;
+        }
+        if (open) {
+          menu.style.height = menu.scrollHeight + "px";
+          // Let it settle to auto so later reflows (font load, rotation)
+          // don't leave it clipped at a stale pixel height.
+          window.setTimeout(function () {
+            if (toggle.getAttribute("aria-expanded") === "true") menu.style.height = "auto";
+          }, OUT_QUART_MS);
+        } else {
+          menu.style.height = menu.scrollHeight + "px";
+          void menu.offsetHeight;
+          menu.style.height = "0px";
+        }
+      };
+
+      toggle.addEventListener("click", function () {
+        setOpen(toggle.getAttribute("aria-expanded") !== "true", true);
+      });
+
+      // Close on Escape, and when a link inside is followed.
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
+          setOpen(false, true);
+          toggle.focus();
+        }
+      });
+
+      var syncToViewport = function () {
+        if (window.matchMedia(MOBILE).matches) {
+          if (!menu.style.height) setOpen(false, false);
+        } else {
+          // Above the breakpoint the sidebar is always open and unstyled.
+          menu.style.height = "";
+          toggle.setAttribute("aria-expanded", "false");
+        }
+      };
+      window.addEventListener("resize", syncToViewport);
+      syncToViewport();
+    }
+
+    // ── Return-to-gallery links ───────────────────────────────────────────
+    // Flags the next load of /drone-videography to restore the pinned pane's
+    // scroll position instead of dropping the visitor back on the hero.
+    document.querySelectorAll("[data-dv-return]").forEach(function (a) {
+      a.addEventListener("click", function () {
+        try { sessionStorage.setItem("dv:return", "1"); } catch (e) {}
+      });
     });
   })();
 </script>

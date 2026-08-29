@@ -322,8 +322,93 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
           el.addEventListener("click", function (e) { e.preventDefault(); enterPortfolio(); });
         });
 
-        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initLayout);
-        else initLayout();
+        // ── Gallery position memory ───────────────────────────────────────
+        // The gallery scrolls inside a pinned pane, not the document, so the
+        // browser has nothing to restore on Back — without this you land on
+        // the hero again. Persist the pane offset and the zone, then put both
+        // back when arriving from a project page or via Back/Forward.
+        var SKEY = "dv:scroll", ZKEY = "dv:zone", RKEY = "dv:return";
+        var saveTimer;
+        function save() {
+          try {
+            sessionStorage.setItem(SKEY, String(Math.round(inner.scrollTop)));
+            sessionStorage.setItem(ZKEY, zone);
+          } catch (e) {}
+        }
+        inner.addEventListener("scroll", function () {
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(save, 120);
+        }, { passive: true });
+        window.addEventListener("pagehide", save);
+        // Flush synchronously on the way out rather than trusting the debounce
+        // to have fired — a click can land inside the 120ms window.
+        document.querySelectorAll(".project-card").forEach(function (card) {
+          card.addEventListener("click", save);
+        });
+
+        function restoreIfReturning() {
+          var returning = false;
+          try {
+            var navEntry = performance.getEntriesByType("navigation")[0];
+            returning =
+              sessionStorage.getItem(RKEY) === "1" ||
+              (navEntry && navEntry.type === "back_forward");
+            sessionStorage.removeItem(RKEY);
+            if (sessionStorage.getItem(ZKEY) !== "portfolio") returning = false;
+          } catch (e) { return; }
+          if (!returning) return;
+
+          var y = 0;
+          try { y = parseInt(sessionStorage.getItem(SKEY) || "0", 10) || 0; } catch (e) {}
+
+          // Jump straight in, no 700ms slide — this is a restore, not a nav.
+          wrapper.style.transition = "none";
+          wrapper.style.transform = "translateY(-100vh)";
+          zone = "portfolio";
+          exitLocked = true;
+          clearTimeout(lockTimer);
+          lockTimer = setTimeout(function () { exitLocked = false; }, 1000);
+          inner.scrollTop = y;
+          requestAnimationFrame(function () { wrapper.style.transition = ""; });
+          // Lazy images above the restore point can still be resolving their
+          // height, which clamps scrollTop; re-apply once layout has settled.
+          window.addEventListener("load", function () { inner.scrollTop = y; });
+          setTimeout(function () { if (Math.abs(inner.scrollTop - y) > 4) inner.scrollTop = y; }, 400);
+        }
+
+        // Clicking the brand from inside the gallery goes up to the hero
+        // rather than reloading the page.
+        document.querySelectorAll("[data-dv-home]").forEach(function (el) {
+          el.addEventListener("click", function (e) {
+            if (zone !== "portfolio") return;
+            e.preventDefault();
+            exitToHero();
+          });
+        });
+
+        // ── Touch devices: reveal the card in focus while scrolling ───────
+        // Only where hovering isn't possible, so pointer users are untouched.
+        // A card opens as it rises past the lower edge of a band in the upper
+        // half of the pane and closes again as it leaves the top.
+        function initTouchReveal() {
+          if (!window.matchMedia("(hover: none)").matches) return;
+          if (!("IntersectionObserver" in window)) return;
+          var cards = document.querySelectorAll(".project-card");
+          if (!cards.length) return;
+          var io = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                entry.target.classList.toggle("is-active", entry.isIntersecting);
+              });
+            },
+            { root: inner, rootMargin: "-15% 0px -50% 0px", threshold: 0 },
+          );
+          cards.forEach(function (c) { io.observe(c); });
+        }
+
+        function boot() { initLayout(); restoreIfReturning(); initTouchReveal(); }
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+        else boot();
       })();
     </script>
 
@@ -376,6 +461,11 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
       .project-card:hover .project-card-content-secondary { opacity: 1; }
       .project-card:hover .project-card-content-line { transform: translateY(0%); }
 
+      /* .is-active is the touch-device stand-in for :hover — see the
+         IntersectionObserver below, which only runs under (hover: none). */
+      .project-card.is-active .project-card-content-secondary { opacity: 1; }
+      .project-card.is-active .project-card-content-line { transform: translateY(0%); }
+
       /* Keyboard users get the same reveal as pointer users. */
       .project-card:focus-visible { transform: scale(0.985); outline: 2px solid var(--color--brand-primary); outline-offset: 3px; }
       .project-card:focus-visible .project-card-image { transform: scale(1.015); }
@@ -395,6 +485,36 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
          purely with CSS, so re-assert the object-fit sizing it expects. */
       .project-card-image { width: 100%; height: 100%; object-fit: cover; }
       .project-card-marquee-item-image { width: 100%; height: 100%; object-fit: cover; }
+
+      /* ── Narrow / half-screen ──────────────────────────────────────
+         Below 991px the template drops .project-card-content into normal
+         flow under the image instead of overlaying it. Our reveal still
+         holds the title lines translated 100% down inside their
+         overflow:hidden wrappers, so that block sat there reserving empty
+         height and pushing the tiles apart. Collapse its row tracks — and
+         the card's own image/text gap — while idle, and let both open as
+         part of the same 500ms outQuart reveal. */
+      @media screen and (max-width: 991px) {
+        .project-card {
+          gap: 0;
+          transition:
+            transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1),
+            gap 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .project-card-content {
+          display: grid;
+          grid-template-rows: 0fr 0fr;
+          transition: grid-template-rows 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .project-card-content > .project-card-content-line-wrapper { min-height: 0; }
+
+        .project-card:hover,
+        .project-card:focus-visible,
+        .project-card.is-active { gap: 1rem; }
+        .project-card:hover .project-card-content,
+        .project-card:focus-visible .project-card-content,
+        .project-card.is-active .project-card-content { grid-template-rows: 1fr 1fr; }
+      }
 
       @media (prefers-reduced-motion: reduce) {
         .project-card-marquee-line { animation: none; }
