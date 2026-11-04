@@ -19,6 +19,11 @@ import { META_GROUPS, TOC } from "@/data/content";
 // The rail's outline: sections top level, their groups as sub-bullets.
 // Numbers continue the page's §-sequence (Hero/Gallery/Robotics are 1–3).
 const railSections: RailSection[] = [
+  // The three bands above the rail: visible as soon as it appears, clickable
+  // to jump back up. They sit outside .lh so they aren't scroll-spied.
+  { id: "lander", num: 1, title: "Lander", groups: [], seen: true, href: "#main" },
+  { id: "robotics", num: 2, title: "Robotics", groups: [], seen: true, href: "#robotics-intro" },
+  { id: "subprojects-link", num: 3, title: "Full Engineering Portfolio", groups: [], seen: true, href: "#subprojects" },
   ...META_GROUPS.map((m, i) => ({
     id: m.id,
     num: i + 4,

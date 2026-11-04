@@ -12,27 +12,36 @@ export type RailSection = {
   num: number;
   title: string;
   groups: { id: string; title: string }[];
+  /** Row is visible from the start instead of building in on scroll. */
+  seen?: boolean;
+  /** Link elsewhere on the page (not a scroll-spied section of this rail). */
+  href?: string;
 };
 
 interface Props {
   sections: RailSection[];
+  caption?: string;
+  /** Switch the rail's ink between light/dark over [data-tone] sections. */
+  toneAware?: boolean;
+  /** CSS selector: the whole rail stays hidden until this element reaches the top. */
+  showFrom?: string;
 }
-const { sections } = Astro.props;
+const { sections, caption = "Contents", toneAware = false, showFrom } = Astro.props;
 ---
-<nav class="sr" aria-label="Section outline">
+<nav class="sr" aria-label="Section outline" data-tone-aware={toneAware ? "" : undefined} data-show-from={showFrom}>
   <div class="sr__stick">
-    <div class="eyebrow sr__cap">Contents</div>
+    <div class="eyebrow sr__cap">{caption}</div>
     <ul class="sr__list">
       {sections.map((s) => (
         <li class="sr__sec" data-rail-sec={s.id}>
           {/* Each row reveals when its own target is first reached — the
               section header rides in with its first group. */}
-          <div class="sr__row" data-row={s.groups.length ? s.groups[0].id : s.id}>
+          <div class:list={["sr__row", s.seen && "is-seen"]} data-row={s.groups.length ? s.groups[0].id : s.id}>
             <div class="sr__row-in">
               <a
                 class="sr__sec-link"
-                href={`#${s.id}`}
-                {...(s.groups.length ? {} : { "data-spy-link": s.id })}
+                href={s.href ?? `#${s.id}`}
+                {...(s.groups.length || s.href ? {} : { "data-spy-link": s.id })}
               >
                 <span class="sr__num">{String(s.num).padStart(2, "0")}</span>
                 <span class="sr__sec-t">{s.title}</span>
@@ -63,6 +72,24 @@ const { sections } = Astro.props;
   .sr {
     height: 100%;
     pointer-events: none;
+  }
+  /* Over a dark band the rail flips to the dark palette (set from the script). */
+  .sr--dark {
+    --ink: var(--dark-ink);
+    --ink-mute: var(--dark-dim);
+    --rule: var(--dark-line);
+  }
+  /* Whole rail held back until its start section is reached. */
+  .sr[data-show-from] .sr__stick {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 300ms ease, visibility 300ms;
+  }
+  .sr[data-show-from].sr--on .sr__stick {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
   .sr__stick {
     position: sticky;
@@ -217,6 +244,12 @@ const { sections } = Astro.props;
     pending = [];
   }
 
+  const nav = document.querySelector<HTMLElement>(".sr[data-tone-aware]");
+  const toneEls = [...document.querySelectorAll<HTMLElement>("[data-tone]")];
+
+  const showFromSel = document.querySelector<HTMLElement>(".sr[data-show-from]")?.dataset.showFrom;
+  const showFromEl = showFromSel ? document.querySelector<HTMLElement>(showFromSel) : null;
+
   let active = "";
   // Index of the deepest target reached so far; its row (and every row before
   // it) is shown. Seeded with the first so the rail is never empty.
@@ -234,6 +267,21 @@ const { sections } = Astro.props;
         el.classList.add("is-in");
         return false;
       });
+    }
+
+    // Hold the whole rail back until its start section reaches the top.
+    if (nav && showFromEl) {
+      nav.classList.toggle("sr--on", showFromEl.getBoundingClientRect().top <= h * 0.5);
+    }
+
+    // Rail ink follows whichever tone band sits under the rail's top edge.
+    if (nav && toneEls.length) {
+      const y = 120;
+      const under = toneEls.find((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top <= y && r.bottom > y;
+      });
+      if (under) nav.classList.toggle("sr--dark", under.dataset.tone === "dark");
     }
 
     // Active target = the last one whose top has passed the upper-third line.

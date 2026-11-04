@@ -1,27 +1,31 @@
 ---
 import { Image } from "astro:assets";
-import { HOME_FEATURED_PROJECTS } from "@/data/content";
+import { ENG_PROJECTS } from "@/data/content";
 
-// This strip is a curated view onto the Engineering-portfolio projects
-// (ENG_PROJECTS.filter(homeFeatured)), not a separate content type — one
-// photo/blurb/tags edit under engineering/eng-grid/<slug>/ updates both the
-// full grid on /engineering and this strip. The domain chips are derived
-// live from whatever tags those featured projects actually carry, so
-// adding/removing a line in a project's tags.md updates the filter too.
-const PROJECTS = HOME_FEATURED_PROJECTS;
+// A live preview of the whole Engineering portfolio: every project in
+// ENG_PROJECTS (same source as /engineering), so anything added there shows up
+// here automatically. It auto-scrolls as a continuous loop; hover pauses it,
+// dragging scrubs it, and clicking a card opens that project on /engineering.
+// The domain filter code is kept but its chips are hidden (see `hidden`).
+const PROJECTS = ENG_PROJECTS;
 const DOMAINS = ["ALL", ...Array.from(new Set(PROJECTS.flatMap((p) => p.tags))).sort()];
+// Two identical runs back to back: the loop wraps by exactly one run's width.
+const RUNS = [0, 1];
 ---
 <section class="sub" id="subprojects" data-rsec="subprojects">
   <div class="sub__head shell">
     <div>
       <div class="eyebrow eyebrow--dark">[ § 03 — Robotics sub-projects ]</div>
-      <h3 class="sub__title">Filter by domain.</h3>
+      <h3 class="sub__title">Full engineering portfolio.</h3>
     </div>
-    <a class="sub__all" href="/engineering">⊞ Full project grid →</a>
+    <a class="sub__go" href="/engineering">
+      <span>Take me there</span>
+      <span class="sub__go-arrow" aria-hidden="true">→</span>
+    </a>
   </div>
 
-  <!-- Filter chips are decorative until the dedicated grid page exists. -->
-  <div class="sub__chips shell" role="tablist" aria-label="Engineering domain filter">
+  <!-- Filtering is parked: chips are hidden but the handlers below still work. -->
+  <div class="sub__chips shell" role="tablist" aria-label="Engineering domain filter" hidden>
     {DOMAINS.map((d, i) => (
       <button
         type="button"
@@ -32,18 +36,30 @@ const DOMAINS = ["ALL", ...Array.from(new Set(PROJECTS.flatMap((p) => p.tags))).
     ))}
   </div>
 
-  <div class="sub__scroller">
-    {PROJECTS.map((p) => (
-      <article class="card" data-tags={p.tags.join("|")}>
-        <div class="card__media">
-          <Image src={p.images[0].src} alt="" width={480} format="webp" quality={78} loading="lazy" decoding="async" />
-          <span class="card__tag">{p.parent}</span>
-          {p.tags[0] && <span class="card__domain">{p.tags[0]}</span>}
-        </div>
-        <div class="card__title">{p.title}</div>
-        <div class="card__desc">{p.blurb}</div>
-      </article>
-    ))}
+  <div class="sub__scroller" data-marquee>
+    <div class="sub__track" data-track>
+      {RUNS.map((run) =>
+        PROJECTS.map((p) => (
+          <a
+            class="card"
+            href={`/engineering#project=${encodeURIComponent(p.id)}`}
+            data-tags={p.tags.join("|")}
+            draggable="false"
+            aria-hidden={run === 1 ? "true" : undefined}
+            tabindex={run === 1 ? -1 : undefined}
+            aria-label={run === 0 ? `${p.title} — open in the engineering portfolio` : undefined}
+          >
+            <div class="card__media">
+              <Image src={p.images[0].src} alt="" width={480} format="webp" quality={78} loading="lazy" decoding="async" draggable="false" />
+              <span class="card__tag">{p.parent}</span>
+              {p.tags[0] && <span class="card__domain">{p.tags[0]}</span>}
+            </div>
+            <div class="card__title">{p.title}</div>
+            <div class="card__desc">{p.blurb}</div>
+          </a>
+        )),
+      )}
+    </div>
   </div>
 
   <div class="sub__empty shell" data-empty hidden>
@@ -52,15 +68,113 @@ const DOMAINS = ["ALL", ...Array.from(new Set(PROJECTS.flatMap((p) => p.tags))).
 </section>
 
 <script>
-  // Domain filter. NOTE: Astro `<script>` tags are ES modules, so
-  // `document.currentScript` is null here — query the section directly.
+  // Astro `<script>` tags are ES modules: `document.currentScript` is null,
+  // so query the section directly.
   const root = document.querySelector<HTMLElement>(".sub");
   if (root) {
     const chips = root.querySelectorAll<HTMLButtonElement>(".chip");
     const cards = root.querySelectorAll<HTMLElement>(".card");
-    const scroller = root.querySelector<HTMLElement>(".sub__scroller");
+    const scroller = root.querySelector<HTMLElement>("[data-marquee]")!;
+    const track = root.querySelector<HTMLElement>("[data-track]")!;
     const empty = root.querySelector<HTMLElement>(".sub__empty");
+    const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    // ── Marquee ──────────────────────────────────────────────────────────
+    const SPEED = 81; // px per second, leftward
+    let x = 0;        // current translateX
+    let loopW = 0;    // width of one full run of cards
+    let hovering = false;
+    let dragging = false;
+    let visible = true;
+    let last = 0;
+    let v = SPEED;    // current speed; eases toward 0 on hover, back up on leave
+
+    const measure = () => {
+      const shown = [...cards].filter((c) => !c.classList.contains("card--hidden"));
+      const per = shown.length / 2;
+      loopW = per >= 1 ? shown[per].offsetLeft - shown[0].offsetLeft : 0;
+    };
+    const wrap = () => {
+      if (!loopW) return;
+      x = (((x % loopW) - loopW) % loopW); // keep in (-loopW, 0]
+    };
+    const paint = () => { track.style.transform = `translate3d(${x}px,0,0)`; };
+
+    const tick = (t: number) => {
+      const dt = Math.min(0.05, (t - last) / 1000 || 0);
+      last = t;
+      const stopping = hovering || dragging || REDUCED;
+      // Exponential ease: glides to a stop on hover (~0.45s), and eases back
+      // up to full speed more gently on leave (~0.8s).
+      const tau = stopping ? 0.45 : 0.8;
+      v += ((stopping ? 0 : SPEED) - v) * (1 - Math.exp(-dt / tau));
+      if (dragging) v = 0;
+      if (visible && loopW && v > 0.05) {
+        x -= v * dt;
+        wrap();
+        paint();
+      }
+      requestAnimationFrame(tick);
+    };
+
+    new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(scroller);
+    window.addEventListener("resize", () => { measure(); wrap(); paint(); }, { passive: true });
+    window.addEventListener("load", measure);
+    measure();
+    requestAnimationFrame((t) => { last = t; tick(t); });
+
+    // Hover pauses; leaving resumes from wherever it was left (even after a drag).
+    scroller.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") hovering = true; });
+    scroller.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hovering = false; });
+
+    // Drag to scrub. A drag past a few px suppresses the click so it doesn't
+    // navigate; a plain click follows the card's link.
+    let startX = 0, startOff = 0, moved = false, pid = -1, noClickUntil = 0;
+    scroller.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      dragging = true; moved = false; pid = e.pointerId;
+      startX = e.clientX; startOff = x;
+    });
+    scroller.addEventListener("pointermove", (e) => {
+      if (!dragging || e.pointerId !== pid) return;
+      const dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) > 5) {
+        moved = true;
+        scroller.setPointerCapture(pid);
+        scroller.classList.add("is-dragging");
+      }
+      if (moved) { x = startOff + dx; wrap(); paint(); }
+    });
+    const end = (e: PointerEvent) => {
+      if (!dragging || e.pointerId !== pid) return;
+      dragging = false;
+      // A drag must never count as a click on whatever card is under the
+      // cursor on release — block clicks for a beat after any real drag.
+      if (moved) noClickUntil = performance.now() + 400;
+      scroller.classList.remove("is-dragging");
+      if (scroller.hasPointerCapture(pid)) scroller.releasePointerCapture(pid);
+    };
+    scroller.addEventListener("pointerup", end);
+    scroller.addEventListener("pointercancel", end);
+    scroller.addEventListener("click", (e) => {
+      if (moved || performance.now() < noClickUntil) {
+        e.preventDefault();
+        e.stopPropagation();
+        moved = false;
+      }
+    }, true);
+    // Never let the browser start a native link/image drag.
+    scroller.addEventListener("dragstart", (e) => e.preventDefault());
+
+    // Horizontal trackpad / wheel gestures scrub; vertical ones go to Lenis.
+    scroller.addEventListener("wheel", (e) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        e.stopPropagation();
+        x -= e.deltaX; wrap(); paint();
+      }
+    }, { passive: true });
+
+    // ── Domain filter (UI hidden; kept working) ──────────────────────────
     const apply = (domain: string) => {
       let shown = 0;
       cards.forEach((card) => {
@@ -69,33 +183,21 @@ const DOMAINS = ["ALL", ...Array.from(new Set(PROJECTS.flatMap((p) => p.tags))).
         card.classList.toggle("card--hidden", !match);
         if (match) shown++;
       });
-      // Reset the horizontal scroll so the first match is in view.
-      if (scroller) scroller.scrollLeft = 0;
+      x = 0;
+      measure();
+      paint();
       if (empty) empty.hidden = shown > 0;
     };
-
     chips.forEach((chip) => {
       chip.addEventListener("click", () => {
-        const d = chip.dataset.domain ?? "ALL";
         chips.forEach((c) => {
           const on = c === chip;
           c.classList.toggle("chip--active", on);
           c.setAttribute("aria-pressed", String(on));
         });
-        apply(d);
+        apply(chip.dataset.domain ?? "ALL");
       });
     });
-
-    // Axis-aware wheel: a clearly horizontal gesture scrolls the carousel itself
-    // (we hide it from Lenis so native overflow-x can do it); a vertical gesture
-    // bubbles to Lenis for a smooth PAGE scroll. This replaces `data-lenis-prevent`,
-    // which handed ALL scroll over the carousel to native — killing Lenis momentum
-    // (a scroll "bump") every time the carousel passed under the cursor.
-    if (scroller) {
-      scroller.addEventListener("wheel", (e) => {
-        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) e.stopPropagation();
-      }, { passive: true });
-    }
   }
 </script>
 
@@ -109,7 +211,7 @@ const DOMAINS = ["ALL", ...Array.from(new Set(PROJECTS.flatMap((p) => p.tags))).
     border-top: 1px solid var(--dark-line);
   }
   .sub__head {
-    padding: 0 var(--page-pad) 14px;
+    padding: 0 var(--page-pad) 20px;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
@@ -125,21 +227,30 @@ const DOMAINS = ["ALL", ...Array.from(new Set(PROJECTS.flatMap((p) => p.tags))).
     letter-spacing: -0.01em;
     font-weight: 600;
   }
-  .sub__all {
-    padding: 10px 14px;
-    border: 1px solid var(--dark-line);
-    color: var(--dark-ink);
+  .sub__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 22px;
+    background: var(--accent);
+    color: var(--accent-ink);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
+    transition: background .2s ease, color .2s ease;
   }
+  .sub__go-arrow { transition: transform .2s ease; font-size: 16px; }
+  .sub__go:hover { background: var(--dark-ink); color: var(--dark); }
+  .sub__go:hover .sub__go-arrow { transform: translateX(5px); }
   .sub__chips {
     padding: 0 var(--page-pad) 18px;
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
   }
+  .sub__chips[hidden] { display: none; }
   .chip {
     padding: 6px 12px;
     font-family: var(--font-mono);
@@ -159,24 +270,28 @@ const DOMAINS = ["ALL", ...Array.from(new Set(PROJECTS.flatMap((p) => p.tags))).
     border-color: var(--accent);
   }
   .sub__scroller {
+    overflow: hidden;
+    cursor: grab;
+    /* Vertical swipes still scroll the page; horizontal ones scrub. */
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    padding-bottom: 12px;
+  }
+  .sub__scroller.is-dragging { cursor: grabbing; }
+  .sub__track {
     display: flex;
     gap: 14px;
-    padding: 0 var(--page-pad) 12px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    /* Aesthetic scrollbar — dark variant for this section. */
-    scrollbar-color: var(--accent) rgba(255, 255, 255, 0.08);
-    scrollbar-width: thin;
+    width: max-content;
+    padding-left: var(--page-pad);
+    will-change: transform;
   }
-  .sub__scroller::-webkit-scrollbar { height: 10px; }
-  .sub__scroller::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.06); }
-  .sub__scroller::-webkit-scrollbar-thumb { background: var(--accent); border: 2px solid var(--dark); }
-  .sub__scroller::-webkit-scrollbar-thumb:hover { background: var(--dark-ink); }
   .card {
-    flex: 0 0 240px;
-    scroll-snap-align: start;
+    flex: 0 0 260px;
+    display: block;
+    color: inherit;
   }
+  .card:hover .card__title { color: var(--accent); }
   .card--hidden { display: none; }
   .sub__empty {
     padding: 24px var(--page-pad) 8px;
@@ -224,6 +339,7 @@ const DOMAINS = ["ALL", ...Array.from(new Set(PROJECTS.flatMap((p) => p.tags))).
     font-size: 14px;
     color: var(--dark-ink);
     font-weight: 600;
+    transition: color .15s;
   }
   .card__desc {
     font-family: var(--font-body);

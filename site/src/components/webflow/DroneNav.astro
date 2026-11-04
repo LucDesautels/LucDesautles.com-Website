@@ -33,7 +33,7 @@ const isDetail = Boolean(current);
             </svg>
           </a>
         )}
-        <a href="/drone-videography" class="nav-brand w-inline-block" data-dv-return={isDetail ? "" : undefined} data-dv-home={isDetail ? undefined : ""}>
+        <a href="/" class="nav-brand w-inline-block" aria-label="Luc Desautels, home">
           <img
             src={`${assets}/images/Luc-Desautels---Small-Final-Luc-upright-3x.svg`}
             loading="lazy"
@@ -94,7 +94,7 @@ const isDetail = Boolean(current);
             rel="noopener noreferrer"
             class="nav-link">LinkedIn</a
           >
-          <a href={`mailto:${SITE.contact.email}`} class="nav-link">{SITE.contact.email}</a>
+          <a href={`mailto:${SITE.contact.email}`} class="nav-link" data-copy-email={SITE.contact.email}>{SITE.contact.email}</a>
           <a href="/" class="nav-link">Back To LucDesautels.com</a>
         </div>
       </div>

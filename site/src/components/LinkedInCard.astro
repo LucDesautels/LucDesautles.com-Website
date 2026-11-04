@@ -1,0 +1,103 @@
+---
+// Shared LinkedIn icon + hover profile card, used by every nav (TopBar and the
+// Webflow-template drone pages). Replaces LinkedIn's deprecated profile-badge
+// embed with a self-hosted card; edit src/data/linkedin.json to update it.
+import profile from "@/data/linkedin.json";
+interface Props { icon?: string }
+const { icon } = Astro.props;
+---
+<div class="lic" data-li-wrap>
+  <a class="lic__icon" href={profile.url} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+    {icon ? (
+      <img src={icon} alt="" width="18" height="18" />
+    ) : (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.65-1.85 3.39-1.85 3.62 0 4.29 2.38 4.29 5.48v6.26zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/>
+      </svg>
+    )}
+  </a>
+  <div class="lic__popup" data-li-popup>
+    <a class="lic__card" href={profile.url} target="_blank" rel="noopener noreferrer">
+      <div class="lic__banner"></div>
+      <img class="lic__photo" src={profile.photo} alt="" width="64" height="64" />
+      <div class="lic__body">
+        <div class="lic__name">{profile.name}</div>
+        <div class="lic__headline">{profile.headline}</div>
+        <div class="lic__loc">{profile.location}</div>
+        <span class="lic__cta">View profile</span>
+      </div>
+    </a>
+  </div>
+</div>
+
+<script>
+  const wrap = document.querySelector<HTMLElement>("[data-li-wrap]");
+  const popup = document.querySelector<HTMLElement>("[data-li-popup]");
+  if (wrap && popup) {
+    const M = 12;
+    const position = () => {
+      popup.style.right = "0px";
+      const r = popup.getBoundingClientRect();
+      let shift = 0;
+      if (r.right > window.innerWidth - M) shift = window.innerWidth - M - r.right;
+      else if (r.left < M) shift = M - r.left;
+      if (shift) popup.style.right = `${-shift}px`;
+    };
+    const show = () => { wrap.classList.add("lic--open"); requestAnimationFrame(position); };
+    const hide = () => wrap.classList.remove("lic--open");
+    wrap.addEventListener("mouseenter", show);
+    wrap.addEventListener("mouseleave", hide);
+    wrap.addEventListener("focusin", show);
+    wrap.addEventListener("focusout", (e) => {
+      if (!wrap.contains((e as FocusEvent).relatedTarget as Node)) hide();
+    });
+    window.addEventListener("resize", () => {
+      if (wrap.classList.contains("lic--open")) position();
+    }, { passive: true });
+  }
+</script>
+
+<style is:global>
+  .lic { position: relative; display: inline-flex; align-self: center; }
+  .lic__icon {
+    width: 34px; height: 34px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #0a66c2; color: #fff; border-radius: 4px;
+  }
+  .lic__icon img { width: 18px; height: 18px; filter: brightness(0) invert(1); }
+  .lic__popup {
+    position: absolute; top: 100%; right: 0; z-index: 60;
+    /* Invisible bridge so moving the cursor into the card doesn't trip mouseleave. */
+    padding-top: 10px;
+    opacity: 0; visibility: hidden; transform: translateY(-6px);
+    transition: opacity .18s ease, transform .18s ease, visibility .18s;
+    pointer-events: none;
+  }
+  .lic--open .lic__popup { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
+  @media (prefers-reduced-motion: reduce) {
+    .lic__popup { transition: opacity .18s ease, visibility .18s; transform: none; }
+  }
+  .lic__card {
+    position: relative; display: block; width: 300px; overflow: hidden;
+    background: #fff; color: #191919; text-decoration: none;
+    border: 1px solid rgba(0, 0, 0, .15); border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .18);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    text-align: left;
+  }
+  .lic__banner { height: 52px; background: linear-gradient(135deg, #0a66c2, #70b5f9); }
+  .lic__photo {
+    position: absolute; top: 20px; left: 16px; width: 64px; height: 64px;
+    border-radius: 50%; border: 3px solid #fff; object-fit: cover; background: #e8e8e8;
+  }
+  .lic__body { padding: 38px 16px 16px; }
+  .lic__name { font-size: 16px; font-weight: 600; line-height: 1.3; }
+  .lic__headline { font-size: 13px; line-height: 1.35; margin-top: 2px; }
+  .lic__loc { font-size: 12px; color: rgba(0, 0, 0, .6); margin-top: 4px; }
+  .lic__cta {
+    display: inline-block; margin-top: 12px; padding: 5px 16px;
+    border: 1px solid #0a66c2; border-radius: 999px;
+    color: #0a66c2; font-size: 14px; font-weight: 600;
+  }
+  .lic__card:hover .lic__cta { background: #0a66c2; color: #fff; }
+</style>

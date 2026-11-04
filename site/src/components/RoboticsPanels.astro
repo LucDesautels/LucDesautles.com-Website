@@ -121,7 +121,7 @@ const N = 5; // slides per column
               <div class="rplb__slide" data-rplb-slide data-col={ci} data-idx={si} hidden>
                 <div class="rplb__img">
                   <Image class="rplb__photo" src={s.image} alt={s.imageLabel} loading="lazy" decoding="async" width={1400} format="webp" quality={80} />
-                  {s.caption && <div class="rplb__caption">{s.caption}</div>}
+                  {s.caption && <div class="rplb__caption">// {s.caption}</div>}
                 </div>
                 {s.extras && s.extras.length > 0 && (
                   <div class="rplb__thumbs">
@@ -159,11 +159,11 @@ const N = 5; // slides per column
                Fades out after a few seconds or on the first interaction. -->
           <div class="rplb__hint" data-rplb-hint aria-hidden="true">
             <div class="rplb__hint-half rplb__hint-half--prev">
-              <span class="rplb__hint-pill">‹ Click this side — back</span>
+              <span class="rplb__hint-pill">// ‹ Click this side — back</span>
             </div>
             <div class="rplb__hint-line"></div>
             <div class="rplb__hint-half rplb__hint-half--next">
-              <span class="rplb__hint-pill">Click this side — next ›</span>
+              <span class="rplb__hint-pill">// Click this side — next ›</span>
             </div>
           </div>
         </div>
@@ -493,6 +493,12 @@ const N = 5; // slides per column
     let lbCol = 0;
     let lbIdx = 0;
     let hintHandle: number | null = null;
+    // The click-zone tutorial is a teaching aid, not decoration: it plays for
+    // the first two lightbox opens of a page load, then stays out of the way.
+    // A reload starts the budget over.
+    let hintsLeft = 2;
+    const HINT_FADE = 300;  // keep in sync with .rplb__hint's transition
+    const HINT_HOLD = 3200; // readable time before it gets out of the way
 
     function lbRender() {
       lbSlides.forEach((el) => {
@@ -514,13 +520,34 @@ const N = 5; // slides per column
       });
     }
 
-    // The click-zone tutorial overlay — show on open, dismiss on first
-    // interaction or after a short timeout.
+    // The click-zone tutorial overlay — show on open, dismiss on the first
+    // interaction or after a full three seconds at rest.
+
+    // Pin the overlay to the active slide's image box. The media column also
+    // holds the thumbnail strip, so an inset:0 overlay would run the dotted
+    // divider past the bottom of the photo.
+    function sizeHint() {
+      if (!lbHint || !lbMedia) return;
+      const img = lb.querySelector(
+        ".rplb__slide:not([hidden]) .rplb__img"
+      ) as HTMLElement | null;
+      if (!img) return;
+      const m = lbMedia.getBoundingClientRect();
+      const r = img.getBoundingClientRect();
+      if (!r.height) return;
+      lbHint.style.top = `${r.top - m.top}px`;
+      lbHint.style.height = `${r.height}px`;
+      lbHint.style.bottom = "auto";
+    }
+
     function showHint() {
       if (!lbHint) return;
+      sizeHint();
       lbHint.classList.add("is-on");
       if (hintHandle != null) window.clearTimeout(hintHandle);
-      hintHandle = window.setTimeout(dismissHint, 3200);
+      // HINT_FADE mirrors the CSS opacity transition, so HINT_HOLD is time at
+      // full opacity rather than time that the fade-in eats into.
+      hintHandle = window.setTimeout(dismissHint, HINT_FADE + HINT_HOLD);
     }
     function dismissHint() {
       if (!lbHint) return;
@@ -545,7 +572,14 @@ const N = 5; // slides per column
       lbRender();
       // Animate in.
       requestAnimationFrame(() => lb.classList.add("is-open"));
-      showHint();
+      if (hintsLeft > 0) {
+        hintsLeft -= 1;
+        // A tick, not a frame: the panel is laid out synchronously above, and
+        // a timer still fires if the tab is throttling requestAnimationFrame.
+        // The delay only exists so the overlay fades in rather than snapping
+        // on in the same paint that reveals the lightbox.
+        window.setTimeout(showHint, 60);
+      }
     }
     function closeLb() {
       if (!lbOpen) return;
@@ -586,6 +620,7 @@ const N = 5; // slides per column
         e.stopPropagation();
         lbIdx = Number(b.dataset.rplbBar);
         lbRender();
+        dismissHint();
       })
     );
     document.addEventListener("keydown", (e) => {
@@ -1008,9 +1043,15 @@ const N = 5; // slides per column
   }
 
   /* Click-zone tutorial overlay. */
+  /* Top/height are overwritten by the script so the overlay covers exactly
+     the active slide's image box, never the thumbnail strip below it. The
+     defaults here only matter for the first frame. */
   .rplb__hint {
     position: absolute;
-    inset: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
     z-index: 3;
     display: flex;
     pointer-events: none;
@@ -1037,18 +1078,16 @@ const N = 5; // slides per column
     align-items: center;
     justify-content: center;
   }
+  /* Matches .col__caption / .rplb__caption — same plate, same voice. */
   .rplb__hint-pill {
     font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    font-size: 10px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--dark-ink);
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    border-radius: 999px;
-    padding: 9px 16px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.42);
+    border: 1px solid var(--dark-line);
+    padding: 6px 10px;
   }
   .rplb__slide {
     display: flex;
@@ -1078,21 +1117,22 @@ const N = 5; // slides per column
     display: block;
     background: #0c0a08;
   }
+  /* Same plate as the in-page preview caption (.col__caption) — flat mono
+     label on a dark scrim, square corners, hairline border. No blur, no
+     radius: those read as a different design language. */
   .rplb__caption {
     position: absolute;
-    left: 16px;
-    bottom: 16px;
+    left: 12px;
+    bottom: 12px;
+    z-index: 4;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.12em;
-    text-transform: uppercase;
     color: var(--dark-ink);
-    padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 10px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.42);
+    padding: 6px 10px;
+    border: 1px solid var(--dark-line);
     max-width: 60%;
   }
   .rplb__thumbs {

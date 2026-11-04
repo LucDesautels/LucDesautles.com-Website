@@ -2,6 +2,8 @@
 import { Image } from "astro:assets";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import TopBar from "@/components/TopBar.astro";
+import SectionRail from "@/components/SectionRail.astro";
+import type { RailSection } from "@/components/SectionRail.astro";
 import Footer from "@/components/Footer.astro";
 import { resolveImage, readText } from "@/lib/finalImages";
 
@@ -65,6 +67,14 @@ const innovations = [
   desc: t(`gen3/innovations/${slug}/desc`),
 }));
 
+const railSections: RailSection[] = [
+  { id: "psf-top", num: 1, title: "Project Sailfish", groups: [], seen: true },
+  { id: "psf-project", num: 2, title: "The Project", groups: [], seen: true },
+  { id: "psf-story", num: 3, title: "The Story", groups: [], seen: true },
+  { id: "psf-involvement", num: 4, title: "My Involvement", groups: [], seen: true },
+  { id: "psf-gen3", num: 5, title: "Generation 3", groups: [], seen: true },
+];
+
 const heroImg = img("hero/hero");
 const storyImg = img("story/team");
 const gen3Img = img("gen3/hero");
@@ -73,11 +83,15 @@ const gen3Img = img("gen3/hero");
   title="Project Sailfish · Luc Desautels"
   description="A proof of technology for a low-cost, autonomous marine search and rescue drone — 2 m wingspan, 160 km endurance, VTOL."
 >
-  <TopBar />
+  <TopBar darkUntil=".psf__hero" />
 
   <main class="psf" id="main">
+    <div class="psf__railwrap">
+      <SectionRail sections={railSections} caption="Sailfish" toneAware showFrom="#psf-project" />
+    </div>
+
     <!-- Hero ────────────────────────────────────────────────────────── -->
-    <section class="psf__hero">
+    <section class="psf__hero" id="psf-top" data-spy="psf-top" data-tone="dark">
       <div class="psf__hero-inner shell">
         <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · IMPACTFUL ROBOTICS</div>
         <h1 class="psf__title">
@@ -99,7 +113,7 @@ const gen3Img = img("gen3/hero");
     </section>
 
     <!-- The Project ─────────────────────────────────────────────────── -->
-    <section class="psf__sec psf__sec--dark">
+    <section class="psf__sec psf__sec--dark" id="psf-project" data-spy="psf-project" data-tone="dark">
       <div class="psf__cont shell">
         <div class="eyebrow eyebrow--dark">§ 01 — The Project</div>
         <h2 class="psf__h2">{t("project/heading")}</h2>
@@ -122,7 +136,7 @@ const gen3Img = img("gen3/hero");
     </section>
 
     <!-- The Story ───────────────────────────────────────────────────── -->
-    <section class="psf__sec psf__sec--light">
+    <section class="psf__sec psf__sec--light" id="psf-story" data-spy="psf-story" data-tone="light">
       <div class="psf__cont shell">
         <div class="eyebrow eyebrow--accent">§ 02 — The Story</div>
         <h2 class="psf__h2">{t("story/heading")}</h2>
@@ -150,7 +164,7 @@ const gen3Img = img("gen3/hero");
     </section>
 
     <!-- My Involvement ──────────────────────────────────────────────── -->
-    <section class="psf__sec psf__sec--dark">
+    <section class="psf__sec psf__sec--dark" id="psf-involvement" data-spy="psf-involvement" data-tone="dark">
       <div class="psf__cont psf__cont--wide shell">
         <div class="eyebrow eyebrow--dark">§ 03 — My Involvement</div>
         <h2 class="psf__h2">{t("involvement/heading")}</h2>
@@ -198,7 +212,7 @@ const gen3Img = img("gen3/hero");
     </section>
 
     <!-- Generation 3 ────────────────────────────────────────────────── -->
-    <section class="psf__sec psf__sec--light">
+    <section class="psf__sec psf__sec--light" id="psf-gen3" data-spy="psf-gen3" data-tone="light">
       <div class="psf__cont shell">
         <div class="eyebrow eyebrow--accent">§ 04 — Generation 3 Proof of Technology</div>
         <h2 class="psf__h2">{t("gen3/heading")}</h2>
@@ -270,7 +284,24 @@ const gen3Img = img("gen3/hero");
 <style>
   /* ── Shared ─────────────────────────────────────────────────────── */
   .psf {
+    position: relative;
     background: var(--bg);
+  }
+  /* Outline rail: pinned in the left gutter for the whole page. Needs ~1400px;
+     below that the content would run under it, so it's hidden. */
+  .psf__railwrap {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--page-pad);
+    width: 170px;
+    z-index: 5;
+    pointer-events: none;
+    --rail-w: 170px;
+  }
+  .psf [data-spy] { scroll-margin-top: var(--topbar-h); }
+  @media (max-width: 1399px) {
+    .psf__railwrap { display: none; }
   }
   .psf__cont {
     max-width: 900px;

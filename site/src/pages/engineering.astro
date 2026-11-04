@@ -7,7 +7,7 @@ import { SITE, ENG_PROJECTS, ENG_TAGS, ENG_LANDER } from "@/data/content";
 import { mdInline } from "@/lib/finalImages";
 ---
 <BaseLayout title="Engineering portfolio · Luc Desautels" description="The full engineering portfolio: ~28 sub-projects across Sailfish, FTC, and standalone work.">
-  <TopBar />
+  <TopBar tone="dark" />
 
   <main class="ep" id="main">
     <!-- Lander ─────────────────────────────────────────────────────── -->
@@ -35,14 +35,41 @@ import { mdInline } from "@/lib/finalImages";
           </div>
 
           <div class="ep__scroll-row">
-            <a class="ep__scroll" href="#programs" aria-label="Scroll to the programs">
-              <span>{ENG_LANDER.scrollProgramsLabel}</span>
-              <span class="ep__scroll-arrow">↓</span>
-            </a>
-            <a class="ep__scroll" href="#all" aria-label="Jump to the project grid">
-              <span>{ENG_LANDER.scrollGridLabel}</span>
-              <span class="ep__scroll-arrow">↓↓</span>
-            </a>
+            <div class="ep__scrollcol">
+              <a class="ep__scroll" href="#programs" aria-label="Scroll to the programs">
+                <span>{ENG_LANDER.scrollProgramsLabel}</span>
+                <span class="ep__scroll-arrow">↓</span>
+              </a>
+              <!-- Mini diagram: programs as rows of technique boxes, lighting up in turn. -->
+              <div class="mini mini--prog" aria-hidden="true">
+                {[0, 1, 2].map((r) => (
+                  <div class="mini__prog" style={`--r:${r}`}>
+                    <span class="mini__prog-label"></span>
+                    <span class="mini__prog-boxes">
+                      {[0, 1, 2, 3].map((b) => <i class="mini__box" style={`--b:${b}`}></i>)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div class="ep__scrollcol">
+              <a class="ep__scroll" href="#all" aria-label="Jump to the project grid">
+                <span>{ENG_LANDER.scrollGridLabel}</span>
+                <span class="ep__scroll-arrow">↓↓</span>
+              </a>
+              <!-- Mini diagram: two-column project grid + detail pane, like the real one. -->
+              <div class="mini mini--grid" data-mini-grid data-i="0" aria-hidden="true">
+                <div class="mini__cards">
+                  {[0, 1, 2, 3, 4, 5].map((i) => <i class="mini__card" style={`--i:${i}`}></i>)}
+                </div>
+                <div class="mini__detail">
+                  <span class="mini__pic"></span>
+                  <span class="mini__ln mini__ln--t"></span>
+                  <span class="mini__ln"></span>
+                  <span class="mini__ln mini__ln--s"></span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -262,6 +289,20 @@ import { mdInline } from "@/lib/finalImages";
   </main>
 
   <script>
+    // Mini project-grid diagram in the lander: steps through its six cards.
+    (function () {
+      const mini = document.querySelector<HTMLElement>("[data-mini-grid]");
+      if (!mini || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      let i = 0;
+      window.setInterval(() => {
+        if (document.hidden) return;
+        i = (i + 1) % 6;
+        mini.dataset.i = String(i);
+      }, 1500);
+    })();
+  </script>
+
+  <script>
     (function () {
       const root = document.querySelector("[data-projects]") as HTMLElement | null;
       if (!root) return;
@@ -422,6 +463,26 @@ import { mdInline } from "@/lib/finalImages";
           }
         });
       });
+
+      // ── Deep link: /engineering#project=<id> opens that project ─────
+      // Used by the home page's portfolio strip. Locks the selection, brings
+      // the grid into view and scrolls the card into its list.
+      function openFromHash() {
+        const m = /project=([^&]+)/.exec(window.location.hash);
+        if (!m) return;
+        const id = decodeURIComponent(m[1]);
+        const card = cards.find((c) => c.getAttribute("data-id") === id);
+        if (!card) return;
+        setSelected(id);
+        focusProject(id);
+        const lenis = (window as any).lenis;
+        const top = root!.getBoundingClientRect().top + window.scrollY - 90;
+        if (lenis) lenis.scrollTo(top, { immediate: true });
+        else window.scrollTo(0, top);
+        card.scrollIntoView({ block: "nearest" });
+      }
+      openFromHash();
+      window.addEventListener("hashchange", openFromHash);
 
       // ── Carousel interactions (delegated on the grid root) ──────────
       root.addEventListener("click", (e) => {
@@ -625,8 +686,103 @@ import { mdInline } from "@/lib/finalImages";
     .ep__scroll-row {
       margin-top: 48px;
       display: flex;
-      gap: 14px;
+      gap: 14px 28px;
       flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .ep__scrollcol { display: flex; flex-direction: column; gap: 14px; }
+
+    /* ── Mini diagrams under the scroll buttons ─────────────────────── */
+    .mini {
+      width: 100%;
+      min-width: 250px;
+      padding: 12px;
+      border: 1px solid var(--dark-line);
+      background: rgba(255, 255, 255, 0.025);
+    }
+    /* Programs: three rows, each a label bar + four technique boxes. A row
+       "activates" in turn and its boxes light up one after another. */
+    .mini--prog { display: grid; gap: 9px; }
+    .mini__prog {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 8px;
+      border: 1px solid var(--dark-line);
+      animation: mini-row 6s ease-in-out infinite;
+      animation-delay: calc(var(--r) * 2s);
+    }
+    .mini__prog-label {
+      width: 34px;
+      height: 6px;
+      background: var(--dark-mute);
+      flex: none;
+      animation: mini-label 6s ease-in-out infinite;
+      animation-delay: calc(var(--r) * 2s);
+    }
+    .mini__prog-boxes { display: flex; gap: 6px; margin-left: auto; }
+    .mini__box {
+      width: 18px;
+      height: 14px;
+      background: var(--dark-line);
+      animation: mini-box 6s ease-in-out infinite;
+      animation-delay: calc(var(--r, 0) * 2s + var(--b) * 0.25s);
+    }
+    .mini__prog:nth-child(1) .mini__box { animation-delay: calc(var(--b) * 0.25s); }
+    .mini__prog:nth-child(2) .mini__box { animation-delay: calc(2s + var(--b) * 0.25s); }
+    .mini__prog:nth-child(3) .mini__box { animation-delay: calc(4s + var(--b) * 0.25s); }
+    @keyframes mini-row {
+      0%, 30%, 100% { border-color: var(--dark-line); background: transparent; }
+      4%, 26% { border-color: var(--accent); background: rgba(217, 106, 54, 0.08); }
+    }
+    @keyframes mini-label {
+      0%, 30%, 100% { background: var(--dark-mute); }
+      4%, 26% { background: var(--accent); }
+    }
+    @keyframes mini-box {
+      0%, 30%, 100% { background: var(--dark-line); }
+      6%, 26% { background: var(--accent); }
+    }
+
+    /* Projects: 2-col card grid on the left, detail pane on the right. The
+       script advances data-i; CSS highlights that card and restyles the pane. */
+    .mini--grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 12px; }
+    .mini__cards { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .mini__card {
+      height: 22px;
+      border: 1px solid var(--dark-line);
+      background: rgba(255, 255, 255, 0.03);
+      transition: border-color .25s, background .25s, transform .25s;
+    }
+    .mini__detail { display: grid; gap: 6px; align-content: start; }
+    .mini__pic {
+      height: 46px;
+      background: var(--dark-line);
+      transition: background .35s;
+    }
+    .mini__ln { height: 5px; background: var(--dark-line); transition: width .35s; width: 90%; }
+    .mini__ln--t { background: var(--dark-mute); width: 60%; height: 6px; }
+    .mini__ln--s { width: 50%; }
+    .mini[data-i="0"] .mini__card:nth-child(1),
+    .mini[data-i="1"] .mini__card:nth-child(2),
+    .mini[data-i="2"] .mini__card:nth-child(3),
+    .mini[data-i="3"] .mini__card:nth-child(4),
+    .mini[data-i="4"] .mini__card:nth-child(5),
+    .mini[data-i="5"] .mini__card:nth-child(6) {
+      border-color: var(--accent);
+      background: rgba(217, 106, 54, 0.16);
+      transform: scale(1.06);
+    }
+    .mini[data-i="0"] .mini__pic { background: rgba(217, 106, 54, 0.55); }
+    .mini[data-i="1"] .mini__pic { background: rgba(110, 150, 190, 0.5); }
+    .mini[data-i="2"] .mini__pic { background: rgba(150, 190, 120, 0.5); }
+    .mini[data-i="3"] .mini__pic { background: rgba(190, 150, 200, 0.5); }
+    .mini[data-i="4"] .mini__pic { background: rgba(220, 190, 110, 0.5); }
+    .mini[data-i="5"] .mini__pic { background: rgba(120, 190, 190, 0.5); }
+    .mini[data-i="1"] .mini__ln, .mini[data-i="4"] .mini__ln { width: 70%; }
+    .mini[data-i="2"] .mini__ln--s, .mini[data-i="5"] .mini__ln--s { width: 80%; }
+    @media (prefers-reduced-motion: reduce) {
+      .mini__prog, .mini__prog-label, .mini__box { animation: none; }
     }
     .ep__scroll {
       display: inline-flex;

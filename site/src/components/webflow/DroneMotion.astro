@@ -195,6 +195,32 @@ const { scrollRoot } = Astro.props;
     // ── Return-to-gallery links ───────────────────────────────────────────
     // Flags the next load of /drone-videography to restore the pinned pane's
     // scroll position instead of dropping the visitor back on the hero.
+    // ── Copy-email buttons (same behaviour as the main site's top bar) ────
+    document.querySelectorAll("[data-copy-email]").forEach(function (a) {
+      var label = a.querySelector(".text-block-2") || a;
+      var email = a.getAttribute("data-copy-email");
+      var timer;
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        var done = function () {
+          label.textContent = "Copied!";
+          clearTimeout(timer);
+          timer = setTimeout(function () { label.textContent = email; }, 1600);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(email).then(done, done);
+        } else {
+          var ta = document.createElement("textarea");
+          ta.value = email;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand("copy"); } catch (err) {}
+          ta.remove();
+          done();
+        }
+      });
+    });
+
     document.querySelectorAll("[data-dv-return]").forEach(function (a) {
       a.addEventListener("click", function () {
         try { sessionStorage.setItem("dv:return", "1"); } catch (e) {}

@@ -1,7 +1,8 @@
 ---
 import { Image } from "astro:assets";
 import { readText, readTextOptional, resolveImage, listSlotDirs, listSlotImages } from "@/lib/finalImages";
-import { SITE } from "@/data/content";
+import { SITE, DEDICATED_PAGES } from "@/data/content";
+import LinkedInCard from "@/components/LinkedInCard.astro";
 import DroneNav from "@/components/webflow/DroneNav.astro";
 import DroneFooter from "@/components/webflow/DroneFooter.astro";
 import DroneMotion from "@/components/webflow/DroneMotion.astro";
@@ -83,12 +84,14 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
         <div class="rl_navbar1_container">
           <div class="text-block">Luc Desautels</div>
           <nav role="navigation" class="rl_navbar1_menu is-page-height-tablet w-nav-menu">
-            <a href="/impactful-robotics" class="rl_navbar1_link w-nav-link">Impactful Robotics</a>
-            <a href="/competitive-robotics" class="rl_navbar1_link w-nav-link">Competitive Robotics</a>
-            <a href="/drone-videography" aria-current="page" class="rl_navbar1_link w-nav-link w--current">Drone Videography</a>
-            <a href="/" class="rl_navbar1_link w-nav-link">More Interests</a>
+            {DEDICATED_PAGES.map((p) => {
+              const cur = p.href.replace(/\/$/, "") === "/drone-videography";
+              return (
+                <a href={p.href} class:list={["rl_navbar1_link", "w-nav-link", cur && "w--current"]} aria-current={cur ? "page" : undefined}>{p.label}</a>
+              );
+            })}
             <div class="rl_navbar1_menu-buttons">
-              <a href={`mailto:${SITE.contact.email}`} class="fs-copyclip_button helper w-inline-block">
+              <a href={`mailto:${SITE.contact.email}`} class="fs-copyclip_button helper w-inline-block" data-copy-email={SITE.contact.email}>
                 <div class="fs-copyclip_button_icon w-embed">
                   <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path
@@ -101,13 +104,7 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
                 <div class="text-block-2">{SITE.contact.email}</div>
               </a>
               <a href="/resume" class="rl_navbar1_button-secondary w-button">Résumé</a>
-              <a
-                href="https://www.linkedin.com/in/luc-desautels/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="link-block w-inline-block"
-                ><img src={`${ASSETS}/images/linkedin-svgrepo-com.svg`} loading="lazy" alt="LinkedIn" class="image new_linkedin_img" /></a
-              >
+              <LinkedInCard icon={`${ASSETS}/images/linkedin-svgrepo-com.svg`} />
             </div>
           </nav>
           <div class="rl_navbar1_menu-button w-nav-button">
