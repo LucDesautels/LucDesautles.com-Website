@@ -33,7 +33,7 @@ const rowThumbs = (imgs: EngSlotImage[]) => imgs.slice(0, 2);
           <div class="egp-prog__text">
             <div class="egp-prog__topline">
               <span class="eyebrow eyebrow--accent">// {prog.eyebrow} / {String(PROGRAMS.length).padStart(2, "0")}</span>
-              <span class="egp-prog__years">{prog.years}</span>
+              <span class="egp-prog__years">{prog.years.split(/\r?\n/).map((l) => <span class="egp-prog__year-line">{l}</span>)}</span>
             </div>
             <h3 class="egp-prog__name">{prog.title}</h3>
             <div class="egp-prog__role">{prog.role}</div>
@@ -485,13 +485,22 @@ const rowThumbs = (imgs: EngSlotImage[]) => imgs.slice(0, 2);
     align-items: baseline;
     justify-content: space-between;
     gap: 16px;
+    position: relative;
   }
   .egp-prog__years {
+    position: absolute;
+    top: 0;
+    right: 0;
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--dark-mute);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    text-align: right;
   }
   .egp-prog__name {
     font-family: var(--font-tech);
