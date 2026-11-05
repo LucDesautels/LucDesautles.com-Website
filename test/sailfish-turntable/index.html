@@ -1,0 +1,135 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Sailfish Turntable — Test</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Khand:wght@500;600;700&display=swap"><link rel="stylesheet" href="/_astro/competitive-robotics.DlG2PKkX.css">
+<link rel="stylesheet" href="/_astro/sailfish-turntable.DJwO_sAI.css"></head> <body> <div class="loader" id="loader"> <span id="loader-text">Loading frames… 0 / 36</span> </div> <header class="intro"> <p class="eyebrow">Prototype · not linked from the site</p> <h1>Sailfish Turntable</h1> <p class="sub">
+36-frame render, two interaction tests. Scroll down to try them.
+</p> <p class="scroll-hint">↓ scroll</p> </header> <section class="stage drag-stage"> <div class="stage-inner"> <p class="label">01 — Drag to rotate</p> <div class="viewer-wrap" id="drag-wrap"> <img id="drag-img-a" class="viewer-img" src="/sailfish-turntable/frame-01.jpg" alt="Sailfish UAV, draggable turntable" draggable="false"> <img id="drag-img-b" class="viewer-img viewer-img--blend" src="/sailfish-turntable/frame-02.jpg" alt="" draggable="false"> </div> <p class="hint" id="drag-hint">click + drag left/right</p> <p class="frame-readout" id="drag-readout">FRAME 01 / 36</p> </div> </section> <section class="scroll-track" id="scroll-track"> <div class="stage scroll-stage"> <div class="stage-inner"> <p class="label">02 — Scroll to rotate</p> <div class="viewer-wrap"> <img id="scroll-img-a" class="viewer-img" src="/sailfish-turntable/frame-01.jpg" alt="Sailfish UAV, scroll-driven turntable" draggable="false"> <img id="scroll-img-b" class="viewer-img viewer-img--blend" src="/sailfish-turntable/frame-02.jpg" alt="" draggable="false"> </div> <p class="frame-readout" id="scroll-readout">FRAME 01 / 36</p> <div class="progress-track"> <div class="progress-fill" id="scroll-progress"></div> </div> </div> </div> </section> <footer class="outro"> <p>end of test page</p> </footer> <script>(function(){const frames = ["/sailfish-turntable/frame-01.jpg","/sailfish-turntable/frame-02.jpg","/sailfish-turntable/frame-03.jpg","/sailfish-turntable/frame-04.jpg","/sailfish-turntable/frame-05.jpg","/sailfish-turntable/frame-06.jpg","/sailfish-turntable/frame-07.jpg","/sailfish-turntable/frame-08.jpg","/sailfish-turntable/frame-09.jpg","/sailfish-turntable/frame-10.jpg","/sailfish-turntable/frame-11.jpg","/sailfish-turntable/frame-12.jpg","/sailfish-turntable/frame-13.jpg","/sailfish-turntable/frame-14.jpg","/sailfish-turntable/frame-15.jpg","/sailfish-turntable/frame-16.jpg","/sailfish-turntable/frame-17.jpg","/sailfish-turntable/frame-18.jpg","/sailfish-turntable/frame-19.jpg","/sailfish-turntable/frame-20.jpg","/sailfish-turntable/frame-21.jpg","/sailfish-turntable/frame-22.jpg","/sailfish-turntable/frame-23.jpg","/sailfish-turntable/frame-24.jpg","/sailfish-turntable/frame-25.jpg","/sailfish-turntable/frame-26.jpg","/sailfish-turntable/frame-27.jpg","/sailfish-turntable/frame-28.jpg","/sailfish-turntable/frame-29.jpg","/sailfish-turntable/frame-30.jpg","/sailfish-turntable/frame-31.jpg","/sailfish-turntable/frame-32.jpg","/sailfish-turntable/frame-33.jpg","/sailfish-turntable/frame-34.jpg","/sailfish-turntable/frame-35.jpg","/sailfish-turntable/frame-36.jpg"];
+const FRAME_COUNT = 36;
+
+      const preloaded = [];
+      const loader = document.getElementById("loader");
+      const loaderText = document.getElementById("loader-text");
+
+      let loadedCount = 0;
+      function onFrameLoaded() {
+        loadedCount++;
+        loaderText.textContent = `Loading frames… ${loadedCount} / ${FRAME_COUNT}`;
+        if (loadedCount === FRAME_COUNT) {
+          loader.classList.add("loader--done");
+          init();
+        }
+      }
+
+      frames.forEach((src, i) => {
+        const img = new Image();
+        img.onload = onFrameLoaded;
+        img.onerror = onFrameLoaded;
+        img.src = src;
+        preloaded[i] = img;
+      });
+
+      function frameSrc(i) {
+        // i is 0-indexed internally, frames are 1-indexed on disk
+        return preloaded[((i % FRAME_COUNT) + FRAME_COUNT) % FRAME_COUNT].src;
+      }
+
+      // Renders a fractional frame index (e.g. 12.4) by crossfading the two
+      // nearest real frames instead of hard-cutting between them — that's
+      // what turns 36 discrete 10°-apart shots into something that reads as
+      // continuous rotation instead of a slideshow.
+      function makeRenderer(imgA, imgB, readout, wrap) {
+        return function render(index, wrapAround) {
+          const idx = wrapAround
+            ? ((index % FRAME_COUNT) + FRAME_COUNT) % FRAME_COUNT
+            : Math.min(FRAME_COUNT - 1, Math.max(0, index));
+          const lo = Math.floor(idx);
+          const hi = wrapAround ? (lo + 1) % FRAME_COUNT : Math.min(FRAME_COUNT - 1, lo + 1);
+          const frac = idx - lo;
+
+          imgA.src = frameSrc(lo);
+          imgB.src = frameSrc(hi);
+          imgB.style.opacity = frac;
+
+          if (readout) {
+            const shown = Math.round(idx) % FRAME_COUNT;
+            readout.textContent = `FRAME ${String(shown + 1).padStart(2, "0")} / ${FRAME_COUNT}`;
+          }
+          return idx;
+        };
+      }
+
+      function init() {
+        initDrag();
+        initScroll();
+      }
+
+      // ---------- Section 1: drag to rotate ----------
+      function initDrag() {
+        const wrap = document.getElementById("drag-wrap");
+        const imgA = document.getElementById("drag-img-a");
+        const imgB = document.getElementById("drag-img-b");
+        const readout = document.getElementById("drag-readout");
+        const hint = document.getElementById("drag-hint");
+        const render = makeRenderer(imgA, imgB, readout, wrap);
+
+        let dragging = false;
+        let startX = 0;
+        let startIndex = 0;
+        let currentIndex = 0;
+        const PX_PER_FRAME = 8; // lower = more sensitive drag
+
+        wrap.addEventListener("pointerdown", (e) => {
+          dragging = true;
+          startX = e.clientX;
+          startIndex = currentIndex;
+          wrap.setPointerCapture(e.pointerId);
+          wrap.classList.add("grabbing");
+          hint.classList.add("hint--hidden");
+        });
+
+        wrap.addEventListener("pointermove", (e) => {
+          if (!dragging) return;
+          const dx = e.clientX - startX;
+          currentIndex = render(startIndex - dx / PX_PER_FRAME, true);
+        });
+
+        function endDrag() {
+          dragging = false;
+          wrap.classList.remove("grabbing");
+        }
+        wrap.addEventListener("pointerup", endDrag);
+        wrap.addEventListener("pointercancel", endDrag);
+      }
+
+      // ---------- Section 2: scroll to rotate ----------
+      function initScroll() {
+        const track = document.getElementById("scroll-track");
+        const imgA = document.getElementById("scroll-img-a");
+        const imgB = document.getElementById("scroll-img-b");
+        const readout = document.getElementById("scroll-readout");
+        const progressFill = document.getElementById("scroll-progress");
+        const render = makeRenderer(imgA, imgB, readout, null);
+
+        // Eased toward the scroll-derived target every frame (instead of
+        // snapping straight to it) so the rotation glides instead of
+        // ticking in lockstep with scroll deltas.
+        const LERP = 0.14;
+        let displayIndex = 0;
+
+        function targetIndex() {
+          const rect = track.getBoundingClientRect();
+          const scrollableHeight = rect.height - window.innerHeight;
+          const progress = Math.min(1, Math.max(0, -rect.top / scrollableHeight));
+          return progress * (FRAME_COUNT - 1);
+        }
+
+        function loop() {
+          const target = targetIndex();
+          displayIndex += (target - displayIndex) * LERP;
+          if (Math.abs(target - displayIndex) < 0.005) displayIndex = target;
+          render(displayIndex, false);
+          progressFill.style.width = `${(displayIndex / (FRAME_COUNT - 1)) * 100}%`;
+          requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+      }
+    })();</script>  </body> </html>
