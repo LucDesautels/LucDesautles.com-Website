@@ -11,7 +11,14 @@ import { mdInline } from "@/lib/finalImages";
 
   <main class="ep" id="main">
     <!-- Lander ─────────────────────────────────────────────────────── -->
-    <section class="ep__lander">
+    <section class="ep__lander" data-lander-glow>
+      <!-- x/y: home position (% of section). s: size (vw). o: opacity. d: max drift (px). e: follow ease. -->
+      <div class="ep__glow" aria-hidden="true" data-x="82" data-y="8"  data-s="38" data-o="0.32" data-d="150" data-e="0.035"></div>
+      <div class="ep__glow" aria-hidden="true" data-x="62" data-y="62" data-s="22" data-o="0.18" data-d="220" data-e="0.022"></div>
+      <div class="ep__glow" aria-hidden="true" data-x="12" data-y="78" data-s="26" data-o="0.16" data-d="190" data-e="0.028"></div>
+      <div class="ep__glow" aria-hidden="true" data-x="38" data-y="18" data-s="16" data-o="0.14" data-d="260" data-e="0.018"></div>
+      <div class="ep__glow" aria-hidden="true" data-x="94" data-y="82" data-s="18" data-o="0.14" data-d="130" data-e="0.04"></div>
+      <div class="ep__glow ep__glow--follow" aria-hidden="true"></div>
       <div class="ep__lander-grid shell">
         <div class="ep__lander-col">
           <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · ENGINEERING PORTFOLIO</div>
@@ -289,6 +296,67 @@ import { mdInline } from "@/lib/finalImages";
   </main>
 
   <script>
+    // Lander glow: several soft orange blobs rest at fixed spots and shift a
+    // little, each at its own depth/delay, as the mouse moves. No spotlight.
+    (function () {
+      const sec = document.querySelector<HTMLElement>("[data-lander-glow]");
+      if (!sec || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const blobs = Array.from(sec.querySelectorAll<HTMLElement>(".ep__glow:not(.ep__glow--follow)")).map((el, i) => {
+        const d = el.dataset;
+        const size = Number(d.s);
+        el.style.width = el.style.height = `min(${size}vw, 720px)`;
+        el.style.setProperty("--o", d.o || "0.2");
+        return { el, i, x: Number(d.x), y: Number(d.y), drift: Number(d.d), ease: Number(d.e), cx: 0, cy: 0 };
+      });
+      // Mouse as -1..1 from the section centre; eased per blob.
+      let mx = 0, my = 0, visible = true, raf = 0;
+      // Cursor follower: organic, turbulent, stretched along its velocity.
+      const fol = sec.querySelector<HTMLElement>(".ep__glow--follow")!;
+      let px0 = 0, py0 = 0, ftx = 0, fty = 0, vx = 0, vy = 0, fx = 0, fy = 0, init = false;
+      window.addEventListener("pointermove", (e) => {
+        const r = sec.getBoundingClientRect();
+        ftx = e.clientX - r.left; fty = e.clientY - r.top;
+        if (!init) { fx = ftx; fy = fty; init = true; }
+        mx = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
+        my = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2));
+      }, { passive: true });
+      new IntersectionObserver((en) => { visible = en[0].isIntersecting; if (visible && !raf) raf = requestAnimationFrame(tick); }).observe(sec);
+      function tick(t: number) {
+        raf = 0;
+        if (!visible) return;
+        const w = sec.clientWidth, h = sec.clientHeight;
+        for (const b of blobs) {
+          // Alternate direction per blob so they shift against each other.
+          const dir = b.i % 2 ? -1 : 1;
+          const tx = mx * b.drift * dir + Math.sin(t / (4200 + b.i * 900) + b.i) * 14;
+          const ty = my * b.drift * dir * 0.8 + Math.cos(t / (5100 + b.i * 700) + b.i) * 12;
+          b.cx += (tx - b.cx) * b.ease;
+          b.cy += (ty - b.cy) * b.ease;
+          const px = (b.x / 100) * w - b.el.offsetWidth / 2 + b.cx;
+          const py = (b.y / 100) * h - b.el.offsetHeight / 2 + b.cy;
+          b.el.style.transform = `translate3d(${px}px, ${py}px, 0)`;
+        }
+        if (init) {
+          // Slow chase + wandering noise; speed drives stretch and rotation.
+          const nx = Math.sin(t / 900) * 38 + Math.sin(t / 370 + 1.3) * 16;
+          const ny = Math.cos(t / 1100) * 38 + Math.cos(t / 430 + 0.7) * 16;
+          const ox = fx, oy = fy;
+          fx += (ftx + nx - fx) * 0.045;
+          fy += (fty + ny - fy) * 0.045;
+          vx += ((fx - ox) - vx) * 0.12; vy += ((fy - oy) - vy) * 0.12;
+          const sp = Math.min(Math.hypot(vx, vy) / 14, 1);
+          const ang = Math.atan2(vy, vx) * 180 / Math.PI;
+          const sx = 1 + sp * 0.55 + Math.sin(t / 700) * 0.08, sy = 1 - sp * 0.25 + Math.cos(t / 800) * 0.08;
+          const br = (k: number) => 40 + Math.sin(t / (600 + k * 170) + k * 2) * 18;
+          fol.style.borderRadius = `${br(1)}% ${br(2)}% ${br(3)}% ${br(4)}% / ${br(5)}% ${br(6)}% ${br(7)}% ${br(8)}%`;
+          fol.style.transform = `translate3d(${fx - fol.offsetWidth / 2}px, ${fy - fol.offsetHeight / 2}px, 0) rotate(${ang}deg) scale(${sx}, ${sy})`;
+        } else fol.style.opacity = "0";
+        if (init) fol.style.opacity = "1";
+        raf = requestAnimationFrame(tick);
+      }
+      raf = requestAnimationFrame(tick);
+    })();
+
     // Mini project-grid diagram in the lander: steps through its six cards.
     (function () {
       const mini = document.querySelector<HTMLElement>("[data-mini-grid]");
@@ -635,7 +703,26 @@ import { mdInline } from "@/lib/finalImages";
       flex-direction: column;
       justify-content: center;
     }
+    /* Mouse-reactive orange glow: blurred orbs eased toward the cursor. */
+    .ep__glow {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(90px);
+      will-change: transform;
+      z-index: 0;
+    }
+    .ep__glow--follow {
+      width: min(26vw, 460px); height: min(26vw, 460px);
+      background: radial-gradient(circle, rgba(217, 106, 54, 0.2) 0%, rgba(217, 106, 54, 0) 70%);
+    }
+    .ep__glow {
+      left: 0; top: 0;
+      background: radial-gradient(circle, rgba(217, 106, 54, var(--o, 0.2)) 0%, rgba(217, 106, 54, 0) 68%);
+    }
     .ep__lander-grid {
+      position: relative;
+      z-index: 1;
       display: grid;
       grid-template-columns: 1fr clamp(380px, 36vw, 520px);
       gap: 56px;

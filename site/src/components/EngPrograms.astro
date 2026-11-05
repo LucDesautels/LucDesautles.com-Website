@@ -33,7 +33,18 @@ const rowThumbs = (imgs: EngSlotImage[]) => imgs.slice(0, 2);
           <div class="egp-prog__text">
             <div class="egp-prog__topline">
               <span class="eyebrow eyebrow--accent">// {prog.eyebrow} / {String(PROGRAMS.length).padStart(2, "0")}</span>
-              <span class="egp-prog__years">{prog.years.split(/\r?\n/).map((l) => <span class="egp-prog__year-line">{l}</span>)}</span>
+              <span class="egp-prog__years">{prog.years.split(/\r?\n/).map((l) => {
+                const m = l.match(/^(.*?)\s*·\s*(\d+)\s+(\S+)$/);
+                return m ? (
+                  <span class="egp-prog__year-line">
+                    <span class="egp-prog__year-label">{m[1]} ·</span>
+                    <span class="egp-prog__year-num">{m[2]}</span>
+                    <span class="egp-prog__year-unit">{m[3]}</span>
+                  </span>
+                ) : (
+                  <span class="egp-prog__year-line egp-prog__year-line--plain">{l}</span>
+                );
+              })}</span>
             </div>
             <h3 class="egp-prog__name">{prog.title}</h3>
             <div class="egp-prog__role">{prog.role}</div>
@@ -496,12 +507,17 @@ const rowThumbs = (imgs: EngSlotImage[]) => imgs.slice(0, 2);
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--dark-mute);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-    text-align: right;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    column-gap: 0.6em;
+    row-gap: 6px;
+    align-items: baseline;
   }
+  .egp-prog__year-line { display: contents; }
+  .egp-prog__year-line--plain { grid-column: 1 / -1; display: block; text-align: right; }
+  .egp-prog__year-label { text-align: right; }
+  .egp-prog__year-num { text-align: center; }
+  .egp-prog__year-unit { text-align: left;   }
   .egp-prog__name {
     font-family: var(--font-tech);
     font-size: clamp(30px, 4vw, 52px);
