@@ -105,6 +105,9 @@ export type EngProject = {
   requirements: string;
   contribution: string;
   result: string;
+  /** Optional dedicated page for the project (e.g. an interactive demo). */
+  href?: string;
+  hrefLabel?: string;
   /** Shows on the home page's sub-projects strip when true, ordered by homeFeaturedOrder. */
   homeFeatured: boolean;
   homeFeaturedOrder: number | null;
@@ -175,6 +178,8 @@ function resolveEngProject(p: Raw["engineering"][number]): EngProject | null {
     requirements: readText(p.requirements),
     contribution: readText(p.contribution),
     result: readText(p.result),
+    href: "href" in p ? (p.href as string) : undefined,
+    hrefLabel: "hrefLabel" in p ? (p.hrefLabel as string) : undefined,
     homeFeatured: p.homeFeatured,
     homeFeaturedOrder: p.homeFeaturedOrder,
   };

@@ -313,7 +313,8 @@
               "standout": true,
               "title": "home/academics/research/optimized-sar-spiral/title",
               "body": "home/academics/research/optimized-sar-spiral/body",
-              "image": "home/academics/research/optimized-sar-spiral/hero"
+              "image": "home/academics/research/optimized-sar-spiral/hero",
+              "href": "/sar-spiral"
             },
             {
               "title": "home/academics/research/motor-and-prop-efficiency/title",
@@ -942,6 +943,8 @@
       "requirements": "engineering/eng-grid/search-pattern/requirements",
       "contribution": "engineering/eng-grid/search-pattern/contribution",
       "result": "engineering/eng-grid/search-pattern/result",
+      "href": "/sar-spiral",
+      "hrefLabel": "Open the interactive model",
       "homeFeatured": false,
       "homeFeaturedOrder": null
     },
