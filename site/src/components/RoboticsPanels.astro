@@ -972,12 +972,54 @@ const N = 5; // slides per column
   }
   .rp__cta:hover { background: var(--accent); color: var(--accent-ink); }
 
-  @media (max-width: 960px) {
-    .rp__grid--top { grid-template-columns: 1fr; }
-    .rp__grid--rows { grid-template-columns: 1fr; }
-    .rp__grid--rows .row { grid-column: 1 !important; }
-    .rp__ctas { grid-template-columns: 1fr; }
-    .rp__stickytop { position: relative; top: auto; }
+  /* ── Narrow windows (split screen, vertical tablet…) ─────────────────
+     One column, one project at a time: FTC (heading, image, progress bars, its five
+     rows, its button), THEN Sailfish (the same). The wrappers are flattened with
+     display: contents so every piece becomes a direct flex item of .rp__pin and
+     `order` can interleave them — the markup keeps its two-column shape for the wide
+     layout, where rows must line up across the columns. Nothing is pinned here: each
+     block simply flows, so there's no band covering rows as they scroll. Type is
+     sized up for the wider single column (the desktop sizes look tiny in it). */
+  @media (max-width: 1099px) {
+    .rp__pin {
+      display: flex;
+      flex-direction: column;
+      max-width: 860px;
+      margin-inline: auto;
+      padding: 0 var(--page-pad);
+    }
+    .rp__stickytop,
+    .rp__stickytop .rp__shell,
+    .rp__grid,
+    .rp__rowsband,
+    .rp__rowsband .rp__shell,
+    .rp__ctas { display: contents; }
+    .rp__stickytop { position: static; }
+    .rp__toc { display: none; }
+
+    /* FTC first … */
+    .col--top[data-col="1"] { order: 1; padding-top: 56px; }
+    .row[data-col="1"] { order: 2; }
+    .rp__cta:nth-child(2) { order: 2; }
+    /* … then Sailfish */
+    .col--top[data-col="0"] { order: 3; padding-top: 72px; }
+    .row[data-col="0"] { order: 4; }
+    .rp__cta:nth-child(1) { order: 4; margin-bottom: 72px; }
+
+    /* "01 / 02" would now read 02 then 01 */
+    .col__counter { display: none; }
+    .col__title { font-size: clamp(40px, 8vw, 64px); }
+    .col__subtitle { font-size: 12px; }
+    .col__head .eyebrow { font-size: 12px; }
+    .col__img { aspect-ratio: 16 / 9; }
+    .col__media { margin-bottom: 20px; }
+    .col__caption { font-size: 11px; }
+
+    .row { padding: 20px 20px 20px 24px; }
+    .row__inner :global(.eyebrow) { font-size: 12px; }
+    .row__title { font-size: 20px; margin: 8px 0 6px; }
+    .row__body { font-size: 16px; line-height: 1.6; }
+    .rp__cta { font-size: 12px; margin-top: 24px; padding: 14px 18px; }
   }
 
   /* ── Lightbox ────────────────────────────────────────────────────── */

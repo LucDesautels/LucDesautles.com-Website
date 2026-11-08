@@ -1,0 +1,681 @@
+---
+// Hand-drawn orange arrows over the landing page.
+//
+// One absolutely-positioned <svg> lives INSIDE the lander's stage, in the stage's
+// own coordinates, so the arrows travel with it whether the page scrolls, the stage
+// is pinned, or (in narrow windows) the stage is being panned sideways. An arrow is
+// two slightly different pencil passes for the stem, then a single chevron stroke
+// for the head that is drawn *after* the stem lands.
+//
+// Anchors are plain elements tagged data-aa="name"; text to steer around is tagged
+// data-aa-text and boxes (cards, tiles, polaroids) data-aa-box. Routes are
+// re-measured on every layout change, so they follow any viewport size, aspect
+// ratio or zoom level; each arrow tries a few candidate routes and keeps the one
+// that hits the least text, and an arrow with no clean route is skipped, never
+// drawn badly.
+//
+// Timeline (all of it also reachable by hovering):
+//   robotics → Focus ........ 4 s after the page has loaded, or as soon as the mouse
+//                             moves over the description or the Focus block
+//   Focus → Eng + Focus → 01  3 s after that, or on hovering Focus / the Engineering
+//                             tile / card 01. Whatever triggered it goes first; on a
+//                             timer or a Focus hover it is Engineering, then 01.
+//   field photo → card 02 .... hover card 02, the field-testing photo or the Focus
+//                             text; fades 2 s after the mouse leaves card 02 and the
+//                             photo (the Focus text doesn't keep it alive)
+//   Thompson Rivers → Kamloops hover "Transfer Student", "Thompson Rivers
+//                             University" or "Kamloops, BC" (one direction only)
+//   Overview click .......... arrow straight down to "§ 01 Table of contents", then scroll
+//
+// Debug: window.__arrowAudit() lists each arrow's state and collision count;
+// window.__arrowReveal(id?) draws one/all.
+---
+<script>
+  type P = { x: number; y: number };
+  interface Box { l: number; t: number; r: number; b: number; w: number; h: number; cx: number; cy: number }
+  type Route = P[];
+  type State = "idle" | "drawing" | "drawn" | "skipped";
+  interface Arrow {
+    id: string;
+    state: State;
+    routes: (c: Ctx) => Route[];
+    g?: SVGGElement;
+    anims: Animation[];
+    token: number;               // invalidates in-flight draws
+    hits: number;
+    dbg?: string[];
+  }
+  interface Ctx {
+    box: (n: string) => Box | null;
+    text: (n: string) => Box | null;
+    lastLine: (n: string) => Box | null;
+    block: (n: string, sel: string) => Box | null;
+    eyebrow: (n: string) => Box | null;
+    corner: (n: string, sel: string) => P | null;
+    textRight: number;
+    textBottom: number;
+  }
+
+  const hero = document.querySelector<HTMLElement>("[data-lander]");
+  const stage = hero?.querySelector<HTMLElement>(".hero__stage") ?? null;
+  if (hero && stage) init(hero, stage);
+
+  function init(hero: HTMLElement, stage: HTMLElement) {
+    const NS = "http://www.w3.org/2000/svg";
+    const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const ACCENT = "var(--accent)";
+
+    // ── geometry, in the stage's own coordinates ────────────────────────────
+    // (origin = the stage's top-left; K undoes any CSS zoom the layout tuner applied)
+    let OX = 0, OY = 0, K = 1;
+    const sync = () => {
+      const r = stage.getBoundingClientRect();
+      OX = r.left; OY = r.top; K = r.width / stage.offsetWidth || 1;
+    };
+    const toBox = (r: { left: number; top: number; right: number; bottom: number }): Box => {
+      sync();
+      const l = (r.left - OX) / K, t = (r.top - OY) / K, rr = (r.right - OX) / K, b = (r.bottom - OY) / K;
+      return { l, t, r: rr, b, w: rr - l, h: b - t, cx: (l + rr) / 2, cy: (t + b) / 2 };
+    };
+    const find = (n: string) => hero.querySelector<HTMLElement>(`[data-aa="${n}"]`);
+    const rectOf = (el: Element | null) => (el ? toBox(el.getBoundingClientRect()) : null);
+    const lines = (el: Element | null): Box[] => {
+      if (!el) return [];
+      return Array.from(el.getClientRects()).filter((r) => r.width > 0 && r.height > 0).map(toBox);
+    };
+    // Tight rects of the *text* inside a block element (not its full-width box).
+    const textLines = (el: Element): Box[] => {
+      const out: Box[] = [];
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let n: Node | null;
+      while ((n = w.nextNode())) {
+        if (!n.textContent || !n.textContent.trim()) continue;
+        const rg = document.createRange();
+        rg.selectNodeContents(n);
+        for (const r of Array.from(rg.getClientRects())) if (r.width > 1 && r.height > 1) out.push(toBox(r));
+      }
+      return out;
+    };
+    const mkCtx = (): Ctx => {
+      const tag = Array.from(hero.querySelectorAll(".hero__tagline"));
+      const tl = tag.flatMap((e) => textLines(e));
+      return {
+        box: (n) => rectOf(find(n)),
+        text: (n) => {
+          const e = find(n);
+          if (!e) return null;
+          const ls = textLines(e);
+          return ls.length ? ls[0] : rectOf(e);
+        },
+        lastLine: (n) => {
+          const ls = lines(find(n));
+          return ls.length ? ls[ls.length - 1] : null;
+        },
+        block: (n, sel) => rectOf(find(n)?.closest(sel) ?? null),
+        eyebrow: (n) => {
+          const e = find(n)?.closest(".hero__meta-item")?.querySelector(".eyebrow");
+          const ls = e ? textLines(e) : [];
+          return ls.length ? ls[0] : null;
+        },
+        // true bottom-right corner of a (possibly rotated) element inside an anchor: its
+        // bounding box is centred on the element, and the rotation comes off the anchor's transform
+        corner: (n, sel) => {
+          const root = find(n), el = root?.querySelector<HTMLElement>(sel);
+          if (!root || !el) return null;
+          sync();
+          const m = new DOMMatrix(getComputedStyle(root).transform);
+          const th = Math.atan2(m.b, m.a), c = Math.cos(th), sn = Math.sin(th);
+          const r = el.getBoundingClientRect();
+          const w = el.offsetWidth, h = el.offsetHeight;
+          const k = r.width / (w * Math.abs(c) + h * Math.abs(sn) || 1);
+          const hx = (w * k) / 2, hy = (h * k) / 2;
+          return {
+            x: (r.left + r.width / 2 + hx * c - hy * sn - OX) / K,
+            y: (r.top + r.height / 2 + hx * sn + hy * c - OY) / K,
+          };
+        },
+        textRight: tl.reduce((m, b) => Math.max(m, b.r), 0),
+        textBottom: tl.reduce((m, b) => Math.max(m, b.b), 0),
+      };
+    };
+
+    // ── obstacles: text lines (a little shrunk, so a stroke may slide through the
+    //    leading between lines) and the boxes of cards / tiles / photos ──────────
+    interface Obs { l: number; t: number; r: number; b: number }
+    let obstacles: Obs[] = [];
+    const measureObstacles = () => {
+      const o: Obs[] = [];
+      hero.querySelectorAll("[data-aa-text]").forEach((e) => {
+        for (const b of textLines(e)) o.push({ l: b.l - 3, r: b.r + 3, t: b.t + b.h * 0.2, b: b.b - b.h * 0.14 });
+      });
+      hero.querySelectorAll("[data-aa-box]").forEach((e) => {
+        const b = toBox(e.getBoundingClientRect());
+        o.push({ l: b.l + 1, r: b.r - 1, t: b.t + 1, b: b.b - 1 });
+      });
+      obstacles = o;
+    };
+
+    // ── drawing math ────────────────────────────────────────────────────────
+    const rng = (seed: string) => {
+      let h = 1779033703 ^ seed.length;
+      for (let i = 0; i < seed.length; i++) { h = Math.imul(h ^ seed.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+      let a = h >>> 0;
+      return () => {
+        a = (a + 0x6d2b79f5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    };
+    const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y);
+    const f = (n: number) => n.toFixed(1);
+
+    /** Catmull-Rom through pts → cubic path string + dense polyline. */
+    function spline(pts: P[]): { d: string; poly: P[] } {
+      if (pts.length < 2) return { d: "", poly: pts.slice() };
+      let d = `M${f(pts[0].x)} ${f(pts[0].y)}`;
+      const poly: P[] = [pts[0]];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(i - 1, 0)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(i + 2, pts.length - 1)];
+        const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
+        const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
+        d += ` C${f(c1.x)} ${f(c1.y)} ${f(c2.x)} ${f(c2.y)} ${f(p2.x)} ${f(p2.y)}`;
+        const steps = Math.max(6, Math.ceil(dist(p1, p2) / 5));
+        for (let s = 1; s <= steps; s++) {
+          const t = s / steps, u = 1 - t;
+          poly.push({
+            x: u * u * u * p1.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * p2.x,
+            y: u * u * u * p1.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * p2.y,
+          });
+        }
+      }
+      return { d, poly };
+    }
+
+    /**
+     * The hand-drawn wobble: resample the route every few px and push each point
+     * sideways by a *slow* drift (two low-frequency sines with random phase), so the
+     * line wanders a little like a steady pencil instead of shaking point to point.
+     * Both ends are pinned so arrows still start and land exactly where intended.
+     */
+    function roughen(poly: P[], rand: () => number, amp: number, step = 7): P[] {
+      const cum = [0];
+      for (let i = 1; i < poly.length; i++) cum.push(cum[i - 1] + dist(poly[i - 1], poly[i]));
+      const total = cum[cum.length - 1];
+      const n = Math.max(2, Math.round(total / step));
+      const l1 = 70 + rand() * 50, l2 = 22 + rand() * 12;
+      const p1 = rand() * 6.28, p2 = rand() * 6.28;
+      const out: P[] = [];
+      let j = 0;
+      for (let k = 0; k <= n; k++) {
+        const s = (k / n) * total;
+        while (j < cum.length - 2 && cum[j + 1] < s) j++;
+        const seg = cum[j + 1] - cum[j] || 1;
+        const t = (s - cum[j]) / seg;
+        const a = poly[j], b = poly[j + 1];
+        const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
+        const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+        const taper = Math.min(1, s / 14, (total - s) / 14);
+        const off = amp * (Math.sin(s / l1 + p1) * 0.75 + Math.sin(s / l2 + p2) * 0.25) * taper;
+        out.push({ x: x + (-dy / len) * off, y: y + (dx / len) * off });
+      }
+      return out;
+    }
+
+    function pointAtFromEnd(poly: P[], back: number): P {
+      let acc = 0;
+      for (let i = poly.length - 1; i > 0; i--) {
+        const seg = dist(poly[i], poly[i - 1]);
+        if (acc + seg >= back) {
+          const t = (back - acc) / seg;
+          return { x: poly[i].x + (poly[i - 1].x - poly[i].x) * t, y: poly[i].y + (poly[i - 1].y - poly[i].y) * t };
+        }
+        acc += seg;
+      }
+      return poly[0];
+    }
+
+    /** A "^" chevron at the end of the path, as one pen stroke. */
+    function head(poly: P[], rand: () => number): string {
+      const E = poly[poly.length - 1];
+      const B = pointAtFromEnd(poly, 16);
+      let tx = E.x - B.x, ty = E.y - B.y;
+      const tl = Math.hypot(tx, ty) || 1;
+      tx /= tl; ty /= tl;
+      const rot = (vx: number, vy: number, deg: number) => {
+        const a = (deg * Math.PI) / 180;
+        return { x: vx * Math.cos(a) - vy * Math.sin(a), y: vx * Math.sin(a) + vy * Math.cos(a) };
+      };
+      const a1 = 28 + rand() * 4, a2 = 28 + rand() * 4;
+      const l1 = 13 + rand() * 2, l2 = 13 + rand() * 2;
+      const u1 = rot(-tx, -ty, a1), u2 = rot(-tx, -ty, -a2);
+      const A = { x: E.x + u1.x * l1, y: E.y + u1.y * l1 };
+      const C = { x: E.x + u2.x * l2, y: E.y + u2.y * l2 };
+      const j = () => (rand() - 0.5) * 1.2;
+      const m1 = { x: (A.x + E.x) / 2 + j(), y: (A.y + E.y) / 2 + j() };
+      const m2 = { x: (E.x + C.x) / 2 + j(), y: (E.y + C.y) / 2 + j() };
+      return `M${f(A.x)} ${f(A.y)} Q${f(m1.x)} ${f(m1.y)} ${f(E.x)} ${f(E.y)} Q${f(m2.x)} ${f(m2.y)} ${f(C.x)} ${f(C.y)}`;
+    }
+
+    // ── candidate routes ────────────────────────────────────────────────────
+    // Every route is a dense polyline whose first and last legs run along a clear
+    // axis, so arrows leave and land at deliberate angles: long paths are straight
+    // runs with rounded corners; hops are a single clean scoop.
+    const densify = (pts: P[], step = 5): P[] => {
+      const out: P[] = [pts[0]];
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1], b = pts[i], d = dist(a, b), n = Math.max(1, Math.ceil(d / step));
+        for (let k = 1; k <= n; k++) out.push({ x: a.x + ((b.x - a.x) * k) / n, y: a.y + ((b.y - a.y) * k) / n });
+      }
+      return out;
+    };
+    /** Straight legs between waypoints with every corner filleted to radius r. */
+    const rounded = (pts: P[], r = 14): P[] => {
+      const out: P[] = [pts[0]];
+      for (let i = 1; i < pts.length - 1; i++) {
+        const prev = pts[i - 1], cur = pts[i], next = pts[i + 1];
+        const d1 = dist(prev, cur), d2 = dist(cur, next);
+        const rr = Math.min(r, d1 / 2, d2 / 2);
+        if (rr < 1.5) { out.push(cur); continue; }
+        const A = { x: cur.x + ((prev.x - cur.x) / d1) * rr, y: cur.y + ((prev.y - cur.y) / d1) * rr };
+        const B = { x: cur.x + ((next.x - cur.x) / d2) * rr, y: cur.y + ((next.y - cur.y) / d2) * rr };
+        out.push(A);
+        for (let k = 1; k < 8; k++) {
+          const t = k / 8, u = 1 - t;
+          out.push({ x: u * u * A.x + 2 * u * t * cur.x + t * t * B.x, y: u * u * A.y + 2 * u * t * cur.y + t * t * B.y });
+        }
+        out.push(B);
+      }
+      out.push(pts[pts.length - 1]);
+      return densify(out);
+    };
+    /** A cubic from S to E through control points c1, c2, sampled densely. */
+    const cubic = (S: P, c1: P, c2: P, E: P): Route => {
+      const out: P[] = [];
+      const n = Math.max(14, Math.ceil((dist(S, c1) + dist(c1, c2) + dist(c2, E)) / 5));
+      for (let k = 0; k <= n; k++) {
+        const t = k / n, u = 1 - t;
+        out.push({
+          x: u * u * u * S.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * E.x,
+          y: u * u * u * S.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * E.y,
+        });
+      }
+      return out;
+    };
+
+    const arrows: Arrow[] = [];
+    const add = (id: string, routes: (c: Ctx) => Route[]) =>
+      arrows.push({ id, state: "idle", routes, anims: [], token: 0, hits: 0 });
+    const byId = (id: string) => arrows.find((a) => a.id === id)!;
+    const vw = () => document.documentElement.clientWidth;
+
+    // robotics → Focus. "robotics." ends a line near the right edge of the tagline, so
+    // the arrow just slips out into the margin there (the one lane that crosses the
+    // paragraphs without touching text), drops down it, and lands right above the "&"
+    // in "Robotics & Aerospace" — the point the other two Focus arrows leave from.
+    add("robotics-focus", (c) => {
+      const w = c.lastLine("tag-robotics"), fb = c.block("focus", ".hero__meta-item"), v = c.box("focus"), amp = c.box("amp"), eb = c.eyebrow("focus");
+      if (!w || !fb) return [];
+      const S = { x: w.r + 18, y: w.cy + 2 };
+      const tx = amp ? amp.cx : fb.l + 30;
+      const E = { x: tx, y: (v ? v.t : fb.t) - 4 };
+      const lane = Math.max(c.textRight + 26, S.x + 44);
+      const out: Route[] = [];
+      if (tx >= Math.max(c.textRight + 20, S.x + 44)) {
+        // the "&" is already right of the paragraph: one clean "L"
+        out.push(rounded([S, { x: tx, y: S.y }, E], 18));
+      } else {
+        const mx = Math.min(lane, vw() - 12);
+        const y2 = Math.max(E.y - 24, c.textBottom + 12);
+        out.push(rounded([S, { x: mx, y: S.y }, { x: mx, y: y2 }, { x: tx, y: y2 }, E], 16));
+      }
+      // narrow layouts: land on the Focus label from the right instead
+      if (eb) out.push(rounded([S, { x: Math.min(lane, vw() - 12), y: S.y }, { x: Math.min(lane, vw() - 12), y: eb.cy }, { x: eb.r + 14, y: eb.cy }], 14));
+      return out;
+    });
+
+    // The two arrows that leave Focus start from the same point, right under the "&",
+    // and diverge: one carries on down to the Engineering tile, one turns right into card 01.
+    const focusStart = (c: Ctx): P | null => {
+      const v = c.box("focus"), amp = c.box("amp");
+      if (!v) return null;
+      return { x: amp ? amp.cx : v.cx, y: v.b + 6 };
+    };
+    add("focus-eng", (c) => {
+      const S = focusStart(c), t = c.box("tile-engineering");
+      if (!S || !t) return [];
+      const E = { x: Math.min(Math.max(S.x, t.l + 14), t.r - 14), y: t.t - 4 };
+      if (E.y - S.y < 26) return [];
+      if (Math.abs(E.x - S.x) < 3) return [densify([S, { x: S.x, y: E.y }])];
+      // not quite in line: straight, a full-radius turn, a turn back, straight
+      const my = S.y + (E.y - S.y) * 0.5;
+      return [rounded([S, { x: S.x, y: my }, { x: E.x, y: my }, E], 22), rounded([S, { x: S.x, y: my }, { x: E.x, y: my }, E], 12)];
+    });
+    add("focus-c1", (c) => {
+      const S = focusStart(c), p = c.box("proof-1");
+      if (!S || !p) return [];
+      const E = { x: p.l - 7, y: p.t + 56 };
+      if (E.x - S.x < 60 || E.y - S.y < 18) return []; // stacked layouts: no side-by-side gap to cross
+      return [rounded([S, { x: S.x, y: E.y }, E], 14)];
+    });
+
+    // Field-testing photo → card 02. Leaves its bottom-right corner heading RIGHT, then
+    // sweeps down in one big curve and comes in vertically onto the top of card 02.
+    add("pol-c2", (c) => {
+      const corner = c.corner("pol-sailfish", "img"), p2 = c.box("proof-2");
+      if (!corner || !p2) return [];
+      const S = { x: corner.x + 7, y: corner.y + 5 };
+      const E = { x: p2.l + 42, y: p2.t - 4 };
+      if (E.x - S.x < 60 || E.y - S.y < 40) return [];
+      return [28, 20, 34].map((r) => rounded([S, { x: E.x, y: S.y }, E], r));
+    });
+
+    // Thompson Rivers University → Kamloops, BC (one direction only). Leaves the end of
+    // "Thompson Rivers University" heading right and down, scoops, and comes up into the
+    // underside of "Kamloops, BC". Hover-only.
+    add("hop", (c) => {
+      const a = c.text("tru"), b = c.text("kam");
+      if (!a || !b) return [];
+      const S = { x: a.r + 8, y: a.cy };
+      const E = { x: b.l + Math.min(34, b.w * 0.4), y: b.b + 7 };
+      const dx = E.x - S.x;
+      if (dx < 24) return [];
+      return [1, 0.7, 1.4, 0.45].map((m) => {
+        const h = Math.min(30, Math.max(14, dx * 0.4)) * m;
+        return cubic(S, { x: S.x + dx * 0.4, y: S.y + h }, { x: E.x, y: E.y + h * 1.15 }, E);
+      });
+    });
+
+    // Overview tile → straight down to "§ 01 Table of contents". Built on click.
+    add("overview", () => []);
+
+    // ── overlay ─────────────────────────────────────────────────────────────
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("aria-hidden", "true");
+    svg.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;overflow:visible;z-index:40;";
+    stage.appendChild(svg);
+
+    const sizeOverlay = () => {
+      svg.setAttribute("width", String(stage.offsetWidth));
+      svg.setAttribute("height", String(stage.offsetHeight));
+    };
+
+    // ── collision scoring + building an arrow's geometry ────────────────────
+    let lastHitPts: number[][] = [];
+    // The start sits just off its own anchor word, so it gets some slack; the tip
+    // gets almost none, because an arrowhead landing on a neighbouring line of text is the worst look.
+    const hitsOf = (poly: P[], skipStart = 22, skipEnd = 9): number => {
+      lastHitPts = [];
+      const L = poly.reduce((s, p, i) => (i ? s + dist(p, poly[i - 1]) : 0), 0);
+      let acc = 0, hits = 0;
+      for (let i = 1; i < poly.length; i++) {
+        acc += dist(poly[i], poly[i - 1]);
+        if (acc < skipStart || acc > L - skipEnd) continue;
+        const p = poly[i];
+        if (obstacles.some((o) => p.x > o.l && p.x < o.r && p.y > o.t && p.y < o.b)) { hits++; lastHitPts.push([Math.round(p.x), Math.round(p.y)]); }
+      }
+      return hits;
+    };
+
+    /** A route that still crosses more than this many sample points of text/boxes is dropped, never drawn wrong. */
+    const MAX_HITS = 2;
+    interface Geom { stem1: string; stem2: string; head: string; len: number; hits: number }
+    function build(a: Arrow, cands: Route[]): Geom | null {
+      if (!cands.length) return null;
+      let best: { r: Route; h: number } | null = null;
+      const dbg: string[] = [];
+      for (const r of cands) {
+        const h = hitsOf(r);
+        dbg.push(`${h}@${lastHitPts.slice(0, 2).map((q) => q.join(",")).join(";")}`);
+        if (!best || h < best.h) best = { r, h };
+        if (h === 0) break;
+      }
+      a.dbg = dbg;
+      if (best!.h > MAX_HITS && a.id !== "overview") { a.hits = best!.h; return null; }
+      const poly = best!.r;
+      const len = poly.reduce((s, p, i) => (i ? s + dist(p, poly[i - 1]) : 0), 0);
+      const amp = Math.min(0.9, 0.4 + len / 700); // gentle: a steady hand, not a shaky one
+      const r1 = rng(a.id + "a"), r2 = rng(a.id + "b"), r3 = rng(a.id + "h");
+      const p1 = roughen(poly, r1, amp);
+      const p2 = roughen(poly.slice(Math.min(3, poly.length - 2)), r2, amp * 1.5);
+      // second pass leaves a touch early (a pencil re-trace) and stops just short
+      const s1 = spline(p1);
+      return { stem1: s1.d, stem2: spline(p2.slice(0, -1)).d, head: head(s1.poly, r3), len, hits: best!.h };
+    }
+
+    // ── render / animate ────────────────────────────────────────────────────
+    const mkPath = (g: SVGGElement, d: string, w: number, op: number) => {
+      const p = document.createElementNS(NS, "path");
+      p.setAttribute("d", d);
+      p.setAttribute("fill", "none");
+      p.setAttribute("stroke", ACCENT);
+      p.setAttribute("stroke-width", String(w));
+      p.setAttribute("stroke-linecap", "round");
+      p.setAttribute("stroke-linejoin", "round");
+      p.setAttribute("stroke-opacity", String(op));
+      g.appendChild(p);
+      return p;
+    };
+    const lenOf = (p: SVGPathElement) => { try { return p.getTotalLength(); } catch { return 0; } };
+
+    function clear(a: Arrow) {
+      a.anims.forEach((x) => x.cancel());
+      a.anims = [];
+      a.token++;
+      a.g?.remove();
+      a.g = undefined;
+    }
+
+    function render(a: Arrow, geom: Geom, animate: boolean, onDone?: () => void) {
+      clear(a);
+      const my = a.token;
+      const g = document.createElementNS(NS, "g");
+      svg.appendChild(g);
+      a.g = g;
+      a.hits = geom.hits;
+      const s1 = mkPath(g, geom.stem1, 2.3, 0.95);
+      const s2 = mkPath(g, geom.stem2, 1.35, 0.5);
+      const hd = mkPath(g, geom.head, 2.3, 0.95);
+      const paths = [s1, s2, hd];
+      const L = paths.map((p) => Math.ceil(lenOf(p)) + 2);
+      paths.forEach((p, i) => { p.style.strokeDasharray = String(L[i]); p.style.strokeDashoffset = animate ? String(L[i]) : "0"; });
+      if (!animate || REDUCED) {
+        a.state = "drawn";
+        paths.forEach((p) => (p.style.strokeDashoffset = "0"));
+        onDone?.();
+        return;
+      }
+      a.state = "drawing";
+      const dur = Math.min(1100, Math.max(420, geom.len * 1.9));
+      const mk = (p: SVGPathElement, i: number, delay: number, d: number, easing: string) =>
+        p.animate([{ strokeDashoffset: L[i] }, { strokeDashoffset: 0 }], { duration: d, delay, easing, fill: "forwards" });
+      const an1 = mk(s1, 0, 0, dur, "cubic-bezier(.45,.08,.3,1)");
+      const an2 = mk(s2, 1, 80, dur * 0.92, "cubic-bezier(.45,.08,.3,1)");
+      const an3 = mk(hd, 2, dur + 60, 230, "cubic-bezier(.3,.1,.4,1)");
+      a.anims = [an1, an2, an3];
+      an3.finished.then(() => {
+        if (a.token !== my) return;
+        a.state = "drawn";
+        onDone?.();
+      }).catch(() => {});
+    }
+
+    // ── measuring + (re)laying out drawn arrows ─────────────────────────────
+    let ctx: Ctx = mkCtx();
+    let overviewRoute: Route | null = null;
+    function overviewGeom(a: Arrow): Geom | null {
+      const tileEl = find("tile-overview");
+      const t = ctx.box("tile-overview");
+      const corner = document.querySelector(".htoc__corner-mark");
+      if (!t || !tileEl) return null;
+      const scrolledPast = tileEl.getBoundingClientRect().bottom < 0;
+      if (corner && !scrolledPast) {
+        const c = toBox(corner.getBoundingClientRect());
+        const x = Math.min(Math.max(c.l + 14, t.l + 24), t.r - 24);
+        overviewRoute = densify([{ x, y: t.b + 8 }, { x, y: c.t - 14 }]);
+      } else if (!overviewRoute) {
+        return null;
+      }
+      return build(a, [overviewRoute!]);
+    }
+    const geomFor = (a: Arrow): Geom | null => (a.id === "overview" ? overviewGeom(a) : build(a, a.routes(ctx)));
+
+    let layoutQueued = false;
+    let lastSig = "";
+    const relayout = (force = false) => {
+      layoutQueued = false;
+      sizeOverlay();
+      ctx = mkCtx();
+      const sig = ["robotics-focus", "focus-c1", "pol-c2", "focus-eng", "hop"]
+        .map((id) => byId(id).routes(ctx).map((r) => `${Math.round(r[0].x)},${Math.round(r[0].y)}>${Math.round(r[r.length - 1].x)},${Math.round(r[r.length - 1].y)}`).join("|").slice(0, 80))
+        .join("/") + `@${stage.offsetWidth}x${stage.offsetHeight}`;
+      if (!force && sig === lastSig) return;
+      lastSig = sig;
+      measureObstacles();
+      for (const a of arrows) {
+        if (a.state === "skipped") { a.state = "idle"; continue; } // the layout changed: give it another chance
+        if (a.state === "idle") continue;
+        const g = geomFor(a);
+        if (g) render(a, g, false);
+        else { clear(a); a.state = "skipped"; }
+      }
+    };
+    const queueLayout = () => {
+      if (layoutQueued) return;
+      layoutQueued = true;
+      requestAnimationFrame(() => relayout());
+    };
+
+    // ── reveal / hide ───────────────────────────────────────────────────────
+    let ready = false;
+    let heroVisible = true;
+
+    function reveal(id: string, delay = 0, onDone?: () => void) {
+      const a = byId(id);
+      if (!ready || a.state !== "idle") return;
+      a.state = "drawing"; // reserve so repeated hovers don't double-fire
+      const go = () => {
+        relayout(true); // fresh measurements right before drawing
+        const g = geomFor(a);
+        if (!g) { a.state = "skipped"; return; }
+        render(a, g, true, onDone);
+      };
+      delay ? setTimeout(go, delay) : go();
+    }
+    /** Fade an arrow out and make it drawable again. */
+    function hide(id: string) {
+      const a = byId(id);
+      if (a.state === "drawing") { setTimeout(() => hide(id), 300); return; } // let it land first
+      if (a.state !== "drawn") return;
+      const g = a.g;
+      if (g) { g.style.transition = "opacity .4s"; g.style.opacity = "0"; }
+      a.token++;
+      setTimeout(() => { if (a.state === "drawn") { clear(a); a.state = "idle"; } }, 430);
+    }
+    /** Run fn once an arrow that is mid-draw has landed (or straight away if it isn't). */
+    const after = (id: string, fn: () => void) => {
+      const a = byId(id);
+      const tick = () => (a.state === "drawing" ? setTimeout(tick, 120) : fn());
+      tick();
+    };
+
+    // ── the timeline ────────────────────────────────────────────────────────
+    let s1 = false, s2 = false, introTimer = 0, s2Timer = 0;
+    // stage 1: robotics → Focus
+    function stage1() {
+      if (s1 || !ready) return;
+      s1 = true;
+      clearTimeout(introTimer);
+      reveal("robotics-focus", 0, () => { s2Timer = window.setTimeout(() => stage2("time"), 3000); });
+    }
+    // stage 2: the two arrows out of Focus. Whatever triggered it goes first; a timer or
+    // a Focus hover means Engineering first, then card 01.
+    function stage2(trigger: "time" | "focus" | "eng" | "c1") {
+      if (s2 || !ready) return;
+      s2 = true;
+      clearTimeout(s2Timer);
+      const run = () => {
+        const [first, second] = trigger === "c1" ? ["focus-c1", "focus-eng"] : ["focus-eng", "focus-c1"];
+        reveal(first);
+        setTimeout(() => reveal(second), 450);
+      };
+      if (s1) after("robotics-focus", run); else run();
+    }
+
+    // field photo → card 02: lives while the pointer is on card 02 or the photo, and
+    // fades two seconds after it leaves both (the Focus text can start it, not keep it)
+    let polHover = 0, polTimer = 0;
+    const polSchedule = () => {
+      clearTimeout(polTimer);
+      if (polHover > 0) return;
+      polTimer = window.setTimeout(() => hide("pol-c2"), 2000);
+    };
+    const polEnter = () => { polHover++; clearTimeout(polTimer); reveal("pol-c2", 450, polSchedule); };
+    const polLeave = () => { polHover = Math.max(0, polHover - 1); if (polHover === 0) polSchedule(); };
+
+    const on = (el: Element | null, ev: string, fn: () => void) => el?.addEventListener(ev, fn, { passive: true } as AddEventListenerOptions);
+    const focusBlock = hero.querySelector(".info--focus");
+    // stage 1 also fires when the mouse moves over the description or the Focus block
+    on(hero.querySelector(".hero__tagline"), "pointermove", stage1);
+    on(focusBlock, "pointermove", () => { stage1(); stage2("focus"); });
+    on(find("tile-engineering"), "pointerenter", () => stage2("eng"));
+    on(find("proof-1"), "pointerenter", () => stage2("c1"));
+    // the Focus text starts the card-02 arrow too, but doesn't keep it alive
+    on(find("focus"), "pointerenter", () => reveal("pol-c2", 300, polSchedule));
+    // card 02 and the photo: the arrow, and (card 02) the polaroid's "> Project Sailfish field testing" caption
+    const pol = find("pol-sailfish");
+    const fire = (type: string) => pol?.dispatchEvent(new MouseEvent(type));
+    const card2 = find("proof-2");
+    on(card2, "pointerenter", () => { fire("mouseenter"); polEnter(); });
+    on(card2, "pointerleave", () => { if (pol && !pol.matches(":hover")) fire("mouseleave"); polLeave(); });
+    on(pol, "pointerenter", polEnter);
+    on(pol, "pointerleave", polLeave);
+    // the hop: hovering any of the three lines draws it (once; it stays)
+    hero.querySelectorAll("[data-aa-hop]").forEach((e) => on(e, "pointerenter", () => reveal("hop")));
+
+    // overview tile: arrow straight down at § 01, *then* the scroll
+    find("tile-overview")?.addEventListener("click", (e) => {
+      const target = document.getElementById("overview");
+      if (!target) return;
+      e.preventDefault();
+      const go = () => {
+        const l = (window as unknown as { lenis?: { scrollTo: (t: Element, o?: object) => void } }).lenis;
+        if (l) l.scrollTo(target, { duration: 1.4 }); else target.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth" });
+      };
+      if (!ready) return go();
+      const a = byId("overview");
+      relayout(true);
+      const g = geomFor(a);
+      if (!g) return go();
+      render(a, g, true, () => setTimeout(go, 280));
+    });
+
+    // ── boot: wait for load + loading screen, then the 4 s countdown starts ──
+    const io = new IntersectionObserver((es) => { heroVisible = es[0].isIntersecting; }, { threshold: 0.1 });
+    io.observe(hero);
+    new ResizeObserver(queueLayout).observe(stage);
+    window.addEventListener("resize", queueLayout);
+    document.fonts?.ready.then(queueLayout);
+    window.addEventListener("load", queueLayout);
+
+    const boot = () => {
+      if (ready) return;
+      ready = true;
+      relayout(true);
+      introTimer = window.setTimeout(function fire() { if (heroVisible) stage1(); else introTimer = window.setTimeout(fire, 400); }, 4000);
+    };
+    const loader = document.querySelector<HTMLElement>("[data-loading-screen]");
+    const afterLoad = () => {
+      if (!loader || loader.classList.contains("is-gone")) return boot();
+      const mo = new MutationObserver(() => { if (loader.classList.contains("is-gone")) { mo.disconnect(); boot(); } });
+      mo.observe(loader, { attributes: true, attributeFilter: ["class"] });
+    };
+    if (document.readyState === "complete") afterLoad(); else window.addEventListener("load", afterLoad, { once: true });
+
+    // debugging hooks (see header)
+    (window as any).__arrowHitPts = () => lastHitPts;
+    (window as any).__arrowAudit = () => arrows.map((a) => ({ id: a.id, state: a.state, hits: a.hits, dbg: a.dbg }));
+    (window as any).__arrowReveal = (id?: string) => { arrows.filter((a) => (id ? a.id === id : a.id !== "overview")).forEach((a) => reveal(a.id)); };
+  }
+</script>

@@ -54,7 +54,7 @@ const tocForIsland = await Promise.all(
   <div data-rsec="hero"><Hero /></div>
 
   <!-- Gallery — only visible in "full picture" filter. -->
-  <div data-filters="full" data-rsec="gallery">
+  <div id="overview" data-filters="full" data-rsec="gallery">
     <HorizontalTOC sections={tocForIsland} client:visible />
   </div>
 

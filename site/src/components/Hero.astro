@@ -1,101 +1,171 @@
 ---
 import { Image } from "astro:assets";
-import { SITE, RESUME_HREF, HERO_IMAGES } from "@/data/content";
-import { mdInline } from "@/lib/finalImages";
-import FilterPills from "./islands/FilterPills.tsx";
+import { SITE, HERO_IMAGES, HERO_COPY, ENG_LANDER } from "@/data/content";
+import { mdInline, resolveImage } from "@/lib/finalImages";
+import LanderTiles from "./LanderTiles.astro";
+import LanderArrows from "./LanderArrows.astro";
 
 const [firstName, ...restName] = SITE.name.split(" ");
 const lastName = restName.join(" ");
+
+// The tagline is two paragraphs (tagline.md, blank-line separated). "robotics"
+// is tagged as an arrow anchor.
+const tagline = HERO_COPY.taglineParagraphs.map((p) =>
+  mdInline(p).replace("<strong>robotics</strong>", '<strong data-aa="tag-robotics">robotics</strong>'),
+);
+// "Transfer Student" / "Thompson Rivers University" are separate lines; the
+// university line is the hover target for the TRU ⇄ Kamloops hop.
+const [currentlyLine1, ...currentlyRest] = HERO_COPY.currentlySub;
+// "Robotics & Aerospace": the "&" is its own anchor. The robotics arrow lands right above it
+// and the two arrows that leave Focus start right below it.
+const focusParts = HERO_COPY.focus.split(" & ");
+
+// The two proof-point cards double as links to their pages, with an image header.
+const proofMeta = [
+  { href: "/competitive-robotics/", photo: resolveImage("home/toc-gallery/robotics/ontario-champions-2024"), pos: "50% 26%" },
+  { href: "/impactful-robotics/", photo: ENG_LANDER.sailfishImage, pos: "50% 50%" },
+];
 ---
-<section class="hero" id="main">
+<section class="hero" id="main" data-lander>
+  <div class="hero__stage">
   <div class="hero__shell shell">
     <div class="hero__grid">
-      <div class="hero__col">
-        <div class="eyebrow">Preview - Personal Portfolio 2026</div>
-        <h1 class="hero__name">
-          {firstName}<br />
-          <span class="hero__name-italic">{lastName}</span><span class="hero__period">.</span>
-        </h1>
-        <p class="hero__tagline" set:html={mdInline(SITE.tagline)} />
+      <!-- LEFT: name, tagline, at-a-glance facts, where-to-next tiles -->
+      <div class="hero__left">
+        <div class="hero__col">
+          <div class="eyebrow" data-aa-text>Preview - Personal Portfolio 2026</div>
+          <h1 class="hero__name" data-aa-text>
+            {firstName}<br />
+            <span class="hero__name-italic">{lastName}</span><span class="hero__period">.</span>
+          </h1>
+          <div class="hero__tagline" data-aa-text>
+            {tagline.map((p) => <p set:html={p} />)}
+          </div>
+        </div>
 
-        <div class="hero__meta">
-          {SITE.meta.map((m) => (
-            <div class="hero__meta-item">
-              <div class="eyebrow">{m.label}</div>
-              <div class="hero__meta-value">{m.value}</div>
+        <div class="hero__meta" data-aa-text>
+          <div class="hero__meta-item info--currently">
+            <div class="eyebrow">Currently in</div>
+            <div class="hero__meta-value">{HERO_COPY.currently}</div>
+            <div class="hero__meta-sub" data-aa-hop>{currentlyLine1}</div>
+            {currentlyRest.map((l) => <div class="hero__meta-sub" data-aa="tru" data-aa-hop>{l}</div>)}
+          </div>
+          <div class="hero__meta-item info--where">
+            <div class="eyebrow">Current Location</div>
+            {HERO_COPY.locations.map((loc) => (
+              <div class="hero__meta-value" data-aa="kam" data-aa-hop>{loc}</div>
+            ))}
+          </div>
+          <div class="hero__meta-item info--focus">
+            <div class="eyebrow">Focus</div>
+            <div class="hero__meta-value"><span data-aa="focus">{focusParts.length === 2 ? <>{focusParts[0]}{" "}<span data-aa="amp">&amp;</span>{" "}{focusParts[1]}</> : HERO_COPY.focus}</span></div>
+          </div>
+        </div>
+
+        <LanderTiles />
+      </div>
+
+      <!-- RIGHT: polaroids (unchanged) with the two proof-point cards under them -->
+      <div class="hero__right">
+        <div class="hero__polaroids" aria-hidden="true">
+          {HERO_IMAGES.portrait && (
+            <div class="polaroid polaroid--lg" data-aa-box>
+              <Image src={HERO_IMAGES.portrait} alt="" class="polaroid__img" width={760} format="webp" quality={82} loading="eager" decoding="async" />
             </div>
+          )}
+          {HERO_IMAGES.inTheField && (
+            <div class="polaroid polaroid--md" data-aa="pol-sailfish" data-aa-box>
+              <Image src={HERO_IMAGES.inTheField} alt="" class="polaroid__img" width={320} format="webp" quality={82} loading="eager" decoding="async" />
+              <div class="caption-drop caption-drop--dark" data-aa="pol-caption">
+                <div class="cd-border cd-border--t"></div>
+                <div class="cd-border cd-border--l"></div>
+                <div class="cd-border cd-border--b"></div>
+                <div class="cd-border cd-border--r"></div>
+                <span class="cd-text" style="white-space:pre;line-height:1.45"></span>
+              </div>
+            </div>
+          )}
+          {HERO_IMAGES.outdoors && (
+            <div class="polaroid polaroid--sm" data-aa-box>
+              <Image src={HERO_IMAGES.outdoors} alt="" class="polaroid__img" width={320} format="webp" quality={82} loading="eager" decoding="async" />
+              <div class="caption-drop caption-drop--light">
+                <div class="cd-border cd-border--l"></div>
+                <div class="cd-border cd-border--b"></div>
+                <div class="cd-border cd-border--r"></div>
+                <span class="cd-text"></span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div class="hero__proofs">
+          {HERO_COPY.proofs.map((p, i) => (
+            <a class="proof" href={proofMeta[i].href} data-aa={`proof-${i + 1}`} data-aa-box>
+              <span class="proof__media" aria-hidden="true">
+                {proofMeta[i].photo && (
+                  <Image class="proof__photo" src={proofMeta[i].photo!} alt="" width={640} quality={74} format="webp" loading="eager" decoding="async" style={`object-position:${proofMeta[i].pos}`} />
+                )}
+              </span>
+              <span class="proof__body" data-aa-text>
+                <span class="eyebrow eyebrow--accent proof__label">
+                  <span class="proof__num">0{i + 1} ·</span>
+                  <span class="proof__title">{p.label}</span>
+                  <span class="proof__go">→</span>
+                </span>
+                <span class="proof__text" set:html={mdInline(p.text)} />
+                <span class="proof__detail">{p.detail.split("\n").map((l) => <span class="proof__dl" set:html={mdInline(l)} />)}</span>
+              </span>
+            </a>
           ))}
         </div>
       </div>
-
-      <div class="hero__polaroids" aria-hidden="true">
-        {HERO_IMAGES.portrait && (
-          <div class="polaroid polaroid--lg">
-            <Image src={HERO_IMAGES.portrait} alt="" class="polaroid__img" style="height:520px;width:380px" width={760} format="webp" quality={82} loading="eager" decoding="async" />
-          </div>
-        )}
-        {HERO_IMAGES.inTheField && (
-          <div class="polaroid polaroid--md">
-            <Image src={HERO_IMAGES.inTheField} alt="" class="polaroid__img" style="width:160px;height:auto" width={320} format="webp" quality={82} loading="eager" decoding="async" />
-            <div class="caption-drop caption-drop--dark">
-              <div class="cd-border cd-border--t"></div>
-              <div class="cd-border cd-border--l"></div>
-              <div class="cd-border cd-border--b"></div>
-              <div class="cd-border cd-border--r"></div>
-              <span class="cd-text" style="white-space:pre;line-height:1.45"></span>
-            </div>
-          </div>
-        )}
-        {HERO_IMAGES.outdoors && (
-          <div class="polaroid polaroid--sm">
-            <Image src={HERO_IMAGES.outdoors} alt="" class="polaroid__img" style="width:160px;height:auto" width={320} format="webp" quality={82} loading="eager" decoding="async" />
-            <div class="caption-drop caption-drop--light">
-              <div class="cd-border cd-border--l"></div>
-              <div class="cd-border cd-border--b"></div>
-              <div class="cd-border cd-border--r"></div>
-              <span class="cd-text"></span>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
-
-    <FilterPills client:visible resumeHref={RESUME_HREF} />
+  </div>
+  <LanderArrows />
   </div>
 </section>
 
 <style>
   .hero {
+    /* On tall screens the original lander centred itself in the leftover height;
+       the same offset is applied to the whole lander here so the name and photos
+       keep the exact position they always had. */
+    --slack: clamp(0px, calc((100vh - 950px) / 2), 140px);
+    /* Narrow windows lay the lander out at this width (see the media query below). */
+    --design-w: 1536px;
     position: relative;
+    z-index: 3; /* above the contents section so the Overview arrow can reach it */
     /* Top bar sits above this, so 100vh - topbar fills the rest of the viewport. */
+    min-height: calc(100vh - var(--topbar-h));
+  }
+  .hero__stage {
+    position: relative;
     min-height: calc(100vh - var(--topbar-h));
     padding: 32px var(--page-pad) 56px;
     display: flex;
     flex-direction: column;
   }
-  .hero__shell {
-    position: relative;
-    z-index: 1;
-    flex: 1;
-    /* 2-row grid: hero block fills row 1 (and self-centres in it), filter
-       pills sit naturally docked at the bottom in row 2. */
-    display: grid;
-    grid-template-rows: 1fr auto;
-    gap: 48px;
-  }
+  .hero__shell { position: relative; z-index: 1; flex: 1; }
+  /* Two columns that flow independently: the left stack (text → facts → tiles) and
+     the right stack (photos → cards), so the cards can sit right under the photos. */
   .hero__grid {
     display: grid;
-    grid-template-columns: 1fr clamp(440px, 36vw, 600px);
+    grid-template-columns: 1fr clamp(440px, calc(36 * var(--vw, 1vw)), 600px);
     gap: 56px;
-    align-items: center;
-    align-self: center;
+    align-items: start;
     width: 100%;
+    margin-top: var(--slack);
   }
-  .hero__col { min-width: 0; }
+  .hero__left { min-width: 0; display: flex; flex-direction: column; }
+  .hero__right { min-width: 0; }
+  /* The original lander centred this block against the 640px photo cluster. That
+     offset, expressed directly, so the eyebrow/name stay put: (640 − the old block's
+     height) / 2, where the old height was mostly the name's font-size. */
+  .hero__col { padding-top: calc(194px - 0.9 * clamp(72px, calc(12 * var(--vw, 1vw)), 168px)); }
   .hero__name {
     font-family: var(--font-display);
     font-weight: 500;
-    font-size: clamp(72px, 12vw, 168px);
+    font-size: clamp(72px, calc(12 * var(--vw, 1vw)), 168px);
     line-height: 0.9;
     letter-spacing: -0.028em;
     margin: 18px 0 0;
@@ -108,16 +178,24 @@ const lastName = restName.join(" ");
     font-size: 21px;
     line-height: 1.45;
     color: var(--ink-dim);
-    max-width: 560px;
-    margin: 32px 0 0;
-    text-wrap: pretty;
+    max-width: 600px;
+    /* one line closer to the name than before */
+    margin: 2px 0 0;
   }
-  .hero__tagline strong { color: var(--ink); font-weight: 600; }
+  /* balance: every line ends near the same x, so "robotics." finishes a line at the
+     right edge of the text block instead of mid-line */
+  .hero__tagline p { margin: 0; text-wrap: balance; }
+  .hero__tagline p + p { margin-top: 0.5em; }
+  .hero__tagline :global(strong) { color: var(--ink); font-weight: 600; }
+
+  /* ── The facts bar: about two lines under the tagline ─────────────────── */
   .hero__meta {
     display: flex;
-    gap: 48px;
-    margin-top: 44px;
+    align-items: flex-start;
+    gap: 14px 56px;
     flex-wrap: wrap;
+    margin-top: 2.9em; /* ≈ two tagline lines (21px × 1.45) */
+    font-size: 21px;
   }
   .hero__meta-value {
     font-family: var(--font-body);
@@ -125,6 +203,100 @@ const lastName = restName.join(" ");
     color: var(--ink);
     font-weight: 700;
     margin-top: 6px;
+  }
+  .hero__meta-sub {
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.3;
+    color: var(--ink-dim);
+    margin-top: 3px;
+  }
+  .hero__meta-sub + .hero__meta-sub { margin-top: 0; }
+
+  /* ── Proof cards: image header + the claim ───────────────────────────── */
+  .hero__proofs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    /* the photo cluster's box is 640px tall but its photos end ~30px above that */
+    margin-top: -14px;
+    /* set by the fit script so the cards end on the same line as the tiles */
+    min-height: var(--cards-h, 0);
+  }
+  .proof {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid var(--rule);
+    background: rgba(255, 255, 255, 0.34);
+    color: var(--ink);
+    transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.2s, box-shadow 0.28s;
+  }
+  .proof:hover, .proof:focus-visible {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 14px 28px rgba(26, 23, 20, 0.12);
+    outline: none;
+  }
+  /* The image's height is worked out from the viewport: whatever is left between
+     the top of the cards and the bottom of the screen, less the label's two lines
+     and a margin. So on any aspect ratio the first screen ends right after the
+     image + "01 / 02" label, and the description is what scrolls into view. */
+  .proof__media {
+    position: relative;
+    display: block;
+    height: var(--media-h, clamp(84px, calc(100vh - 816px - var(--slack)), 210px));
+    overflow: hidden;
+    border-bottom: 3px solid var(--accent);
+    background: rgba(26, 23, 20, 0.05);
+  }
+  .proof__photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .proof:hover .proof__photo { transform: scale(1.06); }
+  .proof__body { display: block; padding: 11px 14px 13px; }
+  /* hanging indent: when the title wraps, line two starts under the first
+     letter of the title (the "P" under the "M"), not back under "02" */
+  .proof__label { display: flex; align-items: baseline; gap: 0.7em; line-height: 1.4; }
+  .proof__num { flex: none; }
+  .proof__title { flex: 1; min-width: 0; }
+  .proof__go { flex: none; color: var(--accent); font-size: 14px; letter-spacing: 0; transition: transform 0.25s; }
+  .proof:hover .proof__go { transform: translateX(3px); }
+  .proof__text {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--ink-dim);
+    margin-top: 8px;
+    text-wrap: pretty;
+  }
+  .proof__text :global(strong) { color: var(--ink); font-weight: 700; }
+  .proof__dl { display: block; }
+  .proof__dl :global(strong) {
+    color: var(--ink-dim);
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.25s;
+  }
+  .proof:hover .proof__dl :global(strong), .proof:focus-visible .proof__dl :global(strong) { text-decoration-color: var(--accent); }
+  .proof__detail {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+    color: var(--ink-mute);
+    margin-top: 8px;
   }
 
   @font-face {
@@ -139,19 +311,23 @@ const lastName = restName.join(" ");
     object-fit: cover;
     object-position: center top;
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+    max-width: none;
   }
 
-  /* Polaroid cluster — absolutely positioned so they can overlap. */
+  /* Polaroid cluster — absolutely positioned so they can overlap. Sizes are the
+     original ones, now set as explicit widths: an abs-pos box with only
+     right/bottom used to shrink to the leftover space, and the global
+     img{max-width:100%} squashed the photo until a hover caption widened it. */
   .hero__polaroids {
     position: relative;
     height: 640px;
   }
-  .polaroid {
-    position: absolute;
-  }
-  .polaroid--lg { top: 0; right: 0; transform: rotate(3deg); }
-  .polaroid--md { bottom: 60px; right: 368px; transform: rotate(-5deg); }
-  .polaroid--sm { bottom: 10px; right: -20px; transform: rotate(0deg); }
+  .polaroid { position: absolute; }
+  .polaroid--lg { top: 0; right: 0; width: 380px; transform: rotate(3deg); }
+  .polaroid--md { bottom: 60px; right: 368px; width: 160px; transform: rotate(-5deg); }
+  .polaroid--sm { bottom: 10px; right: -20px; width: 160px; transform: rotate(0deg); }
+  .polaroid--lg .polaroid__img { width: 380px; height: 520px; }
+  .polaroid--md .polaroid__img, .polaroid--sm .polaroid__img { width: 160px; height: auto; }
 
   /* ── Caption drops ─────────────────────────────────────────────────────── */
   .caption-drop {
@@ -182,20 +358,22 @@ const lastName = restName.join(" ");
 
   .cd-text { white-space: nowrap; }
 
-  @media (max-width: 960px) {
-    .hero { min-height: auto; }
-    .hero__grid { grid-template-columns: 1fr; }
-    .hero__polaroids { height: 540px; margin-top: 24px; }
-    .polaroid--lg { right: auto; left: 0; }
-    .polaroid--md { left: 200px; right: auto; bottom: 40px; }
-    .polaroid--sm { bottom: 10px; right: -20px; }
-  }
-
-  @media (max-width: 640px) {
-    .hero__polaroids { height: 480px; }
-    .polaroid--lg { transform: rotate(2deg) scale(0.85); transform-origin: top left; }
-    .polaroid--md { left: 160px; transform: rotate(-4deg) scale(0.85); transform-origin: bottom left; }
-    .polaroid--sm { bottom: 10px; right: -10px; transform: scale(0.85); transform-origin: bottom right; }
+  /* ── Narrow windows (split screen, vertical tablet…) ───────────────────
+     The lander is laid out exactly as on a full screen, at --design-w, and the window
+     is just a viewport onto it. The stage is pinned and vertical scrolling pans it
+     sideways (the script in this file drives the transform and the section's height),
+     revealing the photos and the 01 / 02 cards; after that, scrolling carries on down
+     toward the table of contents like normal. */
+  @media (max-width: 1099px) {
+    .hero { --vw: calc(var(--design-w) / 100); overflow-x: clip; }
+    .hero__stage {
+      position: sticky;
+      top: 0;
+      width: var(--design-w);
+      padding-left: 56px;
+      padding-right: 56px;
+      will-change: transform;
+    }
   }
 </style>
 
@@ -277,6 +455,8 @@ const lastName = restName.join(" ");
       }, textDelay);
     }
 
+    // Mouse hover on the polaroid itself, and (via LanderArrows) hover on the
+    // Sailfish card, both land here as mouseenter/leave.
     polaroidEl.addEventListener('mouseenter', function () {
       drop.classList.add('is-open');
       runFirstAnim();
@@ -293,4 +473,103 @@ const lastName = restName.join(" ");
     if (sm) setup(sm, '> Backcountry Skiing');
   });
 })();
+</script>
+
+<!-- FIT-SCRIPT -->
+<script>
+  // Fit the first screen to the real viewport, and (in narrow windows) pan the lander.
+  //
+  // CSS can't know how tall the stuff above the cards and tiles ended up being
+  // (that depends on the screen's width, font loading, browser zoom, OS display
+  // scaling...). So this measures the real layout and sets:
+  //   --media-h   the card image's height, so the "01 / 02" label ends just inside
+  //               the bottom of the viewport (a sliver of the description peeks out
+  //               below, i.e. we err on showing a little too much, never too little)
+  //   --tile-gap  the space above the tiles, so their title boxes end there too
+  //   --tiles-h / --cards-h   so the tiles and the cards all end on the same line
+  // It re-runs on resize, zoom, and when fonts finish loading. Measurements are in
+  // CSS px, which the OS/browser scaling already normalises: a 4K and a 1080p screen
+  // of the same shape and sensible scaling get exactly the same layout.
+  const hero = document.querySelector<HTMLElement>("[data-lander]");
+  const stage = hero?.querySelector<HTMLElement>(".hero__stage") ?? null;
+  if (hero && stage) {
+    const LABEL_FROM_BOTTOM = 14;  // card label's bottom edge sits this far above the fold
+    const TILE_FROM_BOTTOM = 18;   // tile title box's bottom edge likewise
+    const DESIGN_W = 1536;         // keep in sync with --design-w
+    const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+    const q = <T extends HTMLElement>(sel: string) => hero.querySelector<T>(sel);
+    const VARS = ["--media-h", "--tile-gap", "--tiles-h", "--cards-h"];
+    const narrow = window.matchMedia("(max-width: 1099px)");
+
+    // Positions in page coordinates *as if nothing were pinned or panned*: the outer
+    // section never moves relative to the page, the stage inside it may.
+    const pageTop = (el: Element) =>
+      hero.getBoundingClientRect().top + window.scrollY + (el.getBoundingClientRect().top - stage.getBoundingClientRect().top);
+    const pageBottom = (el: Element) => pageTop(el) + el.getBoundingClientRect().height;
+
+    const fit = () => {
+      VARS.forEach((v) => hero.style.removeProperty(v));
+      const media = q(".proof__media"), meta = q(".hero__meta"), head = q(".tile__head");
+      const proofs = q(".hero__proofs"), tiles = q(".tiles__grid");
+      if (!media || !meta || !head || !proofs || !tiles) return;
+      const vh = window.innerHeight;
+
+      // 1. card image: label bottom = viewport bottom − LABEL_FROM_BOTTOM
+      const labelH = Math.max(...Array.from(hero.querySelectorAll<HTMLElement>(".proof__label")).map((l) => l.getBoundingClientRect().height));
+      const BORDER = 3, BODY_PAD_TOP = 11;
+      const mediaH = clamp(vh - LABEL_FROM_BOTTOM - pageTop(media) - BORDER - BODY_PAD_TOP - labelH, 84, 260);
+      hero.style.setProperty("--media-h", `${mediaH.toFixed(1)}px`);
+
+      // 2. tile gap: title box bottom = viewport bottom − TILE_FROM_BOTTOM
+      const gap = clamp(vh - TILE_FROM_BOTTOM - head.getBoundingClientRect().height - pageBottom(meta), 26, 180);
+      hero.style.setProperty("--tile-gap", `${gap.toFixed(1)}px`);
+
+      // 3. all five boxes end on the same line (stretch whichever group is shorter)
+      const end = Math.max(pageBottom(proofs), pageBottom(tiles));
+      hero.style.setProperty("--tiles-h", `${(end - pageTop(tiles)).toFixed(1)}px`);
+      hero.style.setProperty("--cards-h", `${(end - pageTop(proofs)).toFixed(1)}px`);
+    };
+
+    // ── narrow windows: sticky stage, scroll → sideways pan ──────────────────────────
+    // The section is made (stage height + pan distance) tall, so the pinned stage stays
+    // put for exactly the pan distance, then is released and scrolls up with the page.
+    let panD = 0;
+    const updatePan = () => {
+      if (!narrow.matches) return;
+      const top = hero.getBoundingClientRect().top; // ≤ 0 once the stage is pinned
+      const p = panD > 0 ? clamp(-top / panD, 0, 1) : 0;
+      stage.style.transform = `translate3d(${(-p * panD).toFixed(1)}px,0,0)`;
+    };
+    const layoutPan = () => {
+      if (!narrow.matches) {
+        hero.style.height = "";
+        stage.style.transform = "";
+        panD = 0;
+        return;
+      }
+      panD = Math.max(0, DESIGN_W - document.documentElement.clientWidth);
+      hero.style.height = `${stage.offsetHeight + panD}px`;
+      updatePan();
+    };
+
+    const run = () => { fit(); layoutPan(); };
+    let queued = false;
+    const queue = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; run(); });
+    };
+    // one rect read + one transform write: cheap enough to do straight in the scroll event
+    window.addEventListener("scroll", updatePan, { passive: true });
+
+    run();
+    window.addEventListener("resize", queue);
+    window.addEventListener("load", queue);
+    document.fonts?.ready.then(queue);
+    narrow.addEventListener("change", queue);
+    // the tagline / facts bar can re-wrap without the window changing (fonts, zoom)
+    const left = q(".hero__left");
+    if (left && "ResizeObserver" in window) new ResizeObserver(queue).observe(left);
+    (window as any).__landerFit = run; // debugging aid
+  }
 </script>

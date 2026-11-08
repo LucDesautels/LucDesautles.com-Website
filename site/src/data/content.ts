@@ -304,6 +304,20 @@ export const ROBOTICS_INTRO = {
   ftcBlurb: readText(raw.roboticsIntro.ftcBlurb),
 };
 
+/** Landing-page copy: tagline paragraphs, the info block, and the two proof-point cards. Each field is its own .md under home/hero/. */
+export const HERO_COPY = {
+  taglineParagraphs: readText("home/hero/tagline").split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean),
+  currently: readText("home/hero/info-currently"),
+  currentlySub: readText("home/hero/info-currently-sub").split("\n").map((l) => l.trim()).filter(Boolean),
+  locations: readText("home/hero/info-locations").split("\n").map((s) => s.trim()).filter(Boolean),
+  focus: readText("home/hero/meta-focus"),
+  proofs: ["1", "2"].map((n) => ({
+    label: readText(`home/hero/proof-${n}-label`),
+    text: readText(`home/hero/proof-${n}-text`),
+    detail: readText(`home/hero/proof-${n}-detail`),
+  })),
+};
+
 export const HERO_IMAGES = {
   portrait: resolveImage(raw.hero.portrait),
   inTheField: resolveImage(raw.hero.inTheField),

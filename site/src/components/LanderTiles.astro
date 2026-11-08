@@ -1,0 +1,344 @@
+---
+// Landing-page navigation tiles (bottom-left of the lander): Overview, Résumé,
+// Engineering Portfolio. Each tile is a title box on top — the part you see on
+// the first screen — with a live wireframe mock-up of its destination underneath
+// that only comes into view as you scroll. The mock-ups are built the way the two
+// minis in the engineering-portfolio lander are, re-coloured for the light page.
+// Engineering Portfolio also swaps its mock-up for a photo while hovered.
+import { Image } from "astro:assets";
+import { ENG_PROJECTS } from "@/data/content";
+import { resolveImage } from "@/lib/finalImages";
+
+const tiles = [
+  { id: "overview", name: "Overview", sub: "Visual contents", href: "#overview", go: "↓" },
+  { id: "resume", name: "Résumé", sub: "#Employment🥀", href: "/resume/", go: "→" },
+  {
+    id: "engineering",
+    name: "Engineering Portfolio",
+    sub: `${ENG_PROJECTS.length} sub-projects`,
+    href: "/engineering",
+    go: "→",
+    photo: resolveImage("home/robotics-compare/sailfish/3-technical/extra-2"),
+    pos: "72% 50%",
+  },
+];
+
+// Overview mock-up: pictures of different proportions hung in front of a tinted
+// background with space between them — like the real contents strip, but fewer
+// and bigger. left/top in px inside a wide strip that scrolls sideways.
+const frames = [
+  { l: 8, t: 8, w: 34, h: 46, r: -2, c: "warm" },
+  { l: 54, t: 30, w: 52, h: 34, r: 1.5, c: "sage" },
+  { l: 118, t: 6, w: 30, h: 30, r: -1, c: "blue" },
+  { l: 160, t: 16, w: 40, h: 52, r: 2, c: "rose" },
+  { l: 214, t: 8, w: 56, h: 36, r: -1.5, c: "warm" },
+  { l: 284, t: 28, w: 32, h: 44, r: 1, c: "sage" },
+  { l: 328, t: 6, w: 48, h: 32, r: -2, c: "blue" },
+  { l: 388, t: 22, w: 36, h: 48, r: 1.5, c: "rose" },
+  { l: 436, t: 8, w: 50, h: 34, r: -1, c: "warm" },
+];
+---
+<div class="tiles" data-tiles>
+  <nav class="tiles__grid" aria-label="Where to next">
+    {tiles.map((t) => (
+      <a class={`tile tile--${t.id}`} href={t.href} data-aa={`tile-${t.id}`} data-aa-box data-tile={t.id}>
+        <span class="tile__head">
+          <span class="tile__text">
+            <span class="tile__name">{t.name}</span>
+            <span class="tile__sub">{t.sub}</span>
+          </span>
+          <span class="tile__go">{t.go}</span>
+        </span>
+        <span class="tile__art" aria-hidden="true">
+          {t.id === "overview" && (
+            <span class="mini mini--ov">
+              <span class="mini__vp">
+                <span class="mini__strip">
+                  {frames.map((f) => (
+                    <i class={`mini__ph mini__ph--${f.c}`} style={`left:${f.l}px;top:${f.t}px;width:${f.w}px;height:${f.h}px;--rot:${f.r}deg`}></i>
+                  ))}
+                </span>
+              </span>
+              <span class="mini__rail"><i class="mini__rail-dot"></i></span>
+            </span>
+          )}
+          {t.id === "resume" && (
+            <span class="mini mini--res">
+              <span class="mini__head"><i class="mini__bar mini__bar--name"></i><i class="mini__bar mini__bar--sub"></i></span>
+              {[0, 1, 2].map((r) => (
+                <span class="mini__sec" style={`--r:${r}`}>
+                  <i class="mini__bar mini__bar--h"></i>
+                  <span class="mini__lines"><i class="mini__bar"></i></span>
+                </span>
+              ))}
+            </span>
+          )}
+          {t.id === "engineering" && (
+            <span class="mini mini--grid" data-mini-grid data-i="0">
+              <span class="mini__cards">
+                {[0, 1, 2, 3, 4, 5].map((i) => <i class="mini__card" style={`--i:${i}`}></i>)}
+              </span>
+              <span class="mini__detail">
+                <i class="mini__pic"></i>
+                <i class="mini__ln mini__ln--t"></i>
+                <i class="mini__ln"></i>
+                <i class="mini__ln mini__ln--s"></i>
+              </span>
+            </span>
+          )}
+          {t.photo && (
+            <Image class="tile__photo" src={t.photo} alt="" width={560} quality={72} format="webp" loading="eager" decoding="async" style={`object-position:${t.pos}`} />
+          )}
+        </span>
+      </a>
+    ))}
+  </nav>
+</div>
+
+<script>
+  // Engineering mini: step through its six cards (same cadence as the one in
+  // the engineering lander).
+  const mini = document.querySelector<HTMLElement>("[data-mini-grid]");
+  if (mini && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    let i = 0;
+    window.setInterval(() => {
+      if (document.hidden) return;
+      i = (i + 1) % 6;
+      mini.dataset.i = String(i);
+    }, 1500);
+  }
+</script>
+
+<style>
+  /* The gap above the title boxes is worked out from the viewport (like the card
+     images beside them), so on any aspect ratio the first screen ends just after
+     the title boxes and the mock-ups underneath are what scrolling reveals. */
+  .tiles { position: relative; margin-top: var(--tile-gap, clamp(26px, calc(100vh - 885px - var(--slack, 0px)), 140px)); }
+  .tiles__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+    /* set by the fit script so the tiles end on the same line as the cards */
+    min-height: var(--tiles-h, 0);
+  }
+  .tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--rule);
+    background: rgba(255, 255, 255, 0.28);
+    color: var(--ink);
+    overflow: hidden;
+    transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.2s, box-shadow 0.28s;
+  }
+  .tile:hover, .tile:focus-visible {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 14px 28px rgba(26, 23, 20, 0.12);
+    outline: none;
+  }
+
+  /* the title box: what's on the first screen */
+  .tile__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 11px 14px 10px;
+    background: rgba(255, 255, 255, 0.5);
+    border-bottom: 1px dashed var(--rule);
+    transition: background 0.2s, border-color 0.2s;
+    position: relative;
+    z-index: 2;
+  }
+  .tile:hover .tile__head { background: rgba(217, 106, 54, 0.08); }
+  .tile__text { display: grid; gap: 2px; min-width: 0; }
+  .tile__name {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.25;
+  }
+  .tile__sub { font-family: var(--font-body); font-size: 12px; color: var(--ink-dim); line-height: 1.25; }
+  .tile__go { font-family: var(--font-mono); font-size: 15px; color: var(--accent); transition: transform 0.25s; }
+  .tile:hover .tile__go { transform: translate(3px, 0); }
+  .tile--overview:hover .tile__go { transform: translate(0, 3px); }
+
+  /* the mock-up, underneath */
+  .tile__art { flex: 1; display: grid; align-items: center; padding: 14px; min-height: 118px; }
+
+  .mini {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--rule);
+    background: rgba(255, 255, 255, 0.5);
+    transition: opacity 0.3s;
+  }
+  .mini i { display: block; font-style: normal; }
+
+  /* Overview: pictures of different proportions hung in front of a tinted
+     background, spaced apart like the real contents strip. The strip moves the
+     way a user scrolls it: a gesture, a pause, another gesture, a pause. */
+  .mini--ov { padding: 0; border: 0; background: none; }
+  .mini__vp {
+    display: block;
+    position: relative;
+    overflow: hidden;
+    height: 78px;
+    border: 1px solid var(--rule);
+    background: #e9e4d6;
+    animation: lm-bg 9s ease-in-out infinite;
+  }
+  .mini__strip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 500px;
+    height: 100%;
+    animation: lm-strip 9s cubic-bezier(0.5, 0, 0.2, 1) infinite;
+  }
+  .mini__ph {
+    position: absolute;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 6px rgba(26, 23, 20, 0.14);
+    
+  }
+  .mini__ph--warm { background: linear-gradient(135deg, #e0cbb8, #cfae93); }
+  .mini__ph--sage { background: linear-gradient(135deg, #cdd3c1, #b0bba1); }
+  .mini__ph--blue { background: linear-gradient(135deg, #c5cfd9, #a8b6c4); }
+  .mini__ph--rose { background: linear-gradient(135deg, #d9c8ca, #c1a9ad); }
+  .mini__rail { display: block; position: relative; height: 3px; margin-top: 9px; background: var(--rule); }
+  .mini__rail-dot { position: absolute; left: 0; top: -1px; width: 34px; height: 5px; background: var(--accent); animation: lm-rail 9s cubic-bezier(0.5, 0, 0.2, 1) infinite; }
+  @keyframes lm-strip {
+    0%, 10%   { transform: translateX(0); }
+    22%, 38%  { transform: translateX(-112px); }
+    50%, 66%  { transform: translateX(-224px); }
+    78%, 88%  { transform: translateX(-290px); }
+    100%      { transform: translateX(0); }
+  }
+  /* the section tint shifts a little between stops, like the real strip's background */
+  @keyframes lm-bg {
+    0%, 10%   { background-color: #e9e5db; }
+    22%, 38%  { background-color: #e3dfd5; }
+    50%, 66%  { background-color: #ebe8e0; }
+    78%, 88%  { background-color: #dfdcd3; }
+    100%      { background-color: #e9e5db; }
+  }
+  @keyframes lm-rail {
+    0%, 10%   { transform: translateX(0); }
+    22%, 38%  { transform: translateX(48px); }
+    50%, 66%  { transform: translateX(96px); }
+    78%, 88%  { transform: translateX(124px); }
+    100%      { transform: translateX(0); }
+  }
+
+  /* Résumé: a page; its sections light up one after another and the lines
+     inside draw in — same beat as the "programs" mini in the engineering lander. */
+  .mini--res { display: grid; gap: 6px; padding: 9px 10px; }
+  .mini__head { display: grid; gap: 4px; padding-bottom: 5px; border-bottom: 1px solid var(--rule); }
+  .mini__bar { height: 4px; background: rgba(26, 23, 20, 0.14); }
+  .mini__bar--name { width: 46%; height: 7px; background: rgba(26, 23, 20, 0.3); }
+  .mini__bar--sub { width: 30%; }
+  .mini__sec {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px;
+    border: 1px solid var(--rule);
+    animation: lm-sec 6s ease-in-out infinite;
+    animation-delay: calc(var(--r) * 2s);
+  }
+  .mini__bar--h { width: 30px; height: 6px; flex: none; background: rgba(26, 23, 20, 0.3); animation: lm-h 6s ease-in-out infinite; animation-delay: calc(var(--r) * 2s); }
+  .mini__lines { display: grid; gap: 4px; flex: 1; }
+  .mini__lines .mini__bar { transform-origin: left center; animation: lm-line 6s ease-in-out infinite; animation-delay: calc(var(--r) * 2s); }
+  .mini__bar--s { width: 62%; }
+  @keyframes lm-sec {
+    0%, 30%, 100% { border-color: var(--rule); background: transparent; }
+    4%, 26% { border-color: var(--accent); background: rgba(217, 106, 54, 0.08); }
+  }
+  @keyframes lm-h {
+    0%, 30%, 100% { background: rgba(26, 23, 20, 0.3); }
+    4%, 26% { background: var(--accent); }
+  }
+  @keyframes lm-line {
+    0%, 30%, 100% { transform: scaleX(1); background: rgba(26, 23, 20, 0.14); }
+    1% { transform: scaleX(0.15); }
+    14%, 26% { transform: scaleX(1); background: rgba(217, 106, 54, 0.45); }
+  }
+
+  /* Engineering portfolio: two-column project grid + detail pane (the engineering
+     lander's second mini), driven by data-i from the script above. */
+  .mini--grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 12px; }
+  .mini__cards { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; align-content: start; }
+  .mini__card {
+    height: 20px;
+    border: 1px solid var(--rule);
+    background: rgba(26, 23, 20, 0.03);
+    transition: border-color 0.25s, background 0.25s, transform 0.25s;
+  }
+  .mini__detail { display: grid; gap: 6px; align-content: start; }
+  .mini__pic { height: 40px; background: rgba(26, 23, 20, 0.1); transition: background 0.35s; }
+  .mini__ln { height: 5px; background: rgba(26, 23, 20, 0.12); width: 90%; transition: width 0.35s; }
+  .mini__ln--t { background: rgba(26, 23, 20, 0.3); width: 60%; height: 6px; }
+  .mini__ln--s { width: 50%; }
+  .mini[data-i="0"] .mini__card:nth-child(1),
+  .mini[data-i="1"] .mini__card:nth-child(2),
+  .mini[data-i="2"] .mini__card:nth-child(3),
+  .mini[data-i="3"] .mini__card:nth-child(4),
+  .mini[data-i="4"] .mini__card:nth-child(5),
+  .mini[data-i="5"] .mini__card:nth-child(6) {
+    border-color: var(--accent);
+    background: rgba(217, 106, 54, 0.16);
+    transform: scale(1.06);
+  }
+  .mini[data-i="0"] .mini__pic { background: rgba(217, 106, 54, 0.5); }
+  .mini[data-i="1"] .mini__pic { background: rgba(80, 120, 165, 0.42); }
+  .mini[data-i="2"] .mini__pic { background: rgba(110, 160, 85, 0.42); }
+  .mini[data-i="3"] .mini__pic { background: rgba(160, 110, 175, 0.42); }
+  .mini[data-i="4"] .mini__pic { background: rgba(200, 160, 60, 0.45); }
+  .mini[data-i="5"] .mini__pic { background: rgba(70, 150, 150, 0.42); }
+  .mini[data-i="1"] .mini__ln, .mini[data-i="4"] .mini__ln { width: 70%; }
+  .mini[data-i="2"] .mini__ln--s, .mini[data-i="5"] .mini__ln--s { width: 80%; }
+
+  /* Engineering tile only: on hover the whole card goes dark — the photo fills it
+     edge to edge under a dark wash, and the title box turns light-on-dark. */
+  .tile__art { position: static; }
+  .tile__photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    opacity: 0;
+    transform: scale(1.04);
+    transition: opacity 0.35s, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .tile--engineering::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(180deg, rgba(22, 20, 18, 0.78) 0%, rgba(22, 20, 18, 0.38) 50%, rgba(22, 20, 18, 0.82) 100%);
+    transition: opacity 0.35s;
+  }
+  .tile--engineering { transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.2s, box-shadow 0.28s, background 0.3s, color 0.3s; }
+  .tile--engineering:hover, .tile--engineering:focus-visible { background: var(--dark); color: #fff; }
+  .tile--engineering:hover .tile__photo, .tile--engineering:focus-visible .tile__photo { opacity: 1; transform: scale(1); }
+  .tile--engineering:hover::before, .tile--engineering:focus-visible::before { opacity: 1; }
+  .tile--engineering:hover .tile__head, .tile--engineering:focus-visible .tile__head { background: transparent; border-bottom-color: rgba(255, 255, 255, 0.3); }
+  .tile--engineering:hover .tile__sub, .tile--engineering:focus-visible .tile__sub { color: rgba(255, 255, 255, 0.8); }
+  .tile--engineering:hover .mini, .tile--engineering:focus-visible .mini { opacity: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mini__vp, .mini__strip, .mini__rail-dot, .mini__sec, .mini__bar--h, .mini__lines .mini__bar { animation: none; }
+  }
+</style>

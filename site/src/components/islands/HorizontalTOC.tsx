@@ -259,7 +259,9 @@ export default function HorizontalTOC({ sections }: Props) {
       const viewportW = window.innerWidth;
       const viewportH = window.innerHeight;
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const wantPin = !reduced && viewportW >= 900 && stripW > viewportW + 50;
+      // Same pinned horizontal scroll at every window width (it used to fall back to a
+      // manual sideways scroll below 900px; only reduced-motion users get that now).
+      const wantPin = !reduced && stripW > viewportW + 50;
       if (wantPin) {
         const maxTranslate = stripW - viewportW;
         const exitDrift = viewportH * EXIT_DRIFT_VH;
