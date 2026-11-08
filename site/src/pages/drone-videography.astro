@@ -230,6 +230,42 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
         var wheelTimer, lockTimer;
         var wrapper;
 
+        // ── Smooth wheel scrolling inside the gallery pane ─────────────────
+        // The wheel handler below cancels native scrolling (it has to, to run the
+        // hero/gallery zones), and that also cancels the browser's own wheel glide:
+        // each notch used to just add its delta to scrollTop and jump. This keeps a
+        // target position and eases the pane toward it every frame. It is time-based,
+        // so it feels the same at 60 or 144 Hz, and it only changes HOW the pane
+        // moves; the zone logic, the flick-to-exit and the position memory are as they were.
+        var SMOOTH_MS = 120;           // ease time constant: higher = longer glide
+        var targetY = 0, curY = 0, glideRaf = 0, lastT = 0;
+        function maxY() { return inner.scrollHeight - inner.clientHeight; }
+        function glideStep(t) {
+          var dt = Math.min(64, t - lastT || 16);
+          lastT = t;
+          curY += (targetY - curY) * (1 - Math.exp(-dt / SMOOTH_MS));
+          if (Math.abs(targetY - curY) < 0.4) {
+            curY = targetY;
+            inner.scrollTop = curY;
+            glideRaf = 0;
+            return;
+          }
+          inner.scrollTop = curY;
+          glideRaf = requestAnimationFrame(glideStep);
+        }
+        function glideBy(dy) {
+          // not mid-glide: pick up wherever the pane really is (scrollbar drag, touch, restore)
+          if (!glideRaf) { curY = targetY = inner.scrollTop; }
+          targetY = Math.max(0, Math.min(maxY(), targetY + dy));
+          if (!glideRaf) { lastT = performance.now(); glideRaf = requestAnimationFrame(glideStep); }
+        }
+        // For programmatic jumps (back to the top, restoring a saved position).
+        function jumpTo(y) {
+          if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; }
+          inner.scrollTop = y;
+          curY = targetY = inner.scrollTop;
+        }
+
         function initLayout() {
           document.body.style.overflow = "hidden";
           document.body.style.height = "100vh";
@@ -261,7 +297,7 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
         function exitToHero() {
           if (animating || zone === "hero") return;
           animating = true;
-          inner.scrollTop = 0;
+          jumpTo(0);
           wrapper.style.transform = "translateY(0)";
           setTimeout(function () {
             animating = false;
@@ -276,15 +312,17 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
             if (e.deltaY > 0) enterPortfolio();
             return;
           }
+          // mice report pixels, some browsers report lines/pages: normalise to px
+          var dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * inner.clientHeight : e.deltaY;
           if (e.deltaY > 0) {
             armed = false;
-            inner.scrollTop += e.deltaY;
+            glideBy(dy);
             return;
           }
           var intentional = e.deltaY < -8;
           if (inner.scrollTop > 0) {
             armed = false;
-            if (intentional) inner.scrollTop += e.deltaY;
+            if (intentional) glideBy(dy);
             return;
           }
           if (!intentional) return;
@@ -365,12 +403,12 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
           exitLocked = true;
           clearTimeout(lockTimer);
           lockTimer = setTimeout(function () { exitLocked = false; }, 1000);
-          inner.scrollTop = y;
+          jumpTo(y);
           requestAnimationFrame(function () { wrapper.style.transition = ""; });
           // Lazy images above the restore point can still be resolving their
           // height, which clamps scrollTop; re-apply once layout has settled.
-          window.addEventListener("load", function () { inner.scrollTop = y; });
-          setTimeout(function () { if (Math.abs(inner.scrollTop - y) > 4) inner.scrollTop = y; }, 400);
+          window.addEventListener("load", function () { jumpTo(y); });
+          setTimeout(function () { if (Math.abs(inner.scrollTop - y) > 4) jumpTo(y); }, 400);
         }
 
         // Clicking the brand from inside the gallery goes up to the hero
@@ -423,6 +461,12 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
         height: 100%;
         overflow-y: scroll;
       }
+      /* The template reveals the footer with z-index:-1 (content slides over it).
+         Inside this scroll pane that sinks it *under* the pane's own box, and a
+         scroll container is hit-tested before anything behind it — so every footer
+         link was unclickable. z-index:1 lifts the footer above the pane but keeps it
+         below .layout (z-index:2), so the reveal looks identical and the links work. */
+      .portfolio-scroll .section.section-footer { z-index: 1; }
       .portfolio-scroll::-webkit-scrollbar { width: 6px; }
       .portfolio-scroll::-webkit-scrollbar-track { background: transparent; }
       .portfolio-scroll::-webkit-scrollbar-thumb {

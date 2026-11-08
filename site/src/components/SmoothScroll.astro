@@ -99,8 +99,19 @@
     window.lenis = lenis;
     // Re-fire native-style scroll events so non-Lenis consumers (TopBar,
     // WaveField, HorizontalTOC's scroll RAF) keep working.
+    // Lenis also listens to window "scroll", and when it isn't mid-glide it answers
+    // with its own "scroll" event — which landed back here and re-dispatched, forever
+    // (the "Maximum call stack size exceeded" flood). The flag breaks that loop: our
+    // synthetic event is still delivered to everyone else, Lenis's reply to it isn't re-fired.
+    let refiring = false;
     lenis.on("scroll", () => {
-      window.dispatchEvent(new Event("scroll"));
+      if (refiring) return;
+      refiring = true;
+      try {
+        window.dispatchEvent(new Event("scroll"));
+      } finally {
+        refiring = false;
+      }
     });
     rafHandle = requestAnimationFrame(rafLoop);
   }

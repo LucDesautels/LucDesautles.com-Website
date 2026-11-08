@@ -12,6 +12,7 @@ import DroneNav from "@/components/webflow/DroneNav.astro";
 import DroneNextProject from "@/components/webflow/DroneNextProject.astro";
 import DroneFooter from "@/components/webflow/DroneFooter.astro";
 import DroneMotion from "@/components/webflow/DroneMotion.astro";
+import SmoothScroll from "@/components/SmoothScroll.astro";
 
 // Faithful port of the Webflow CMS template page `detail_projects.html`.
 // This is a real route, exactly as the template was: in Webflow the project
@@ -243,6 +244,10 @@ const next = {
     </div>
 
     <DroneFooter projects={index} />
+    {/* Same Lenis smooth scroll as the rest of the site. These pages scroll the real
+        document and have no wheel handler of their own, so there's nothing to fight
+        (the gallery page, with its custom two-zone scroll, does its own easing). */}
+    <SmoothScroll />
     <DroneMotion />
 
     <style is:global>

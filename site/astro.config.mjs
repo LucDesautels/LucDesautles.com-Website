@@ -15,5 +15,15 @@ export default defineConfig({
     build: {
       assetsInlineLimit: 0,
     },
+    // Dev server only. Vite pre-bundles dependencies the first time it sees them, and
+    // when it finds a *new* one mid-session (say, the first visit to a page that imports
+    // lenis) it re-bundles and changes the hash — pages already rendered then ask for the
+    // old one and get "504 Outdated Optimize Dep", React fails to load, and every island
+    // stays un-hydrated (the email button stuck as dots, the contents strip dead). Listing
+    // the packages here bundles them all at startup so nothing is discovered late.
+    // (Has no effect on the production build.)
+    optimizeDeps: {
+      include: ["react-dom/client", "lenis", "vara"],
+    },
   },
 });
