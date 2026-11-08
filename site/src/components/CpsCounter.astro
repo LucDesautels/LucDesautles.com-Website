@@ -11,7 +11,9 @@ const CONTACT = `mailto:${SITE.contact.email}`;
     <div class="cps__now"><span data-cps-now>0</span><small>cps</small></div>
     <div class="cps__best">best <span data-cps-best>0</span></div>
   </div>
-  <a class="cps__hi" href={CONTACT}>yo contact me to hop on hypixel bedwars ;)</a>
+  <!-- No href until the popup is armed (see script) — a bare <a> is not a link,
+       so it can't be clicked, previewed in the status bar, or show a link cursor. -->
+  <a class="cps__hi" data-cps-link data-href={CONTACT} tabindex="-1">yo contact me to hop on hypixel bedwars ;)</a>
 </div>
 
 <script>
@@ -37,13 +39,45 @@ const CONTACT = `mailto:${SITE.contact.email}`;
     let lastClick = 0;
     let lastSample = 0;
     let raf = 0;
+    let armed = false;
+    let lastDown = -Infinity;        // last pointerdown anywhere (incl. on the popup)
+    let prevDown = -Infinity;        // the one before it
+    const link = root.querySelector<HTMLAnchorElement>("[data-cps-link]");
+    const ARM_QUIET = 450;           // ms without any click before the link goes live
+
+    // The mailto link is only a real link while "armed": popup visible AND the
+    // visitor's clicking has paused. Otherwise it has no href at all, so a click
+    // burst landing on the popup's spot can never open the mail client.
+    function setArmed(on: boolean) {
+      if (armed === on) return;
+      armed = on;
+      root!.classList.toggle("is-armed", on);
+      if (!link) return;
+      if (on) link.setAttribute("href", link.dataset.href || "");
+      else link.removeAttribute("href");
+    }
+
+    function setActive(on: boolean) {
+      active = on;
+      root!.classList.toggle("is-on", on);
+      if (!on) setArmed(false);
+    }
+
+    // Belt and braces: even when armed, ignore a click that's part of a rapid run.
+    link?.addEventListener("click", (e) => {
+      if (!armed || lastDown - prevDown < ARM_QUIET) e.preventDefault();
+    });
 
     function accent() {
       return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#d96a36";
     }
 
     window.addEventListener("pointerdown", (e) => {
-      if ((e.target as HTMLElement)?.closest("[data-wf-tuner], [data-lt], [data-cps]")) return;
+      prevDown = lastDown;
+      lastDown = performance.now();
+      if ((e.target as HTMLElement)?.closest?.("[data-wf-tuner], [data-lt], [data-cps]")) return;
+      // Any click outside the link drops it back to inert until clicking pauses.
+      setArmed(false);
       const now = performance.now();
       times.push(now);
       lastClick = now;
@@ -79,10 +113,9 @@ const CONTACT = `mailto:${SITE.contact.email}`;
         hist.push(cps); hist.shift();
       }
 
-      if (cps >= SHOW_AT && !active) { active = true; root!.classList.add("is-on"); }
-      if (active && cps === 0 && now - lastClick > HIDE_AFTER) {
-        active = false; root!.classList.remove("is-on");
-      }
+      if (cps >= SHOW_AT && !active) setActive(true);
+      if (active && cps === 0 && now - lastClick > HIDE_AFTER) setActive(false);
+      if (active && !armed && now - lastDown > ARM_QUIET) setArmed(true);
 
       if (active) {
         if (nowEl) nowEl.textContent = String(cps);
@@ -120,9 +153,19 @@ const CONTACT = `mailto:${SITE.contact.email}`;
     /* Panel stays click-through so rapid clicks in the middle of the screen keep
        landing on the page and feeding the meter — only the link is interactive. */
     pointer-events: none;
-    transition: opacity 180ms ease, transform 180ms ease;
+    /* Fully out of the hit-test / selection / cursor logic while closed. */
+    visibility: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+    transition: opacity 180ms ease, transform 180ms ease, visibility 0s linear 180ms;
   }
-  .cps.is-on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .cps.is-on {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    visibility: visible;
+    transition: opacity 180ms ease, transform 180ms ease, visibility 0s;
+  }
   .cps__graph { display: block; width: 120px; height: 34px; }
   .cps__nums { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
   .cps__now { font-size: 20px; font-weight: 700; line-height: 1; color: var(--accent); }
@@ -135,7 +178,9 @@ const CONTACT = `mailto:${SITE.contact.email}`;
     text-decoration: none;
     border-top: 1px solid rgba(255, 255, 255, 0.14);
     padding-top: 5px;
-    pointer-events: auto;
+    /* Inert (and invisible to the hit-test) until the popup is shown and armed. */
+    pointer-events: none;
   }
-  .cps__hi:hover { text-decoration: underline; }
+  .cps.is-on.is-armed .cps__hi { pointer-events: auto; cursor: pointer; }
+  .cps.is-on.is-armed .cps__hi:hover { text-decoration: underline; }
 </style>

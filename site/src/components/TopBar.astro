@@ -2,6 +2,7 @@
 import { SITE, DEDICATED_PAGES } from "@/data/content";
 import LinkedInCard from "@/components/LinkedInCard.astro";
 import CopyEmailButton from "@/components/islands/CopyEmailButton.tsx";
+import { encodeObf } from "@/lib/contact";
 // tone="dark": always dark. darkUntil="<selector>": dark while that dark
 // section is still under the bar, light once it scrolls past.
 const { tone, darkUntil } = Astro.props as { tone?: "dark"; darkUntil?: string };
@@ -24,7 +25,7 @@ const { tone, darkUntil } = Astro.props as { tone?: "dark"; darkUntil?: string }
       {DEDICATED_PAGES.map((p) => (
         <a class="topbar__link" href={p.href}>{p.label}</a>
       ))}
-      <CopyEmailButton client:load email={SITE.contact.email} />
+      <CopyEmailButton client:load emailObf={encodeObf(SITE.contact.email)} mask={SITE.contact.email.replace(/[^@.]/g, "•")} />
       <a class="topbar__btn" href="/resume/">Résumé</a>
       <LinkedInCard />
     </nav>

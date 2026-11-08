@@ -1,0 +1,95 @@
+/* Header email button + hover dropdown. Colours come from the surrounding
+   .topbar so it follows the light/dark tone automatically. */
+
+.ceb {
+  position: relative;
+  display: inline-flex;
+  align-self: center;
+}
+
+.ceb__btn {
+  padding: 8px 14px;
+  border: 2px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.ceb__btn--ok {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ceb__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 60;
+  min-width: 100%;
+  /* Invisible bridge so the cursor can travel from the button to the menu. */
+  padding-top: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  pointer-events: none;
+}
+.ceb--open .ceb__menu {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+}
+.ceb__menu-in {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+}
+.ceb__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 11px 14px;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+}
+.ceb__item + .ceb__item { border-top: 1px solid var(--rule-soft); }
+.ceb__item:hover,
+.ceb__item:focus-visible {
+  background: var(--ink);
+  color: var(--bg);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ceb__menu { transition: opacity 0.18s ease, visibility 0.18s; transform: none; }
+}
+
+/* ≤880px the nav is a stacked hamburger list: show the options inline
+   instead of as a hover popup (touch has no hover). */
+@media (max-width: 880px) {
+  .ceb { flex-direction: column; align-items: flex-start; align-self: flex-start; margin-top: 6px; }
+  .ceb__menu {
+    position: static;
+    padding-top: 6px;
+    min-width: 0;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+  }
+  .ceb__menu-in { box-shadow: none; }
+}

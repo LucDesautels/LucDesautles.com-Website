@@ -2,6 +2,7 @@
 import { SITE } from "@/data/content";
 import Noise from "./Noise.astro";
 import { execSync } from "child_process";
+import { encodeObf } from "@/lib/contact";
 
 // Get the last commit SHA and date
 let commitSha = "unknown";
@@ -27,10 +28,10 @@ const dateStr = commitDate.toLocaleDateString("en-US", options);
     <div class="ft__row">
       <div class="ft__left">
         <div class="ft__email-container">
-          <button class="ft__email" id="email-copy" data-email={SITE.contact.email}>
-            {SITE.contact.email}
+          <button class="ft__email" id="email-copy" data-email-obf={encodeObf(SITE.contact.email)} title="Copy email to clipboard">
+            <span data-obf={encodeObf(SITE.contact.email)}>{SITE.contact.email.replace(/[^@.]/g, "•")}</span>
           </button>
-          <button class="ft__copy-icon" id="copy-icon" data-email={SITE.contact.email} type="button" aria-label="Copy email">
+          <button class="ft__copy-icon" id="copy-icon" data-email-obf={encodeObf(SITE.contact.email)} type="button" aria-label="Copy email">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M2 6v8a1 1 0 001 1h7a1 1 0 001-1V6M4 4V3a1 1 0 011-1h6a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -38,6 +39,7 @@ const dateStr = commitDate.toLocaleDateString("en-US", options);
           <div class="ft__toast" id="copy-toast">Copied to clipboard.</div>
         </div>
         <div class="ft__links">
+          <a href="/contact">CONTACT ↗</a>
           <a href="/engineering">ENGINEERING ↗</a>
           <a href={`https://${SITE.contact.linkedin}`} target="_blank" rel="noopener noreferrer">LINKEDIN ↗</a>
           <a href="/resume">RÉSUMÉ ↗</a>
@@ -52,21 +54,24 @@ const dateStr = commitDate.toLocaleDateString("en-US", options);
 </footer>
 
 <script>
+  import { copyText } from "../lib/copy";
+  import { decodeObf, fillObf } from "../lib/contact";
+
   const emailButton = document.getElementById("email-copy");
   const copyIcon = document.getElementById("copy-icon");
   const toast = document.getElementById("copy-toast");
 
-  const copyToClipboard = () => {
-    const email = emailButton.getAttribute("data-email");
-    if (email) {
-      navigator.clipboard.writeText(email).then(() => {
-        // Show toast
-        toast.classList.add("ft__toast--visible");
-        setTimeout(() => {
-          toast.classList.remove("ft__toast--visible");
-        }, 2000);
-      });
-    }
+  fillObf(emailButton ?? document);
+  let toastTimer: number | undefined;
+
+  const copyToClipboard = async () => {
+    const enc = emailButton?.getAttribute("data-email-obf");
+    if (!enc || !toast) return;
+    const ok = await copyText(decodeObf(enc));
+    toast.textContent = ok ? "Copied to clipboard." : "Copy failed — select it manually.";
+    toast.classList.add("ft__toast--visible");
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.remove("ft__toast--visible"), 2000);
   };
 
   if (emailButton) {

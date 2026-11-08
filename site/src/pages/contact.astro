@@ -1,0 +1,968 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import TopBar from "@/components/TopBar.astro";
+import { SITE, RESUME_HREF } from "@/data/content";
+import linkedin from "@/data/linkedin.json";
+import { encodeObf, SECURE_SUBJECT, DRAFT_TEXT } from "@/lib/contact";
+
+const emailObf = encodeObf(SITE.contact.email);
+const emailMask = SITE.contact.email.replace(/[^@.]/g, "•");
+
+const LOCATIONS = ["Toronto, ON", "Kamloops, BC", "Vancouver, BC"];
+
+// Monochrome (currentColor) icons for the link buttons.
+const ICONS = {
+  linkedin: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.48-.9 1.65-1.85 3.39-1.85 3.62 0 4.29 2.38 4.29 5.48v6.26zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>`,
+  resume: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>`,
+  engineering: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg>`,
+  github: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>`,
+  copy: `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 6v8a1 1 0 001 1h7a1 1 0 001-1V6M4 4V3a1 1 0 011-1h6a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  expand: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>`,
+};
+
+const links = [
+  { label: "LinkedIn", href: linkedin.url, external: true, icon: ICONS.linkedin },
+  { label: "Résumé", href: RESUME_HREF, external: false, icon: ICONS.resume },
+  { label: "Engineering portfolio", href: "/engineering", external: false, icon: ICONS.engineering },
+  { label: "GitHub", href: `https://${SITE.contact.github}`, external: true, icon: ICONS.github },
+];
+
+// Email demo clips, in numeric order (files are served from /public/contact).
+const emailClips = [1, 2, 3, 4, 5].map((n) => `/contact/email-${n}.mp4`);
+---
+<BaseLayout
+  title="Contact · Luc Desautels"
+  description="How to reach Luc Desautels: email, a quick contact form, and secure channels (Signal, secured email) for matters of discretion."
+>
+  <TopBar />
+
+  <main class="ct" id="main">
+    <!-- Lander ─────────────────────────────────────────────────────── -->
+    <section class="ct__lander shell">
+      <div class="eyebrow eyebrow--accent">// LUC DESAUTELS · CONTACT</div>
+      <h1 class="ct__title">
+        <span class="ct__title-italic">Get in contact</span><span class="ct__period">.</span>
+      </h1>
+      <p class="ct__lede">Don&rsquo;t hesitate to reach out.</p>
+    </section>
+
+    <!-- Details + form ─────────────────────────────────────────────── -->
+    <section class="ct__grid shell">
+      <div class="ct__panel">
+        <div class="eyebrow">Details</div>
+        <dl class="ct__dl">
+          <div class="ct__row">
+            <dt class="eyebrow">Name</dt>
+            <dd class="ct__val">
+              {SITE.name}
+              <div class="ct__pron">
+                <span>&ldquo;Luc Des-au-tel&rdquo;</span>
+                <span>&ldquo;Luke Dehz-o-tell&rdquo;</span>
+              </div>
+            </dd>
+          </div>
+
+          <div class="ct__row ct__row--ctl">
+            <dt class="eyebrow">Email</dt>
+            <dd class="ct__val">
+              <div class="ct__copyline">
+                <code class="ct__mono" data-obf={emailObf}>{emailMask}</code>
+                <button class="ct__iconbtn" type="button" data-copy-obf={emailObf} aria-label="Copy email address">
+                  <span set:html={ICONS.copy} /><span class="ct__iconbtn-t">Copy</span>
+                </button>
+                <a class="ct__iconbtn" data-draft href="#" aria-label="Create a draft email">
+                  <span class="ct__iconbtn-t">Create draft email</span><span aria-hidden="true">↗</span>
+                </a>
+              </div>
+            </dd>
+          </div>
+
+          <div class="ct__row ct__row--ctl">
+            <dt class="eyebrow">Signal</dt>
+            <dd class="ct__val">
+              <button class="ct__img" type="button" data-lb data-lb-group="signal-id" data-lb-type="img" data-lb-src="/contact/signal-username.webp" aria-label="Expand Signal username">
+                <img src="/contact/signal-username.webp" alt="Signal username (image)" width="2000" height="750" loading="lazy" draggable="false" />
+                <span class="ct__expand" aria-hidden="true" set:html={ICONS.expand} />
+              </button>
+            </dd>
+          </div>
+
+          <div class="ct__row ct__row--ctl">
+            <dt class="eyebrow">WhatsApp</dt>
+            <dd class="ct__val">
+              <button class="ct__img" type="button" data-lb data-lb-group="whatsapp-id" data-lb-type="img" data-lb-src="/contact/whatsapp-number.webp" aria-label="Expand WhatsApp number">
+                <img src="/contact/whatsapp-number.webp" alt="WhatsApp number (image)" width="2000" height="750" loading="lazy" draggable="false" />
+                <span class="ct__expand" aria-hidden="true" set:html={ICONS.expand} />
+              </button>
+            </dd>
+          </div>
+
+        </dl>
+
+        <div class="ct__links">
+          {links.map((l) => (
+            <a
+              class="ct__btn"
+              href={l.href}
+              {...(l.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            >
+              <span class="ct__btn-ico" set:html={l.icon} />
+              {l.label}
+            </a>
+          ))}
+        </div>
+
+        <div class="ct__locwrap">
+          <div class="eyebrow">Frequent locations</div>
+          <ul class="ct__locs">
+            {LOCATIONS.map((l) => <li>{l}</li>)}
+          </ul>
+        </div>
+      </div>
+
+      <form class="ct__panel ct__form" data-contact-form>
+        <div class="eyebrow">Quick message</div>
+        <label class="ct__field">
+          <span class="eyebrow">Your name</span>
+          <input name="name" type="text" autocomplete="name" required />
+        </label>
+        <label class="ct__field">
+          <span class="eyebrow">Your email</span>
+          <input name="email" type="email" autocomplete="email" required />
+        </label>
+        <label class="ct__field">
+          <span class="eyebrow">Message</span>
+          <textarea name="message" rows="10" required>{DRAFT_TEXT}</textarea>
+        </label>
+        <button class="ct__submit" type="submit">Create draft email <span aria-hidden="true">↗</span></button>
+      </form>
+    </section>
+
+    <!-- Matters of discretion ──────────────────────────────────────── -->
+    <section class="ct__secure shell" data-secure>
+      <p class="ct__teaser" data-teaser>
+        For matters of discretion, <button class="ct__more" type="button" data-open aria-expanded="false" aria-controls="secure-panel">&hellip;more</button>
+      </p>
+
+      <div class="ct__sp" id="secure-panel" data-panel hidden>
+        <p class="ct__lead" tabindex="-1">For matters of discretion, you may contact me using the following methods.</p>
+
+        <article class="ct__method">
+          <h3 class="ct__method-h">
+            <a href="https://signal.org" target="_blank" rel="noopener noreferrer">Signal Protocol</a>
+          </h3>
+          <div class="ct__clips ct__clips--single">
+            <div class="ct__clip" data-clip data-lb data-lb-group="signal" data-lb-type="video" data-lb-src="/contact/signal.mp4" role="button" tabindex="0" aria-label="Expand Signal walkthrough">
+              <video muted loop playsinline preload="none" data-src="/contact/signal.mp4" aria-hidden="true"></video>
+              <span class="ct__clip-tag" aria-hidden="true">LOADING</span>
+              <span class="ct__expand" aria-hidden="true" set:html={ICONS.expand} />
+            </div>
+          </div>
+          <p class="ct__p"><strong>Details:</strong> Signal is the state-of-the-art E2EE messaging app. You will contact me anonymously as a sealed sender. This is the preferred method for individuals and absolute discretion.</p>
+          <p class="ct__p"><strong>Procedure:</strong> You will contact me at the Signal username above which takes the form of <code class="ct__inline">@username.number</code></p>
+        </article>
+
+        <article class="ct__method">
+          <h3 class="ct__method-h">Email</h3>
+          <div class="ct__clips">
+            {emailClips.map((src, i) => (
+              <div class="ct__clip" data-clip data-lb data-lb-group="email" data-lb-type="video" data-lb-src={src} role="button" tabindex="0" aria-label={`Expand email walkthrough, part ${i + 1} of ${emailClips.length}`}>
+                <video muted loop playsinline preload="none" data-src={src} aria-hidden="true"></video>
+                <span class="ct__clip-tag" aria-hidden="true">LOADING</span>
+                <span class="ct__expand" aria-hidden="true" set:html={ICONS.expand} />
+              </div>
+            ))}
+          </div>
+          <p class="ct__p"><strong>Details:</strong> This is the preferred method for individuals who prefer email and convenience of organizations.</p>
+          <p class="ct__p">
+            <strong>Procedure:</strong> You will contact me at the email address above. The email subject must be
+            <button class="ct__chip" type="button" data-copy-text={SECURE_SUBJECT} title="Copy subject line">
+              <span>{SECURE_SUBJECT}</span><span set:html={ICONS.copy} />
+            </button>
+            otherwise the email will be deleted upon receipt. If you are using
+            <span class="ct__swap" tabindex="0">
+              <span class="ct__swap-a">an unsecured email provider</span>
+              <span class="ct__swap-b" aria-hidden="true">Gmail, Outlook, iCloud, Yahoo, etc.</span>
+            </span>
+            please refrain from including sensitive or identifiable information in your first message as it will not be fully secured.
+            In your email provide only necessary details regarding basic context and your reason for contact. You will receive a reply
+            based on your message with instructions on how to proceed.
+          </p>
+        </article>
+
+        <p class="ct__p ct__p--fine">
+          The contact addresses above have been obfuscated to prevent automated scraping and spam. The secure channels listed below
+          exist for reasons of security, privacy, or anonymity in communication. This includes compliance with national or international
+          security-clearance frameworks, such as Canada&rsquo;s Controlled Goods Program (CGP) and NATO security directives, as well as
+          situations where an individual or organization requires discretion, including legal whistleblowing, business arrangements,
+          and private discussions.
+        </p>
+
+        <button class="ct__more ct__more--less" type="button" data-close>&hellip; view less</button>
+      </div>
+    </section>
+
+    <!-- Lightbox ───────────────────────────────────────────────────── -->
+    <div class="lb" data-lb-root data-lenis-prevent hidden role="dialog" aria-modal="true" aria-label="Expanded media">
+      <div class="lb__stage" data-lb-stage></div>
+      <button class="lb__btn lb__close" type="button" data-lb-close aria-label="Close">&#10005;</button>
+      <button class="lb__btn lb__nav lb__prev" type="button" data-lb-prev aria-label="Previous">&#8249;</button>
+      <button class="lb__btn lb__nav lb__next" type="button" data-lb-next aria-label="Next">&#8250;</button>
+      <div class="lb__tools">
+        <button class="lb__btn" type="button" data-lb-zoom="out" aria-label="Zoom out">&minus;</button>
+        <span class="lb__pct" data-lb-pct>100%</span>
+        <button class="lb__btn" type="button" data-lb-zoom="in" aria-label="Zoom in">+</button>
+        <button class="lb__btn lb__reset" type="button" data-lb-zoom="reset">Reset</button>
+      </div>
+      <div class="lb__count" data-lb-count></div>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  import { copyText } from "../lib/copy";
+  import { decodeObf, fillObf, mailtoHref } from "../lib/contact";
+
+  // ── Decode the obfuscated address into the page ──
+  fillObf();
+  const emailEnc = document.querySelector<HTMLElement>("[data-copy-obf]")?.dataset.copyObf;
+  const email = emailEnc ? decodeObf(emailEnc) : "";
+
+  // ── Create-draft link ──
+  const draft = document.querySelector<HTMLAnchorElement>("[data-draft]");
+  if (draft && email) draft.href = mailtoHref(email);
+
+  // ── Copy buttons (email, subject chip) ──
+  const flash = (btn: HTMLElement, ok: boolean) => {
+    const t = btn.querySelector<HTMLElement>(".ct__iconbtn-t") ?? btn.querySelector<HTMLElement>("span");
+    if (!t) return;
+    const prev = (btn.dataset.prev ??= t.textContent ?? "");
+    t.textContent = ok ? "Copied." : "Press Ctrl+C";
+    btn.classList.toggle("is-ok", ok);
+    window.setTimeout(() => {
+      t.textContent = prev;
+      btn.classList.remove("is-ok");
+    }, 1800);
+  };
+  document.querySelectorAll<HTMLElement>("[data-copy-obf], [data-copy-text]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const text = btn.dataset.copyObf ? decodeObf(btn.dataset.copyObf) : btn.dataset.copyText ?? "";
+      flash(btn, await copyText(text));
+    });
+  });
+
+  // ── Form → pre-filled mailto draft (no backend) ──
+  const form = document.querySelector<HTMLFormElement>("[data-contact-form]");
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!email) return;
+    const fd = new FormData(form);
+    const body = `${fd.get("message")}\n\n— ${fd.get("name")} <${fd.get("email")}>`;
+    window.location.href = mailtoHref(email, body);
+  });
+
+  // ── Secure-channels panel: videos load only after "…more" ──
+  const root = document.querySelector<HTMLElement>("[data-secure]");
+  const panel = root?.querySelector<HTMLElement>("[data-panel]");
+  const teaser = root?.querySelector<HTMLElement>("[data-teaser]");
+  const openBtn = root?.querySelector<HTMLButtonElement>("[data-open]");
+  const closeBtn = root?.querySelector<HTMLButtonElement>("[data-close]");
+  const clips = Array.from(root?.querySelectorAll<HTMLElement>("[data-clip]") ?? []);
+
+  // Only play what's on screen, so six 720p clips aren't all decoding at once.
+  const io = new IntersectionObserver((entries) => {
+    for (const en of entries) {
+      const v = en.target as HTMLVideoElement;
+      if (!v.dataset.ready) continue;
+      if (en.isIntersecting) v.play().catch(() => {});
+      else v.pause();
+    }
+  }, { threshold: 0.25 });
+
+  const startLoading = (clip: HTMLElement) => {
+    const v = clip.querySelector<HTMLVideoElement>("video");
+    if (!v || v.dataset.started || !v.dataset.src) return;
+    v.dataset.started = "1";
+    clip.classList.add("is-loading");
+    v.addEventListener("loadeddata", () => clip.classList.add("has-frame"), { once: true });
+    // Fully buffered → drop the blur and start the loop.
+    v.addEventListener("canplaythrough", () => {
+      v.dataset.ready = "1";
+      clip.classList.remove("is-loading");
+      clip.classList.add("is-ready");
+      io.observe(v);
+    }, { once: true });
+    v.addEventListener("error", () => {
+      clip.classList.remove("is-loading");
+      clip.classList.add("is-error");
+      const tag = clip.querySelector(".ct__clip-tag");
+      if (tag) tag.textContent = "UNAVAILABLE";
+    }, { once: true });
+    v.preload = "auto";
+    v.src = v.dataset.src;
+    v.load();
+  };
+
+  const setOpen = (open: boolean) => {
+    if (!panel || !teaser || !openBtn) return;
+    panel.hidden = !open;
+    teaser.hidden = open;
+    openBtn.setAttribute("aria-expanded", String(open));
+    if (open) {
+      clips.forEach(startLoading);
+      panel.querySelector<HTMLElement>(".ct__lead")?.focus({ preventScroll: true });
+    } else {
+      panel.querySelectorAll("video").forEach((v) => v.pause());
+      openBtn.focus({ preventScroll: true });
+    }
+  };
+  openBtn?.addEventListener("click", () => setOpen(true));
+  closeBtn?.addEventListener("click", () => setOpen(false));
+
+  // ── Lightbox: zoom (wheel / pinch / buttons / double-click), pan (drag), arrows ──
+  const lb = document.querySelector<HTMLElement>("[data-lb-root]")!;
+  const stage = lb.querySelector<HTMLElement>("[data-lb-stage]")!;
+  const pct = lb.querySelector<HTMLElement>("[data-lb-pct]")!;
+  const count = lb.querySelector<HTMLElement>("[data-lb-count]")!;
+  const prevBtn = lb.querySelector<HTMLElement>("[data-lb-prev]")!;
+  const nextBtn = lb.querySelector<HTMLElement>("[data-lb-next]")!;
+
+  const MIN = 0.25, MAX = 8;
+  let group: HTMLElement[] = [];
+  let idx = 0;
+  let media: HTMLElement | null = null;
+  let s = 1, tx = 0, ty = 0;
+  let lastFocus: HTMLElement | null = null;
+
+  const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+
+  const apply = () => {
+    if (!media) return;
+    s = clamp(s, MIN, MAX);
+    if (s <= 1) { tx = 0; ty = 0; }
+    else {
+      // keep at least part of the media on screen
+      const mx = (media.offsetWidth * s) / 2, my = (media.offsetHeight * s) / 2;
+      tx = clamp(tx, -mx, mx);
+      ty = clamp(ty, -my, my);
+    }
+    media.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+    pct.textContent = `${Math.round(s * 100)}%`;
+    lb.classList.toggle("is-zoomed", s > 1);
+  };
+
+  // Zoom keeping the point under (px,py) fixed (viewport coords).
+  const zoomAt = (ns: number, px: number, py: number) => {
+    ns = clamp(ns, MIN, MAX);
+    const r = stage.getBoundingClientRect();
+    const dx = px - (r.left + r.width / 2);
+    const dy = py - (r.top + r.height / 2);
+    const k = ns / s;
+    tx = dx - (dx - tx) * k;
+    ty = dy - (dy - ty) * k;
+    s = ns;
+    apply();
+  };
+  const zoomCenter = (ns: number) => {
+    const r = stage.getBoundingClientRect();
+    zoomAt(ns, r.left + r.width / 2, r.top + r.height / 2);
+  };
+
+  const render = () => {
+    const t = group[idx];
+    stage.textContent = "";
+    s = 1; tx = 0; ty = 0;
+    const type = t.dataset.lbType;
+    let el: HTMLElement;
+    if (type === "video") {
+      const v = document.createElement("video");
+      v.src = t.dataset.lbSrc!;
+      v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+      v.play().catch(() => {});
+      el = v;
+    } else {
+      const im = document.createElement("img");
+      im.src = t.dataset.lbSrc!;
+      im.alt = "";
+      el = im;
+    }
+    el.className = "lb__media";
+    el.draggable = false;
+    stage.appendChild(el);
+    media = el;
+    const multi = group.length > 1;
+    prevBtn.hidden = nextBtn.hidden = !multi;
+    count.textContent = multi ? `${idx + 1} / ${group.length}` : "";
+    apply();
+  };
+
+  const open = (trigger: HTMLElement) => {
+    const g = trigger.dataset.lbGroup;
+    group = Array.from(document.querySelectorAll<HTMLElement>("[data-lb]")).filter((e) => e.dataset.lbGroup === g);
+    idx = Math.max(0, group.indexOf(trigger));
+    lastFocus = trigger;
+    lb.hidden = false;
+    document.documentElement.classList.add("lb-open");
+    render();
+    lb.querySelector<HTMLElement>("[data-lb-close]")?.focus({ preventScroll: true });
+  };
+  const close = () => {
+    lb.hidden = true;
+    stage.textContent = "";
+    media = null;
+    document.documentElement.classList.remove("lb-open");
+    lastFocus?.focus({ preventScroll: true });
+  };
+  const step = (d: number) => {
+    if (group.length < 2) return;
+    idx = (idx + d + group.length) % group.length;
+    render();
+  };
+
+  document.querySelectorAll<HTMLElement>("[data-lb]").forEach((t) => {
+    t.addEventListener("click", () => open(t));
+    t.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(t); }
+    });
+  });
+  lb.querySelector("[data-lb-close]")!.addEventListener("click", close);
+  prevBtn.addEventListener("click", () => step(-1));
+  nextBtn.addEventListener("click", () => step(1));
+  lb.querySelectorAll<HTMLElement>("[data-lb-zoom]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const a = b.dataset.lbZoom;
+      if (a === "in") zoomCenter(s * 1.5);
+      else if (a === "out") zoomCenter(s / 1.5);
+      else { s = 1; tx = 0; ty = 0; apply(); }
+    }));
+
+  // Click on the dark backdrop (not the media) closes.
+  stage.addEventListener("click", (e) => {
+    if (e.target === stage && !moved) close();
+  });
+
+  stage.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    zoomAt(s * Math.exp(-e.deltaY * 0.002), e.clientX, e.clientY);
+  }, { passive: false });
+
+  // Pointer pan + two-finger pinch.
+  const ptrs = new Map<number, { x: number; y: number }>();
+  let pinch0 = 0, pinchS0 = 1;
+  let moved = false;
+  stage.addEventListener("pointerdown", (e) => {
+    stage.setPointerCapture(e.pointerId);
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved = false;
+    if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      pinch0 = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      pinchS0 = s;
+    }
+  });
+  stage.addEventListener("pointermove", (e) => {
+    const p = ptrs.get(e.pointerId);
+    if (!p) return;
+    if (ptrs.size === 2) {
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const [a, b] = [...ptrs.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      zoomAt(pinchS0 * (d / pinch0), (a.x + b.x) / 2, (a.y + b.y) / 2);
+      moved = true;
+      return;
+    }
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (Math.abs(dx) + Math.abs(dy) > 1) moved = true;
+    if (s > 1) { tx += dx; ty += dy; apply(); }
+  });
+  const endPtr = (e: PointerEvent) => { ptrs.delete(e.pointerId); window.setTimeout(() => (moved = false), 0); };
+  stage.addEventListener("pointerup", endPtr);
+  stage.addEventListener("pointercancel", endPtr);
+  stage.addEventListener("dblclick", (e) => {
+    if (s !== 1) { s = 1; tx = 0; ty = 0; apply(); }
+    else zoomAt(2.5, e.clientX, e.clientY);
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (lb.hidden) return;
+    if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft") step(-1);
+    else if (e.key === "ArrowRight") step(1);
+    else if (e.key === "+" || e.key === "=") zoomCenter(s * 1.5);
+    else if (e.key === "-") zoomCenter(s / 1.5);
+    else if (e.key === "0") { s = 1; tx = 0; ty = 0; apply(); }
+  });
+</script>
+
+<style>
+  .ct { padding-top: 0; }
+
+  /* Lander */
+  .ct__lander { padding: 40px var(--page-pad) 0; }
+  .ct__title {
+    font-family: var(--font-display);
+    font-size: clamp(44px, 7.5vw, 88px);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin: 14px 0 0;
+    color: var(--ink);
+  }
+  .ct__title-italic { font-style: italic; font-weight: 400; }
+  .ct__period { color: var(--trim); }
+  .ct__lede {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(18px, 2vw, 24px);
+    line-height: 1.45;
+    color: var(--ink-dim);
+    margin: 16px 0 0;
+  }
+
+  /* Matters of discretion */
+  .ct__secure { padding: 0 var(--page-pad) 96px; }
+  .ct__teaser {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(17px, 1.8vw, 20px);
+    color: var(--ink-dim);
+  }
+  .ct__more {
+    font: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 5px;
+    text-decoration-color: transparent;
+    transition: text-decoration-color 0.2s;
+  }
+  .ct__more:hover { text-decoration-color: currentColor; }
+
+  .ct__sp {
+    background: var(--dark);
+    color: var(--dark-ink);
+    padding: clamp(24px, 4vw, 44px);
+    margin-top: 4px;
+    position: relative;
+    z-index: 2;
+    animation: ct-open 0.35s ease both;
+  }
+  .ct__sp[hidden] { display: none; }
+  @keyframes ct-open { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .ct__lead {
+    margin: 0;
+    max-width: 760px;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--dark-ink);
+    outline: none;
+  }
+  .ct__method { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--dark-line); }
+  .ct__method-h {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 19px;
+    line-height: 1.3;
+    margin-bottom: 16px;
+  }
+  .ct__method-h a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 5px;
+  }
+  .ct__p {
+    margin: 16px 0 0;
+    max-width: 820px;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--dark-dim);
+  }
+  .ct__p strong { color: var(--dark-ink); font-weight: 600; }
+  .ct__p--fine { margin-top: 40px; font-size: 14px; color: var(--dark-mute); }
+  .ct__inline {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    padding: 2px 6px;
+    background: var(--dark-panel);
+    border: 1px solid var(--dark-line);
+    color: var(--dark-ink);
+  }
+  .ct__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 8px;
+    vertical-align: baseline;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--dark-ink);
+    background: var(--dark-panel);
+    border: 1px solid var(--dark-line);
+    cursor: pointer;
+    user-select: all;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .ct__chip:hover { border-color: var(--accent); color: var(--accent); }
+  .ct__chip.is-ok { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  /* "an unsecured email provider" → hover reveals examples */
+  .ct__swap {
+    position: relative;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 4px;
+    cursor: help;
+    color: var(--dark-ink);
+    outline: none;
+  }
+  .ct__swap-b { display: none; }
+  .ct__swap:hover .ct__swap-a,
+  .ct__swap:focus .ct__swap-a { display: none; }
+  .ct__swap:hover .ct__swap-b,
+  .ct__swap:focus .ct__swap-b { display: inline; color: var(--accent); }
+
+  /* Video clips */
+  .ct__clips {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+  .ct__clips::-webkit-scrollbar { height: 5px; background: transparent; }
+  .ct__clips::-webkit-scrollbar-track { background: transparent; }
+  .ct__clips::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border: 0; border-radius: 3px; }
+  .ct__clips::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
+  .ct__clips--single .ct__clip { flex: 0 1 520px; }
+  .ct__clip {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 200px;          /* all clips identical; row scrolls if it can't fit */
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    scroll-snap-align: start;
+    cursor: zoom-in;
+    background:
+      linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.06) 50%, transparent 70%) 0 0 / 200% 100%,
+      var(--dark-panel);
+    border: 1px solid var(--dark-line);
+  }
+  .ct__clip.is-loading { animation: ct-shimmer 1.4s linear infinite; }
+  @keyframes ct-shimmer { to { background-position: -200% 0, 0 0; } }
+  .ct__clip video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    filter: blur(16px);
+    transform: scale(1.08);   /* hide the blurred edges */
+    transition: filter 0.7s ease, transform 0.7s ease, opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .ct__clip.has-frame video { opacity: 1; }
+  .ct__clip.is-ready video { filter: none; transform: none; }
+  .ct__clip-tag {
+    position: absolute;
+    left: 10px;
+    bottom: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--dark-dim);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+    transition: opacity 0.3s ease;
+  }
+  .ct__clip.is-ready .ct__clip-tag { opacity: 0; }
+
+  /* Hover: darken + centred expand symbol (clips and the ID images) */
+  .ct__clip::after,
+  .ct__img::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+  .ct__expand {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+  .ct__clip:hover::after, .ct__clip:focus-visible::after,
+  .ct__img:hover::after, .ct__img:focus-visible::after { opacity: 1; }
+  .ct__clip:hover .ct__expand, .ct__clip:focus-visible .ct__expand,
+  .ct__img:hover .ct__expand, .ct__img:focus-visible .ct__expand { opacity: 1; }
+  .ct__clip:focus-visible, .ct__img:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .ct__more--less { display: block; margin-top: 32px; font-size: 16px; }
+
+  /* ID images (Signal / WhatsApp) — view-only, not selectable */
+  .ct__img {
+    position: relative;
+    display: block;
+    height: 38px;           /* same height as the email box */
+    width: auto;
+    max-width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--rule);
+    background: transparent;
+    cursor: zoom-in;
+    line-height: 0;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .ct__img img {
+    width: auto;
+    height: 100%;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+
+  /* Details + form */
+  .ct__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 28px;
+    padding: 36px var(--page-pad) 28px;
+    align-items: stretch;
+  }
+  .ct__panel {
+    border: 1px solid var(--rule);
+    /* Mostly opaque + blurred so the wave lines don't cut through the card. */
+    background: rgba(250, 247, 240, 0.96);
+    -webkit-backdrop-filter: blur(24px) saturate(1.1);
+    backdrop-filter: blur(24px) saturate(1.1);
+    /* The wave canvas is a fixed layer at z-index 1; sit above it so its lines
+       are covered (and blurred) instead of drawn on top of the card. */
+    position: relative;
+    z-index: 2;
+    padding: 28px;
+  }
+  .ct__dl { margin: 18px 0 0; }
+  .ct__pron { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; font-size: 14px; font-style: italic; color: var(--ink-mute); }
+  .ct__row {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px 0;
+    border-top: 1px solid var(--rule-soft);
+    align-items: baseline;
+  }
+  .ct__row dt { margin: 0; }
+  /* Rows whose value is a 38px control (email box / ID image): label is centred on
+     that 38px line so Email, Signal and WhatsApp all space identically. */
+  .ct__row--ctl { align-items: start; }
+  .ct__row--ctl dt { min-height: 38px; display: flex; align-items: center; }
+  .ct__val { margin: 0; font-size: 17px; color: var(--ink); }
+  .ct__copyline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .ct__mono {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    padding: 7px 10px;
+    background: var(--bg-warm);
+    border: 1px solid var(--rule);
+    user-select: all;       /* one click selects the whole address */
+    -webkit-user-select: all;
+    overflow-wrap: anywhere;
+  }
+  .ct__iconbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border: 2px solid var(--rule);
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .ct__iconbtn:hover { background: var(--ink); color: var(--bg); }
+  .ct__iconbtn.is-ok { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .ct__locwrap { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--rule-soft); display: flex; flex-direction: column; gap: 12px; }
+  .ct__locs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .ct__locs li {
+    padding: 5px 12px;
+    border: 1px solid var(--rule);
+    font-size: 15px;
+  }
+  .ct__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule-soft);
+  }
+  .ct__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 2px solid var(--rule);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    transition: background 0.2s, color 0.2s;
+  }
+  .ct__btn-ico { display: inline-flex; }
+  .ct__btn:hover { background: var(--ink); color: var(--bg); }
+
+  /* Form */
+  .ct__form { display: flex; flex-direction: column; gap: 16px; }
+  .ct__field { display: flex; flex-direction: column; gap: 6px; }
+  .ct__field:has(textarea) { flex: 1; }
+  .ct__field textarea { flex: 1; }
+  .ct__field input,
+  .ct__field textarea {
+    font: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    padding: 11px 12px;
+    border-radius: 0;
+    resize: vertical;
+  }
+  .ct__field input:focus,
+  .ct__field textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+  .ct__submit {
+    align-self: flex-start;
+    padding: 12px 20px;
+    background: var(--ink);
+    color: var(--bg);
+    border: 2px solid var(--ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .ct__submit:hover { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  /* Lightbox */
+  .lb {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(8, 7, 6, 0.94);
+    color: #fff;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .lb[hidden] { display: none; }
+  .lb__stage {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    touch-action: none;
+    cursor: zoom-in;
+  }
+  .lb.is-zoomed .lb__stage { cursor: grab; }
+  .lb.is-zoomed .lb__stage:active { cursor: grabbing; }
+  .lb__btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 20px;
+    line-height: 1;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .lb__btn:hover { background: rgba(255, 255, 255, 0.24); }
+  .lb__btn[hidden] { display: none; }
+  .lb__close { position: absolute; top: 18px; right: 18px; z-index: 2; font-size: 16px; }
+  .lb__nav { position: absolute; top: 50%; z-index: 2; transform: translateY(-50%); width: 48px; height: 64px; font-size: 34px; }
+  .lb__prev { left: 18px; }
+  .lb__next { right: 18px; }
+  .lb__tools {
+    position: absolute;
+    left: 50%;
+    bottom: 22px;
+    z-index: 2;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lb__reset { font-size: 13px; }
+  .lb__pct {
+    min-width: 52px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .lb__count {
+    position: absolute;
+    top: 26px;
+    left: 24px;
+    z-index: 2;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  @media (max-width: 960px) {
+    .ct__grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 880px) {
+    .ct__lander,
+    .ct__grid,
+    .ct__secure { padding-left: 20px; padding-right: 20px; }
+    .ct__panel { padding: 20px; }
+    .ct__row { grid-template-columns: 1fr; gap: 6px; }
+    .ct__clip { min-width: 160px; }
+    .lb__nav { width: 40px; height: 52px; }
+    .lb__prev { left: 8px; }
+    .lb__next { right: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ct__sp { animation: none; }
+    .ct__clip.is-loading { animation: none; }
+    .ct__clip video { transition: none; }
+  }
+</style>
+
+<style is:global>
+  /* Created at runtime (no Astro scope attribute), so global. */
+  .lb__media {
+    max-width: 92vw;
+    max-height: 82vh;
+    width: auto;
+    height: auto;
+    transform-origin: center center;
+    will-change: transform;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+  html.lb-open { overflow: hidden; }
+</style>

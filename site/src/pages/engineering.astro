@@ -26,10 +26,10 @@ import { mdInline } from "@/lib/finalImages";
             Engineering<br />
             <span class="ep__title-italic">portfolio</span><span class="ep__period">.</span>
           </h1>
-          <div class="ep__byline" set:html={mdInline(ENG_LANDER.byline)} />
+          <div class="ep__byline" set:html={mdInline(ENG_LANDER.byline).replace(/<strong>(.*?)<\/strong>/, '<a class="ep__byline-link" href="/"><strong>$1</strong></a>')} />
           <p class="ep__tagline" set:html={mdInline(ENG_LANDER.tagline)} />
           <div class="ep__meta">
-            {SITE.meta.map((m) => (
+            {SITE.meta.filter((m) => m.label.toLowerCase() !== "currently").map((m) => (
               <div class="ep__meta-item">
                 <div class="eyebrow eyebrow--dark">{m.label}</div>
                 <div class="ep__meta-value">{m.value}</div>
@@ -748,6 +748,9 @@ import { mdInline } from "@/lib/finalImages";
       margin: 16px 0 0;
     }
     .ep__byline strong { color: var(--dark-ink); font-weight: 600; font-style: normal; }
+    .ep__byline-link { text-decoration: none; }
+    .ep__byline-link strong { transition: color 0.25s ease; }
+    .ep__byline-link:hover strong { color: color-mix(in srgb, var(--dark-ink) 82%, #000); }
     .ep__tagline {
       font-family: var(--font-body);
       font-size: 19px;

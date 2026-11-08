@@ -164,7 +164,20 @@ Luc Desautels   →  rendered as "Luc" / "Desautels" italic + accent period
 
 **Tagline (paragraph under the name)** · `home/hero/tagline.md`
 ```
-I'm deeply involved in robotics and thrive in competitive environments. I'm passionate about impactful engineering and startup work, backed by extensive technical and leadership experience. Outside of that, you'll find me rock climbing, playing fiddle, or shooting drone photography. [BY THE WAY: Make sure that there is an orange underline on the words competitive environments linking to competitive robotics page, an underline under impactful engineering to it's page, and extensive technical and leadership experience linking to the engineering portfolio page. And also drone photography linking to the drone videography page.]
+I'm passionate about impactful engineering and startup wo
+Through my
+My main focus right now is in robotics. , backed by leadership and extensive technical experience despite having recently started uni. Outside of, you'll find me rock climbing, playing fiddle, or nature drone photography. 
+
+
+I'm deeply involved in robotics and thrive in competitive environments. 
+I'm an Engineering student working in robotics. 
+Main endeavors: Founded and lead a team to develop
+[BY THE WAY: Make sure that there is an orange underline on the words competitive environments linking to competitive robotics page, an underline under impactful engineering to it's page, and extensive technical and leadership experience linking to the engineering portfolio page. And also drone photography linking to the drone videography page.]
+
+"Headline" proof points:
+Competitive robotics: Placed #1 in FTC Ontario Provincial Championships '24 and went on to be a team representing Canada that year on the world stage in Huston, Tx.
+My most ambitious project to date: Founded and led a team of friends to engineer novel drones for marine search and rescue operations. (Over years 11-12 in high school, 1200+ hours)
+
 ```
 
 ### Hero meta row (three stats under the tagline)
