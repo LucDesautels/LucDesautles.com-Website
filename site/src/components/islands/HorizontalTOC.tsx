@@ -206,6 +206,17 @@ export default function HorizontalTOC({ sections }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [outerHeight, setOuterHeight] = useState<number | null>(null);
   const [enabled, setEnabled] = useState(false);
+  // The strip's *structure* (every tile, sized and placed) renders straight away; the
+  // photos are given their src only after the window's load event, so they can never
+  // hold up the loading screen or compete with the hero's images on a slow connection.
+  // Until a photo arrives its tile shows the diagonal-stripe placeholder frame.
+  const [imagesOn, setImagesOn] = useState(false);
+  useEffect(() => {
+    const go = () => setImagesOn(true);
+    if (document.readyState === "complete") { go(); return; }
+    window.addEventListener("load", go, { once: true });
+    return () => window.removeEventListener("load", go);
+  }, []);
   const [railVariant, setRailVariant] = useState<RailVariant>("fat-fixed");
 
   // The bottom rail's progress used to live in React state, which forced a
@@ -539,7 +550,7 @@ export default function HorizontalTOC({ sections }: Props) {
                   return (
                     <div
                       key={ii}
-                      className="htoc__tile"
+                      className={`htoc__tile${sec.dark ? " htoc__tile--dark" : ""}`}
                       style={{
                         width: w,
                         height: h,
@@ -547,10 +558,13 @@ export default function HorizontalTOC({ sections }: Props) {
                       }}
                     >
                       <img
-                        src={it.image}
+                        className="htoc__img"
+                        src={imagesOn ? it.image : undefined}
                         alt={it.label}
                         loading="lazy"
                         decoding="async"
+                        {...({ fetchpriority: "low" } as Record<string, string>)}
+                        onLoad={(e) => e.currentTarget.classList.add("is-loaded")}
                         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                       />
                       <div className="htoc__tile-cap">/ {it.tag}</div>
@@ -781,10 +795,21 @@ export default function HorizontalTOC({ sections }: Props) {
           white-space: nowrap;
           transition: color .35s ease;
         }
+        /* The tile is its own placeholder: the site's diagonal grey stripes (tokens.css
+           .placeholder / .placeholder--dark), visible until the photo has loaded over
+           it. Not the .placeholder class itself — that clips overflow, and the caption
+           hangs below the tile. */
         .htoc__tile {
           position: relative;
           flex: 0 0 auto;
+          background: repeating-linear-gradient(135deg, #d8d2c1 0 14px, #cfc8b5 14px 28px);
         }
+        .htoc__tile--dark {
+          background: repeating-linear-gradient(135deg, #1c1916 0 14px, #211e1a 14px 28px);
+        }
+        /* alt text must not flash up over the frame while there is no src yet */
+        .htoc__img { opacity: 0; transition: opacity .45s ease; color: transparent; font-size: 0; }
+        .htoc__img.is-loaded { opacity: 1; }
         .htoc__tile-cap {
           position: absolute;
           left: 6px;

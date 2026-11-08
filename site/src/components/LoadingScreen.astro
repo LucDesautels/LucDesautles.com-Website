@@ -26,11 +26,36 @@
   // Block scroll behind the overlay until the page has fully loaded.
   document.documentElement.style.overflow = "hidden";
 
-  window.addEventListener("load", () => {
-    loader?.exit().then(() => {
-      screen?.classList.add("is-gone");
-      document.documentElement.style.overflow = "";
+  // Keep the overlay up until the home page's contents section (the pinned horizontal
+  // strip) has hydrated and measured itself. Window "load" doesn't wait for island
+  // scripts, so without this the page can be revealed while that section is still its
+  // server-rendered fallback. Resolves straight away on pages without it, and gives up
+  // after a few seconds so a failed hydration can never trap the user behind the loader.
+  function contentsReady(): Promise<void> {
+    const island = document.querySelector('astro-island[component-url*="HorizontalTOC"]');
+    if (!island) return Promise.resolve();
+    return new Promise((resolve) => {
+      // two frames after hydration: its layout effect decides pinned vs manual, then re-renders
+      const settle = () => requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      if (!island.hasAttribute("ssr")) return settle();
+      const mo = new MutationObserver(() => {
+        if (!island.hasAttribute("ssr")) {
+          mo.disconnect();
+          settle();
+        }
+      });
+      mo.observe(island, { attributes: true, attributeFilter: ["ssr"] });
+      window.setTimeout(() => { mo.disconnect(); resolve(); }, 4000);
     });
+  }
+
+  window.addEventListener("load", () => {
+    contentsReady().then(() =>
+      loader?.exit().then(() => {
+        screen?.classList.add("is-gone");
+        document.documentElement.style.overflow = "";
+      }),
+    );
   });
 </script>
 

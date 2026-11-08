@@ -55,7 +55,11 @@ const tocForIsland = await Promise.all(
 
   <!-- Gallery — only visible in "full picture" filter. -->
   <div id="overview" data-filters="full" data-rsec="gallery">
-    <HorizontalTOC sections={tocForIsland} client:visible />
+    {/* client:load, not :visible — it has to be live (measured, pinned, sized) before
+        the loading screen lifts. Hydrating on approach meant its plain server-rendered
+        fallback (a manual-scroll strip with a gradient bar) showed for a moment and then
+        swapped to the real pinned version as soon as you began scrolling. */}
+    <HorizontalTOC sections={tocForIsland} client:load />
   </div>
 
   <!-- Robotics block — visible in full, eng-acad, engineering. -->
