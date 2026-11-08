@@ -273,7 +273,12 @@ const projects = listSlotDirs(`${B}/projects`).map((dir) => {
           wrapper = document.createElement("div");
           wrapper.id = "scroll-wrapper";
           wrapper.style.cssText =
-            "position:fixed;top:0;left:0;width:100%;transition:transform 0.7s cubic-bezier(0.77,0,0.175,1);";
+            // transform:translateY(0) from the start (not just once it slides): any
+            // transform makes the wrapper the containing block of the footer's
+            // position:fixed panel, so the panel always lives in the gallery half of
+            // the wrapper. With no transform it was pinned to the *viewport* and, once
+            // lifted above the hero, covered the landing page on first load.
+            "position:fixed;top:0;left:0;width:100%;transform:translateY(0);transition:transform 0.7s cubic-bezier(0.77,0,0.175,1);";
           hero.parentNode.insertBefore(wrapper, hero);
           wrapper.appendChild(hero);
           wrapper.appendChild(portfolio);
